@@ -1,0 +1,342 @@
+'''
+Created on Jun 4, 2010
+
+@author: Pete Jemian
+@copyright: Copyright (C) 2010, UChicago Argonne, LLC, All Rights Reserved
+@license: qTool is part of USAXS_tools; See LICENSE (included with this file) for full details.
+@version: $Id$
+@summary: USAXS qTool allows USAXS users to drive AR, AY, and DY based 
+on the desired Q.  It provides a table of known positions and buttons 
+to move each of the motors.
+@requires: wxPython
+@requires: CaChannel (for EPICS)
+@status: converted from the Tcl code
+
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
+'''
+
+
+import os
+import wx
+
+
+class GUI(wx.App):
+    '''class whose only purpose is to run the qToolFrame'''
+
+    def OnInit(self):
+        '''run the GUI, always returns True'''
+        self.main = qToolFrame(None)
+        self.main.Show()
+        self.SetTopWindow(self.main)
+        return True
+
+
+class qToolFrame(wx.Frame):
+    '''define and operate the GUI'''
+
+    def __init__(self, parent):
+        '''create the GUI'''
+
+        # define some things for the program
+        self.SVN_ID = "$Id$"
+        self.TITLE = u'USAXS Q positioner'
+        self.GRAY = wx.ColorRGB(0xababab)
+        self.MOVING_COLOR = wx.GREEN
+        self.NOT_MOVING_COLOR = wx.LIGHT_GREY
+        self.LIGHTBLUE = wx.ColorRGB(0xffddcc)
+        self.BISQUE = wx.ColorRGB(0xaaddee)
+        self.NUM_Q_ROWS = 16
+        self.MIN_GUI_SIZE = wx.Size(560, 940)    # the widgets just fit
+        self.MAX_GUI_SIZE = wx.Size(-1, 940)     # can only grow window horizontally
+        self.RC_FILE = '~/.qToolUsaxsrc'
+        self.AXIS_NAMES = "AR AY DY"
+        self.AXIS_LABELS = "motor readback target"
+        self.AXIS_FIELDS = 'RBV VAL'
+        # Tcl configuration items remaining
+        #  PV,Q,Finish        32idbLAX:USAXS:Finish
+        #  PV,AR,enc        32idbLAX:aero:c0:m1.RBV
+        #  PV,AR,enc,center    32idbLAX:USAXS:Q.B
+        #  PV,SDD        32idbLAX:USAXS:SDD.VAL
+        #  PV,SAD        32idbLAX:USAXS:SAD.VAL
+        #  PV,lambda        32ida:BraggLambdaRdbkAO
+        #  PV,AR,motor        32idbLAX:aero:c0:m1
+        #  PV,AY,motor        32idbLAX:m58:c1:m7
+        #  PV,DY,motor        32idbLAX:m58:c2:m5
+        #  motorPVfields        "VAL DESC RBV STOP HLM LLM MOVN"
+
+        # build the GUI
+        wx.Frame.__init__(self, id=-1, name=u'qToolFrame',
+              parent=parent,
+              style=wx.DEFAULT_FRAME_STYLE, title=self.TITLE,
+              size=self.MIN_GUI_SIZE
+              )
+        
+        self.SetMinSize(self.MIN_GUI_SIZE)
+        self.SetMaxSize(self.MAX_GUI_SIZE)
+        self.__init_statusBar__('status')
+        self.__init_bsMain__(parent)
+
+    def __init_statusBar__(self, text):
+        '''provides a status bar to say what is happening'''
+        self.mainStatusBar = wx.StatusBar(id=-1,
+              name='mainStatusBar', parent=self, style=0)
+        self.mainStatusBar.SetFieldsCount(1)
+        self.mainStatusBar.SetStatusText(number=0, text=text)
+        self.mainStatusBar.SetStatusWidths([-1])
+        self.SetStatusBar(self.mainStatusBar)
+
+    def __init_bsMain__(self, parent):
+        '''main box sizer, outermost sizer of the GUI'''
+        # list of items to add to the main BoxSizer
+        self.bsMainItemList = []
+
+        self.title = self.__init_statictext__(
+               name='title', text=self.TITLE, fontSize=20, tooltip='')
+        self.bsMainItemList.append(self.title)
+
+        self.subtitle = self.__init_statictext__(
+               name='subtitle', text=self.SVN_ID, fontSize=8,
+               tooltip='revision identifier from the version control system')
+        self.bsMainItemList.append(self.subtitle)
+
+        self.bsMainItemList.append(self.__init_button_bar__())
+        self.bsMainItemList.append(self.__init_motor_controls__())
+        self.bsMainItemList.append(self.__init_parameters__())
+        self.bsMainItemList.append(self.__init_positions_controls__())
+
+        self.bsMain = wx.BoxSizer(orient=wx.VERTICAL)
+        for item in self.bsMainItemList:
+            self.bsMain.AddWindow(item, 0, border=0, flag=wx.EXPAND)
+        self.SetSizer(self.bsMain)
+
+    def __init_motor_controls__(self):
+        '''
+            create the control items, 
+            defines self.motorList dictionary, 
+            returns FlexGridSizer object
+        '''
+        self.sbMotor = wx.StaticBox(id=wx.NewId(),
+              label='watch EPICS motors', name='sbMotor',
+              parent=self, style=0)
+        self.sbsMotor = wx.StaticBoxSizer(self.sbMotor, wx.VERTICAL)
+        self.fgsMotor = wx.FlexGridSizer(rows=4, cols=3, hgap=10, vgap=5)
+        
+        # column labels
+        for item in self.AXIS_LABELS.split():
+            self.fgsMotor.Add(
+                 wx.StaticText(self, -1, item, style=wx.ALIGN_RIGHT), 
+                 0, flag=wx.EXPAND)
+        # one motor axis per row
+        self.motorList = {}
+        for axis in self.AXIS_NAMES.split():
+            self.fgsMotor.Add(
+                 wx.StaticText(self, -1, axis, style=wx.ALIGN_RIGHT), 
+                 0, flag=wx.EXPAND)
+            dict = {}
+            for field in self.AXIS_FIELDS.split():
+                text = '[%s].%s' % (axis, field)
+                widget = wx.StaticText(self, wx.NewId(), text, style=wx.ALIGN_RIGHT)
+                widget.SetBackgroundColour(self.NOT_MOVING_COLOR)
+                widget.SetToolTipString('most recent EPICS value of ' + text + ' PV')
+                self.fgsMotor.Add(widget, 0, flag=wx.EXPAND) 
+                dict[field] = widget
+            self.motorList[axis] = dict
+        
+        self.fgsMotor.AddGrowableCol(1)
+        self.fgsMotor.AddGrowableCol(2)
+        
+        self.sbsMotor.Add(self.fgsMotor, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
+        
+        return self.sbsMotor
+
+    def __init_parameters__(self):
+        '''
+            create the table of user parameters, 
+            defines parameterList dictionary, 
+            returns FlexGridSizer object
+        '''
+        config = [
+          ['AY0', 'AY position at beam center, mm', self.LIGHTBLUE],
+          ['DY0', 'DY position at beam center, mm', self.LIGHTBLUE],
+          ['ARenc', 'AR encoder reading, degrees', self.BISQUE],
+          ['ARenc0', 'AR encoder center, degrees', self.BISQUE],
+          ['SDD', 'sample-detector distance, mm', self.BISQUE],
+          ['SAD', 'sample-analyzer distance, mm', self.BISQUE],
+          ['lambda', 'wavelength, A', self.BISQUE]
+        ]
+        self.sbParameter = wx.StaticBox(id=wx.NewId(),
+              label='user parameters', name='sbParameter',
+              parent=self, style=0)
+        self.sbsParameter = wx.StaticBoxSizer(self.sbParameter, wx.VERTICAL)
+        self.fgsParameter = wx.FlexGridSizer(rows=len(config), cols=2, hgap=10, vgap=5)
+        
+        self.parameterList = {}
+        for row in config:
+            name, desc, color = row
+            self.fgsParameter.Add(
+                 wx.StaticText(self, -1, desc, style=wx.ALIGN_RIGHT), 
+                 0, flag=wx.EXPAND)
+            widget = wx.TextCtrl(self, wx.NewId(), "")
+            widget.SetBackgroundColour(color)
+            widget.SetToolTipString('value of ' + name + ' parameter')
+            self.fgsParameter.Add(widget, 1, wx.EXPAND)
+            self.parameterList[name] = { 'entry': widget }
+
+        self.fgsParameter.AddGrowableCol(1)
+        self.sbsParameter.Add(self.fgsParameter, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
+        
+        return self.sbsParameter
+
+    def __init_positions_controls__(self):
+        '''
+            create the positions table
+            defines self.positionList list
+            returns FlexGridSizer object
+        '''
+        labels = ['#', 'description', 'Q, 1/A', 'AR, degrees', 'AY, mm', 'DY, mm']
+
+        # @todo: this panel needs scrollbars!  Then it could have ~25 rows
+        self.sbPosition = wx.StaticBox(id=wx.NewId(),
+              label='table of Q positions', name='sbPosition',
+              parent=self, style=0)
+        self.sbsPosition = wx.StaticBoxSizer(self.sbPosition, wx.VERTICAL)
+        self.fgsPosition = wx.FlexGridSizer(rows=15, cols=len(labels), hgap=10, vgap=5)
+        
+        for label in labels:
+            self.fgsPosition.Add(
+                 wx.StaticText(self, -1, label, style=wx.ALIGN_RIGHT), 
+                 0, flag=wx.EXPAND)
+
+        self.positionList = []
+        for row in range(self.NUM_Q_ROWS):
+            dict = {}
+
+            self.fgsPosition.Add(
+                 wx.StaticText(self, -1, str(row+1), style=wx.ALIGN_RIGHT), 
+                 0, flag=wx.EXPAND)
+
+            widget = wx.TextCtrl(self, wx.NewId(), "")
+            widget.SetBackgroundColour(self.BISQUE)
+            widget.SetToolTipString('user description of this position (row)')
+            self.fgsPosition.Add(widget, 1, wx.EXPAND)
+            dict['label'] = { 'entry': widget }
+
+            widget = wx.TextCtrl(self, wx.NewId(), "")
+            widget.SetBackgroundColour(self.BISQUE)
+            widget.SetToolTipString('Q value of this position (row)')
+            self.fgsPosition.Add(widget, 1, wx.EXPAND)
+            dict['Q'] = { 'entry': widget }
+
+            for axis in self.AXIS_NAMES.split():
+                #widget = wx.TextCtrl(self, wx.NewId(), "")
+                label = "%s%d" % (axis, row+1)
+                widget = wx.Button(id=wx.NewId(), 
+                   label=label,
+                   name=label+'button', 
+                   parent=self)
+                #widget.SetBackgroundColour(BISQUE)
+                widget.SetToolTipString('move ' + axis + ' to this value')
+                self.fgsPosition.Add(widget, 1, wx.EXPAND)
+                dict[axis] = { 'entry': widget }
+
+            self.positionList.append(dict)
+
+        for col in range(1, len(labels)):
+            self.fgsPosition.AddGrowableCol(col)
+        self.sbsPosition.Add(self.fgsPosition, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
+        
+        return self.sbsPosition
+
+    def __init_button_bar__(self):
+        '''
+            create the button bar, 
+            defines buttonList dictionary, 
+            returns BoxSizer object
+        '''
+        labels = ['save settings', 'read settings', 'stop motors']
+
+        self.bsButtons = wx.BoxSizer(orient=wx.HORIZONTAL)
+
+        self.buttonList = {}
+        for text in labels:
+            label = text.split()[0]
+            widget = wx.Button(id=wx.NewId(), parent=self, label=text, name=label+'Button')
+            #widget.SetBackgroundColour(BISQUE)
+            widget.SetToolTipString(text)
+            self.bsButtons.Add(widget, 1, wx.EXPAND)
+            dict = { 'button': widget }
+            self.buttonList[label] = dict
+        self.buttonList['stop']['button'].SetBackgroundColour(wx.RED)
+        self.buttonList['stop']['button'].SetForegroundColour(wx.WHITE)
+        self.buttonList['save']['button'].Bind(wx.EVT_BUTTON, self.save_rcfile)
+        self.buttonList['read']['button'].Bind(wx.EVT_BUTTON, self.read_rcfile)
+
+        # queue it for writing to the main BoxSizer
+        return self.bsButtons
+
+    def __init_statictext__(self, name, text, tooltip='', fontSize=10, color=None):
+        '''create a StaticText item'''
+        item = wx.StaticText(id=-1,
+              label=text, name=name, parent=self,
+              style=wx.MAXIMIZE_BOX | wx.ALIGN_CENTRE | wx.EXPAND)
+        item.SetFont(wx.Font(fontSize, wx.SWISS, wx.NORMAL, wx.NORMAL, False))
+        item.SetAutoLayout(True)
+        item.SetToolTipString(tooltip)
+        item.Center(wx.HORIZONTAL)
+        if color == None:
+            color = self.GRAY
+        item.SetBackgroundColour(color)
+        return item
+
+    def read_rcfile(self, event):
+        '''
+            reads the resource configuration file
+            writes the widget fields
+        '''
+        if os.path.exists(self.RC_FILE):
+            for line in open(self.RC_FILE, 'r'):
+                key = line.split()[0]
+                value = " ".join(line.split()[1:])
+                if value == '-':
+                    value = ''
+                splits = key.split(',')
+                if len(splits) > 1:
+                    # Q position table
+                    row, item = splits
+                    self.positionList[int(row)-1][item]['entry'].SetValue(value)
+                else:
+                    # user parameter
+                    self.parameterList[key]['entry'].SetValue(value)
+
+    def save_rcfile(self, event):
+        '''
+            reads the widget fields
+            writes the resource configuration file
+        '''
+        output = ""
+        # user parameters
+        for key in "AY0 DY0".split():
+            value = self.parameterList[key]['entry'].GetValue()
+            if len(value) == 0:
+                value = "-"    # do not write empty strings
+            output += "%s %s\n" % (key, value)
+        # Q position table
+        for row in range(self.NUM_Q_ROWS):
+            for item in "label Q".split():
+                value = self.positionList[row][item]['entry'].GetValue()
+                if len(value) == 0:
+                    value = "-"    # do not write empty strings
+                output += "%d,%s %s\n" % (row+1, item, value)
+        f = open(self.RC_FILE, 'w')
+        f.write(output)
+        f.close()
+
+
+if __name__ == '__main__':
+    GUI(0).MainLoop()

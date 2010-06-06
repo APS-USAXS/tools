@@ -2,6 +2,8 @@
 Created on Jun 4, 2010
 
 @author: Pete Jemian
+@contact: jemian@anl.gov
+@organization: Advanced Photon Source, Argonne National Laboratory
 @copyright: Copyright (C) 2010, UChicago Argonne, LLC, All Rights Reserved
 @license: qTool is part of USAXS_tools; See LICENSE (included with this file) for full details.
 @version: $Id$
@@ -54,6 +56,8 @@ class qToolFrame(wx.Frame):
         self.NOT_MOVING_COLOR = wx.LIGHT_GREY
         self.LIGHTBLUE = wx.ColorRGB(0xffddcc)
         self.BISQUE = wx.ColorRGB(0xaaddee)
+        self.COLOR_USER_ENTRY = self.BISQUE
+        self.COLOR_CALCULATED = self.LIGHTBLUE
         self.NUM_Q_ROWS = 30
         self.MIN_GUI_SIZE = (600, 600)    # the widgets just fit
         self.MAX_GUI_SIZE = (-1, -1)
@@ -171,13 +175,13 @@ class qToolFrame(wx.Frame):
             returns FlexGridSizer object
         '''
         config = [
-          ['AY0', 'AY position at beam center, mm', self.LIGHTBLUE],
-          ['DY0', 'DY position at beam center, mm', self.LIGHTBLUE],
-          ['ARenc', 'AR encoder reading, degrees', self.BISQUE],
-          ['ARenc0', 'AR encoder center, degrees', self.BISQUE],
-          ['SDD', 'sample-detector distance, mm', self.BISQUE],
-          ['SAD', 'sample-analyzer distance, mm', self.BISQUE],
-          ['lambda', 'wavelength, A', self.BISQUE]
+          ['AY0', 'AY position at beam center, mm', self.COLOR_USER_ENTRY],
+          ['DY0', 'DY position at beam center, mm', self.COLOR_USER_ENTRY],
+          ['ARenc', 'AR encoder reading, degrees', self.COLOR_CALCULATED],
+          ['ARenc0', 'AR encoder center, degrees', self.COLOR_CALCULATED],
+          ['SDD', 'sample-detector distance, mm', self.COLOR_CALCULATED],
+          ['SAD', 'sample-analyzer distance, mm', self.COLOR_CALCULATED],
+          ['lambda', 'wavelength, A', self.COLOR_CALCULATED]
         ]
         sbox = wx.StaticBox(id=wx.ID_ANY,
               label='user parameters', name='sbox',
@@ -229,13 +233,13 @@ class qToolFrame(wx.Frame):
             fgs.Add(st, 0, flag=wx.EXPAND)
 
             widget = wx.TextCtrl(swin, wx.ID_ANY, "")
-            widget.SetBackgroundColour(self.BISQUE)
+            widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
             widget.SetToolTipString('user description of this position (row)')
             fgs.Add(widget, 3, wx.EXPAND)
             dict['label'] = { 'entry': widget }
 
             widget = wx.TextCtrl(swin, wx.ID_ANY, "")
-            widget.SetBackgroundColour(self.BISQUE)
+            widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
             widget.SetToolTipString('Q value of this position (row)')
             fgs.Add(widget, 2, wx.EXPAND)
             dict['Q'] = { 'entry': widget }
@@ -245,7 +249,7 @@ class qToolFrame(wx.Frame):
                 label = "%s%d" % (axis, row+1)
                 widget = wx.Button(parent=swin, id=wx.ID_ANY, 
                    label=label, name=label+'button' )
-                #widget.SetBackgroundColour(BISQUE)
+                widget.SetBackgroundColour(self.COLOR_CALCULATED)
                 widget.SetToolTipString('move ' + axis + ' to this value')
                 fgs.Add(widget, 2, wx.EXPAND)
                 dict[axis] = { 'entry': widget }
@@ -278,7 +282,7 @@ class qToolFrame(wx.Frame):
         for text in labels:
             label = text.split()[0]
             widget = wx.Button(id=wx.ID_ANY, parent=self, label=text, name=label+'Button')
-            #widget.SetBackgroundColour(BISQUE)
+            widget.SetBackgroundColour(self.COLOR_CALCULATED)
             widget.SetToolTipString(text)
             self.bsButtons.Add(widget, 1, wx.EXPAND)
             dict = { 'button': widget }

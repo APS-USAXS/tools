@@ -55,10 +55,12 @@ class qToolFrame(wx.Frame):
         self.NOT_MOVING_COLOR = wx.LIGHT_GREY
         self.LIGHTBLUE = wx.ColorRGB(0xffddcc)
         self.BISQUE = wx.ColorRGB(0xaaddee)
-        self.COLOR_USER_ENTRY = self.BISQUE
+        self.MINTCREAM = wx.ColorRGB(0xe5ffea)
         self.COLOR_CALCULATED = self.LIGHTBLUE
+        self.COLOR_EPICS_MONITOR = self.MINTCREAM
+        self.COLOR_USER_ENTRY = self.BISQUE
         self.NUM_Q_ROWS = 30
-        self.MIN_GUI_SIZE = (600, 600)    # the widgets just fit
+        self.MIN_GUI_SIZE = (500, 760)    # the widgets just fit
         self.MAX_GUI_SIZE = (-1, -1)
         self.USER_HOME = os.getenv('USERPROFILE') or os.getenv('HOME') # windows or Linux/Mac
         self.RC_FILE = os.path.join(self.USER_HOME, '.scanTimeCalcrc')
@@ -110,7 +112,7 @@ class qToolFrame(wx.Frame):
         itemList = []
 
         self.title = self.__init_statictext__(
-               name='title', text=self.TITLE, fontSize=20, tooltip='')
+               name='title', text=self.TITLE, fontSize=18, tooltip='')
         
         itemList.append([0, self.title])
 
@@ -120,6 +122,8 @@ class qToolFrame(wx.Frame):
         itemList.append([0, self.subtitle])
 
         itemList.append([0, self.__init_parameters__()])
+        itemList.append([0, self.__init_others__()])
+        itemList.append([0, self.__init_results__()])
 
         box = wx.BoxSizer(orient=wx.VERTICAL)
         for item in itemList:
@@ -133,9 +137,9 @@ class qToolFrame(wx.Frame):
         '''
             create the table of user parameters, 
             defines parameterList dictionary, 
-            returns FlexGridSizer object
+            returns container object
         '''
-        entryConfig = [
+        config = [
           ['GUI_N', '# of points', ''],
           ['GUI_keV', 'energy', 'keV'],
           ['GUI_Start', 'AR_start_offset', 'degrees'],
@@ -143,19 +147,90 @@ class qToolFrame(wx.Frame):
           ['GUI_CountTime', 'count time', 'seconds'],
           ['N_samples', '# of samples', '']
         ]
-        sbox = wx.StaticBox(id=wx.ID_ANY,
-              label='user parameters', name='sbox',
-              parent=self, style=0)
+        sbox = wx.StaticBox(parent=self, id=wx.ID_ANY,
+              label='user parameters', style=0)
         sbs = wx.StaticBoxSizer(sbox, wx.VERTICAL)
-        fgs = wx.FlexGridSizer(rows=len(entryConfig), cols=3, hgap=10, vgap=5)
+        fgs = wx.FlexGridSizer(rows=len(config)+3+1, cols=3, hgap=10, vgap=5)
         
         self.parameterList = {}
-        for row in entryConfig:
+        for row in config:
             name, desc, units = row
             st = wx.StaticText(self, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(self, wx.ID_ANY, "")
+            widget = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
+            widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
+            widget.SetToolTipString('value of ' + name + ' parameter')
+            fgs.Add(widget, 1, wx.EXPAND|wx.ALL)
+            self.parameterList[name] = { 'entry': widget }
+
+            st = wx.StaticText(self, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
+            fgs.Add(st, 0, flag=wx.EXPAND)
+
+        config = [
+          ['AR_start', 'AR start angle', 'degrees'],
+          ['AR_center', 'AR center angle', 'degrees'],
+          ['AR_end', 'AR end angle', 'degrees']
+        ]
+        for row in config:
+            name, desc, units = row
+            st = wx.StaticText(self, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
+            fgs.Add(st, 0, flag=wx.EXPAND)
+
+            widget = wx.StaticText(self, wx.ID_ANY, "", style=wx.ALIGN_CENTER|wx.SIMPLE_BORDER)
+            widget.SetToolTipString('value of ' + name + ' parameter')
+            widget.SetBackgroundColour(self.COLOR_EPICS_MONITOR)
+            fgs.Add(widget, 1, wx.EXPAND)
+            self.parameterList[name] = { 'entry': widget }
+
+            st = wx.StaticText(self, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
+            fgs.Add(st, 0, flag=wx.EXPAND)
+
+        # copy button
+        # @todo: move this button to its own code block and install at top-most level so it can span window horizontally
+        st = wx.StaticText(self, wx.ID_ANY, "", style=wx.ALIGN_RIGHT)
+        fgs.Add(st, 0, flag=wx.EXPAND)
+        button = wx.Button(self, id=wx.ID_ANY, 
+           label="copy EPICS PVs to table" )
+        button.SetBackgroundColour(wx.BLACK)
+        button.SetForegroundColour(wx.WHITE)
+        button.SetToolTipString('copy EPICS PVs to table values')
+        fgs.Add(button, 2, wx.EXPAND)
+        self.parameterList["copy"] = { 'button': button }
+        st = wx.StaticText(self, wx.ID_ANY, "", style=wx.ALIGN_RIGHT)
+        fgs.Add(st, 0, flag=wx.EXPAND)
+
+        fgs.AddGrowableCol(1)
+        sbs.Add(fgs, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
+        
+        return sbs
+
+    def __init_others__(self):
+        '''
+            create the table of other user parameters, 
+            defines otherList dictionary, 
+            returns container object
+        '''
+        config = [
+          ['VELO_step', 'AR step-scan speed', 'degrees/second'],
+          ['VELO_return', 'AR return speed', 'degrees/second'],
+          ['ACCL', 'AR acceleration time', 'seconds'],
+          ['t_delay', 'delay time/point', 'seconds'],
+          ['t_tuning', 'tuning and dark current time', 'seconds']
+        ]
+        sbox = wx.StaticBox(parent=self, id=wx.ID_ANY,
+              label='other user parameters', style=0)
+        sbs = wx.StaticBoxSizer(sbox, wx.VERTICAL)
+        fgs = wx.FlexGridSizer(rows=len(config), cols=3, hgap=10, vgap=5)
+        
+        self.otherList = {}
+
+        for row in config:
+            name, desc, units = row
+            st = wx.StaticText(self, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
+            fgs.Add(st, 0, flag=wx.EXPAND)
+
+            widget = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
             widget.SetToolTipString('value of ' + name + ' parameter')
             fgs.Add(widget, 1, wx.EXPAND)
@@ -163,6 +238,51 @@ class qToolFrame(wx.Frame):
 
             st = wx.StaticText(self, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
+
+        fgs.AddGrowableCol(1)
+        sbs.Add(fgs, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
+        
+        return sbs
+
+    def __init_results__(self):
+        '''
+            create the table of calculated results, 
+            defines resultsList dictionary, 
+            returns container object
+        '''
+        config = [
+          ['s_motion', 'AR motor step time', 'seconds', 'p_motion'],
+          ['s_count', 'counting time', 'seconds', 'p_count'],
+          ['s_delay', 'delay time', 'seconds', 'p_delay'],
+          ['s_accl', 'AR motor acceleration time', 'seconds', 'p_accl'],
+          ['s_return', 'AR motor return time', 'seconds', 'p_return'],
+          ['s_scan', 'one sample scan time', 'seconds/scan', 's_scan_HMS'],
+          ['s_series', 'total time complete series', 'seconds/series', 's_HMS']
+        ]
+        sbox = wx.StaticBox(parent=self, id=wx.ID_ANY,
+              label='calculated values', style=0)
+        sbs = wx.StaticBoxSizer(sbox, wx.VERTICAL)
+        fgs = wx.FlexGridSizer(rows=len(config), cols=4, hgap=10, vgap=5)
+        
+        self.resultsList = {}
+
+        for row in config:
+            name, desc, units, pct = row
+            st = wx.StaticText(self, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
+            fgs.Add(st, 0, flag=wx.EXPAND)
+
+            widget = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
+            widget.SetBackgroundColour(self.COLOR_CALCULATED)
+            widget.SetToolTipString('value of ' + name + ' parameter')
+            fgs.Add(widget, 1, wx.EXPAND)
+            self.parameterList[name] = { 'entry': widget }
+
+            st = wx.StaticText(self, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
+            fgs.Add(st, 0, flag=wx.EXPAND)
+
+            st = wx.StaticText(self, wx.ID_ANY, pct, style=wx.ALIGN_LEFT)
+            fgs.Add(st, 0, flag=wx.EXPAND)
+            self.parameterList[pct] = { 'text': widget }
 
         fgs.AddGrowableCol(1)
         sbs.Add(fgs, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)

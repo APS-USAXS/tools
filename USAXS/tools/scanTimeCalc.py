@@ -11,7 +11,6 @@ Created on Jun 4, 2010
 @requires: CaChannel (for EPICS)
 @status: converted from the Tcl code
 
-@todo: finish building the GUI
 @todo: manage the RC_FILE I/O
 @todo: Calculations
 @todo: Connect with EPICS variables
@@ -60,8 +59,6 @@ class qToolFrame(wx.Frame):
         self.COLOR_EPICS_MONITOR = self.MINTCREAM
         self.COLOR_USER_ENTRY = self.BISQUE
         self.NUM_Q_ROWS = 30
-        self.MIN_GUI_SIZE = (500, 760)    # the widgets just fit
-        self.MAX_GUI_SIZE = (-1, -1)
         self.USER_HOME = os.getenv('USERPROFILE') or os.getenv('HOME') # windows or Linux/Mac
         self.RC_FILE = os.path.join(self.USER_HOME, '.scanTimeCalcrc')
         """
@@ -88,19 +85,15 @@ class qToolFrame(wx.Frame):
 
         # build the GUI
         wx.Frame.__init__(self, parent=parent, id=wx.ID_ANY,
-              style=wx.DEFAULT_FRAME_STYLE, title=self.TITLE,
-              size=self.MIN_GUI_SIZE)
+              style=wx.DEFAULT_FRAME_STYLE, title=self.TITLE)
         
-        self.SetMinSize(self.MIN_GUI_SIZE)
-        self.SetMaxSize(self.MAX_GUI_SIZE)
         self.__init_statusBar__('status')
         self.__init_bsMain__(parent)
         self.SetStatusText('startup is complete')
 
     def __init_statusBar__(self, text):
         '''provides a status bar to say what is happening'''
-        bar = wx.StatusBar(id=wx.ID_ANY,
-              name='mainStatusBar', parent=self, style=0)
+        bar = wx.StatusBar(parent=self, id=wx.ID_ANY, style=0)
         bar.SetFieldsCount(1)
         bar.SetStatusText(number=0, text=text)
         bar.SetStatusWidths([-1])
@@ -112,18 +105,19 @@ class qToolFrame(wx.Frame):
         itemList = []
 
         self.title = self.__init_statictext__(
-               name='title', text=self.TITLE, fontSize=18, tooltip='')
+               text=self.TITLE, fontSize=18)
         
         itemList.append([0, self.title])
 
         self.subtitle = self.__init_statictext__(
-               name='subtitle', text=self.SVN_ID, fontSize=8,
+               text=self.SVN_ID, fontSize=8,
                tooltip='revision identifier from the version control system')
         itemList.append([0, self.subtitle])
 
-        itemList.append([0, self.__init_parameters__()])
-        itemList.append([0, self.__init_others__()])
-        itemList.append([0, self.__init_results__()])
+        itemList.append([0, self.__init_parameters__(self)])
+        itemList.append([0, self.__init_copy_button__(self)])
+        itemList.append([0, self.__init_others__(self)])
+        itemList.append([0, self.__init_results__(self)])
 
         box = wx.BoxSizer(orient=wx.VERTICAL)
         for item in itemList:
@@ -131,9 +125,13 @@ class qToolFrame(wx.Frame):
             box.Add(widget, hint, flag=wx.EXPAND)
         
         self.SetSizer(box)
-        self.FitInside()
+        #self.SetAutoLayout(True)
+        self.Fit()
+        size = self.GetSize()
+        self.SetMinSize(size)
+        self.SetMaxSize((-1, size[1]))  # only expand horizontally
 
-    def __init_parameters__(self):
+    def __init_parameters__(self, parent):
         '''
             create the table of user parameters, 
             defines parameterList dictionary, 
@@ -147,24 +145,24 @@ class qToolFrame(wx.Frame):
           ['GUI_CountTime', 'count time', 'seconds'],
           ['N_samples', '# of samples', '']
         ]
-        sbox = wx.StaticBox(parent=self, id=wx.ID_ANY,
+        sbox = wx.StaticBox(parent, id=wx.ID_ANY,
               label='user parameters', style=0)
         sbs = wx.StaticBoxSizer(sbox, wx.VERTICAL)
-        fgs = wx.FlexGridSizer(rows=len(config)+3+1, cols=3, hgap=10, vgap=5)
+        fgs = wx.FlexGridSizer(rows=len(config), cols=3, hgap=10, vgap=5)
         
         self.parameterList = {}
         for row in config:
             name, desc, units = row
-            st = wx.StaticText(self, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
+            st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
             widget.SetToolTipString('value of ' + name + ' parameter')
             fgs.Add(widget, 1, wx.EXPAND|wx.ALL)
             self.parameterList[name] = { 'entry': widget }
 
-            st = wx.StaticText(self, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
+            st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
         config = [
@@ -172,40 +170,47 @@ class qToolFrame(wx.Frame):
           ['AR_center', 'AR center angle', 'degrees'],
           ['AR_end', 'AR end angle', 'degrees']
         ]
+        fgs.SetRows(fgs.GetRows() + len(config))
         for row in config:
             name, desc, units = row
-            st = wx.StaticText(self, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
+            st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.StaticText(self, wx.ID_ANY, "", style=wx.ALIGN_CENTER|wx.SIMPLE_BORDER)
+            widget = wx.StaticText(parent, wx.ID_ANY, "", style=wx.ALIGN_CENTER|wx.SIMPLE_BORDER)
             widget.SetToolTipString('value of ' + name + ' parameter')
             widget.SetBackgroundColour(self.COLOR_EPICS_MONITOR)
             fgs.Add(widget, 1, wx.EXPAND)
             self.parameterList[name] = { 'entry': widget }
 
-            st = wx.StaticText(self, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
+            st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
+        fgs.AddGrowableCol(1)
+        sbs.Add(fgs, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
+        sbox.FitInside()
+        
+        return sbs
+
+    def __init_copy_button__(self, parent):
+        '''
+            create the EPICS sync button, 
+            defines copyList dictionary, 
+            returns container object
+        '''
+        self.copyList = {}
+
         # copy button
-        # @todo: move this button to its own code block and install at top-most level so it can span window horizontally
-        st = wx.StaticText(self, wx.ID_ANY, "", style=wx.ALIGN_RIGHT)
-        fgs.Add(st, 0, flag=wx.EXPAND)
-        button = wx.Button(self, id=wx.ID_ANY, 
+        button = wx.Button(parent, id=wx.ID_ANY, 
            label="copy EPICS PVs to table" )
         button.SetBackgroundColour(wx.BLACK)
         button.SetForegroundColour(wx.WHITE)
         button.SetToolTipString('copy EPICS PVs to table values')
-        fgs.Add(button, 2, wx.EXPAND)
-        self.parameterList["copy"] = { 'button': button }
-        st = wx.StaticText(self, wx.ID_ANY, "", style=wx.ALIGN_RIGHT)
-        fgs.Add(st, 0, flag=wx.EXPAND)
+        self.copyList["copy"] = { 'button': button }
 
-        fgs.AddGrowableCol(1)
-        sbs.Add(fgs, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
-        
-        return sbs
+        return button
 
-    def __init_others__(self):
+
+    def __init_others__(self, parent):
         '''
             create the table of other user parameters, 
             defines otherList dictionary, 
@@ -218,7 +223,7 @@ class qToolFrame(wx.Frame):
           ['t_delay', 'delay time/point', 'seconds'],
           ['t_tuning', 'tuning and dark current time', 'seconds']
         ]
-        sbox = wx.StaticBox(parent=self, id=wx.ID_ANY,
+        sbox = wx.StaticBox(parent, id=wx.ID_ANY,
               label='other user parameters', style=0)
         sbs = wx.StaticBoxSizer(sbox, wx.VERTICAL)
         fgs = wx.FlexGridSizer(rows=len(config), cols=3, hgap=10, vgap=5)
@@ -227,24 +232,25 @@ class qToolFrame(wx.Frame):
 
         for row in config:
             name, desc, units = row
-            st = wx.StaticText(self, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
+            st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
             widget.SetToolTipString('value of ' + name + ' parameter')
             fgs.Add(widget, 1, wx.EXPAND)
             self.parameterList[name] = { 'entry': widget }
 
-            st = wx.StaticText(self, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
+            st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
         fgs.AddGrowableCol(1)
         sbs.Add(fgs, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
+        sbox.FitInside()
         
         return sbs
 
-    def __init_results__(self):
+    def __init_results__(self, parent):
         '''
             create the table of calculated results, 
             defines resultsList dictionary, 
@@ -259,7 +265,7 @@ class qToolFrame(wx.Frame):
           ['s_scan', 'one sample scan time', 'seconds/scan', 's_scan_HMS'],
           ['s_series', 'total time complete series', 'seconds/series', 's_HMS']
         ]
-        sbox = wx.StaticBox(parent=self, id=wx.ID_ANY,
+        sbox = wx.StaticBox(parent, id=wx.ID_ANY,
               label='calculated values', style=0)
         sbs = wx.StaticBoxSizer(sbox, wx.VERTICAL)
         fgs = wx.FlexGridSizer(rows=len(config), cols=4, hgap=10, vgap=5)
@@ -268,31 +274,31 @@ class qToolFrame(wx.Frame):
 
         for row in config:
             name, desc, units, pct = row
-            st = wx.StaticText(self, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
+            st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
             widget.SetBackgroundColour(self.COLOR_CALCULATED)
             widget.SetToolTipString('value of ' + name + ' parameter')
             fgs.Add(widget, 1, wx.EXPAND)
             self.parameterList[name] = { 'entry': widget }
 
-            st = wx.StaticText(self, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
+            st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            st = wx.StaticText(self, wx.ID_ANY, pct, style=wx.ALIGN_LEFT)
+            st = wx.StaticText(parent, wx.ID_ANY, pct, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
             self.parameterList[pct] = { 'text': widget }
 
         fgs.AddGrowableCol(1)
         sbs.Add(fgs, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
+        sbox.FitInside()
         
         return sbs
 
-    def __init_statictext__(self, name, text, tooltip='', fontSize=10, color=None):
+    def __init_statictext__(self, text, tooltip='', fontSize=10, color=None):
         '''create a StaticText item'''
-        item = wx.StaticText(id=wx.ID_ANY,
-              label=text, name=name, parent=self,
+        item = wx.StaticText(parent=self, id=wx.ID_ANY, label=text,
               style=wx.MAXIMIZE_BOX | wx.ALIGN_CENTRE | wx.EXPAND)
         item.SetFont(wx.Font(fontSize, wx.SWISS, wx.NORMAL, wx.NORMAL, False))
         item.SetAutoLayout(True)

@@ -28,7 +28,8 @@ to move each of the motors.
 
 
 import os
-import wx
+#import wx
+import wx.lib.scrolledpanel
 
 
 class GUI(wx.App):
@@ -59,7 +60,6 @@ class qToolFrame(wx.Frame):
         self.COLOR_USER_ENTRY = self.BISQUE
         self.COLOR_CALCULATED = self.LIGHTBLUE
         self.NUM_Q_ROWS = 30
-        self.MIN_GUI_SIZE = (600, 600)    # the widgets just fit
         self.MAX_GUI_SIZE = (-1, -1)
         self.USER_HOME = os.getenv('USERPROFILE') or os.getenv('HOME') # windows or Linux/Mac
         self.RC_FILE = os.path.join(self.USER_HOME, '.qToolUsaxsrc')
@@ -79,22 +79,16 @@ class qToolFrame(wx.Frame):
         #  motorPVfields        "VAL DESC RBV STOP HLM LLM MOVN"
 
         # build the GUI
-        wx.Frame.__init__(self, id=wx.ID_ANY, name=u'qToolFrame',
-              parent=parent,
-              style=wx.DEFAULT_FRAME_STYLE, title=self.TITLE,
-              size=self.MIN_GUI_SIZE
-              )
+        wx.Frame.__init__(self, parent=parent, id=wx.ID_ANY,
+              style=wx.DEFAULT_FRAME_STYLE, title=self.TITLE)
         
-        self.SetMinSize(self.MIN_GUI_SIZE)
-        self.SetMaxSize(self.MAX_GUI_SIZE)
         self.__init_statusBar__('status')
         self.__init_bsMain__(parent)
         self.SetStatusText('startup is complete')
 
     def __init_statusBar__(self, text):
         '''provides a status bar to say what is happening'''
-        bar = wx.StatusBar(id=wx.ID_ANY,
-              name='mainStatusBar', parent=self, style=0)
+        bar = wx.StatusBar(parent=self, id=wx.ID_ANY, style=0)
         bar.SetFieldsCount(1)
         bar.SetStatusText(number=0, text=text)
         bar.SetStatusWidths([-1])
@@ -105,20 +99,20 @@ class qToolFrame(wx.Frame):
         # list of items to add to the main BoxSizer
         itemList = []
 
-        self.title = self.__init_statictext__(
-               name='title', text=self.TITLE, fontSize=20, tooltip='')
-        
+
+        self.title = self.__init_statictext__(self, 
+                          text=self.TITLE, fontSize=20)
         itemList.append([0, self.title])
 
-        self.subtitle = self.__init_statictext__(
-               name='subtitle', text=self.SVN_ID, fontSize=8,
+        self.subtitle = self.__init_statictext__(self, 
+               text=self.SVN_ID, fontSize=8,
                tooltip='revision identifier from the version control system')
         itemList.append([0, self.subtitle])
 
-        itemList.append([0, self.__init_button_bar__()])
-        itemList.append([0, self.__init_motor_controls__()])
-        itemList.append([0, self.__init_parameters__()])
-        itemList.append([1, self.__init_positions_controls__()])
+        itemList.append([0, self.__init_button_bar__(self)])
+        itemList.append([0, self.__init_motor_controls__(self)])
+        itemList.append([0, self.__init_parameters__(self)])
+        itemList.append([1, self.__init_positions_controls__(self)])
 
         box = wx.BoxSizer(orient=wx.VERTICAL)
         for item in itemList:
@@ -126,35 +120,40 @@ class qToolFrame(wx.Frame):
             box.Add(widget, hint, flag=wx.EXPAND)
         
         self.SetSizer(box)
-        self.FitInside()
+        self.SetAutoLayout(True)
+        #self.Fit()
+        #size = self.GetSize()
+        size = (600, 600)
+        self.SetSize(size)
+        self.SetMinSize(size)
+        self.SetMaxSize(self.MAX_GUI_SIZE)
 
-    def __init_motor_controls__(self):
+    def __init_motor_controls__(self, parent):
         '''
             create the control items, 
             defines self.motorList dictionary, 
             returns FlexGridSizer object
         '''
-        sbox = wx.StaticBox(id=wx.ID_ANY,
-              label='watch EPICS motors', name='sbMotor',
-              parent=self, style=0)
+        sbox = wx.StaticBox(parent, id=wx.ID_ANY,
+              label='watch EPICS motors', style=0)
         sbs = wx.StaticBoxSizer(sbox, wx.VERTICAL)
         fgs = wx.FlexGridSizer(rows=4, cols=3, hgap=10, vgap=5)
         
         # column labels
         for item in self.AXIS_LABELS.split():
             fgs.Add(
-                 wx.StaticText(self, wx.ID_ANY, item, style=wx.ALIGN_RIGHT), 
+                 wx.StaticText(parent, wx.ID_ANY, item, style=wx.ALIGN_RIGHT), 
                  0, flag=wx.EXPAND)
         # one motor axis per row
         self.motorList = {}
         for axis in self.AXIS_NAMES.split():
             fgs.Add(
-                 wx.StaticText(self, wx.ID_ANY, axis, style=wx.ALIGN_RIGHT), 
+                 wx.StaticText(parent, wx.ID_ANY, axis, style=wx.ALIGN_RIGHT), 
                  0, flag=wx.EXPAND)
             dict = {}
             for field in self.AXIS_FIELDS.split():
                 text = '[%s].%s' % (axis, field)
-                widget = wx.StaticText(self, wx.ID_ANY, text, style=wx.ALIGN_RIGHT)
+                widget = wx.StaticText(parent, wx.ID_ANY, text, style=wx.ALIGN_RIGHT)
                 widget.SetBackgroundColour(self.NOT_MOVING_COLOR)
                 widget.SetToolTipString('most recent EPICS value of ' + text + ' PV')
                 fgs.Add(widget, 0, flag=wx.EXPAND) 
@@ -168,7 +167,7 @@ class qToolFrame(wx.Frame):
         
         return sbs
 
-    def __init_parameters__(self):
+    def __init_parameters__(self, parent):
         '''
             create the table of user parameters, 
             defines parameterList dictionary, 
@@ -183,9 +182,8 @@ class qToolFrame(wx.Frame):
           ['SAD', 'sample-analyzer distance, mm', self.COLOR_CALCULATED],
           ['lambda', 'wavelength, A', self.COLOR_CALCULATED]
         ]
-        sbox = wx.StaticBox(id=wx.ID_ANY,
-              label='user parameters', name='sbox',
-              parent=self, style=0)
+        sbox = wx.StaticBox(parent, id=wx.ID_ANY,
+              label='user parameters', style=0)
         sbs = wx.StaticBoxSizer(sbox, wx.VERTICAL)
         fgs = wx.FlexGridSizer(rows=len(config), cols=2, hgap=10, vgap=5)
         
@@ -193,9 +191,9 @@ class qToolFrame(wx.Frame):
         for row in config:
             name, desc, color = row
             fgs.Add(
-                 wx.StaticText(self, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT), 
+                 wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT), 
                  0, flag=wx.EXPAND)
-            widget = wx.TextCtrl(self, wx.ID_ANY, "")
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "")
             widget.SetBackgroundColour(color)
             widget.SetToolTipString('value of ' + name + ' parameter')
             fgs.Add(widget, 1, wx.EXPAND)
@@ -206,7 +204,7 @@ class qToolFrame(wx.Frame):
         
         return sbs
 
-    def __init_positions_controls__(self):
+    def __init_positions_controls__(self, parent):
         '''
             create the positions table
             defines self.positionList list
@@ -214,10 +212,9 @@ class qToolFrame(wx.Frame):
         '''
         labels = ['#', 'description', 'Q, 1/A', 'AR, degrees', 'AY, mm', 'DY, mm']
 
-        swin = wx.ScrolledWindow(self, wx.ID_ANY, style=wx.VSCROLL)
+        swin = wx.lib.scrolledpanel.ScrolledPanel(parent, wx.ID_ANY, style=wx.VSCROLL)
 
         sbox = wx.StaticBox(parent=swin, id=wx.ID_ANY, label="table of Q positions")
-        sbs = wx.StaticBoxSizer(sbox, orient=wx.VERTICAL)
         fgs = wx.FlexGridSizer(rows=self.NUM_Q_ROWS, cols=len(labels), hgap=10, vgap=5)
 
         #--- start of table
@@ -245,10 +242,8 @@ class qToolFrame(wx.Frame):
             dict['Q'] = { 'entry': widget }
 
             for axis in self.AXIS_NAMES.split():
-                #widget = wx.TextCtrl(self, wx.ID_ANY, "")
                 label = "%s%d" % (axis, row+1)
-                widget = wx.Button(parent=swin, id=wx.ID_ANY, 
-                   label=label, name=label+'button' )
+                widget = wx.Button(parent=swin, id=wx.ID_ANY, label=label )
                 widget.SetBackgroundColour(self.COLOR_CALCULATED)
                 widget.SetToolTipString('move ' + axis + ' to this value')
                 fgs.Add(widget, 2, wx.EXPAND)
@@ -260,15 +255,19 @@ class qToolFrame(wx.Frame):
             fgs.AddGrowableCol(col)
         #--- end of table
 
+        sbs = wx.StaticBoxSizer(sbox, orient=wx.VERTICAL)
         sbs.Add(fgs, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
+        sbox.SetAutoLayout(True)
+        sbox.Fit()
 
-        swin.SetScrollbars(1, 5, -1, -1)
+        swin.SetupScrolling()
         swin.SetSizer(sbs)
-        swin.FitInside()
+        swin.SetAutoLayout(True)
+        swin.Fit()
 
         return swin
 
-    def __init_button_bar__(self):
+    def __init_button_bar__(self, parent):
         '''
             create the button bar, 
             defines buttonList dictionary, 
@@ -281,7 +280,7 @@ class qToolFrame(wx.Frame):
         self.buttonList = {}
         for text in labels:
             label = text.split()[0]
-            widget = wx.Button(id=wx.ID_ANY, parent=self, label=text, name=label+'Button')
+            widget = wx.Button(parent, id=wx.ID_ANY, label=text)
             widget.SetBackgroundColour(self.COLOR_CALCULATED)
             widget.SetToolTipString(text)
             self.bsButtons.Add(widget, 1, wx.EXPAND)
@@ -295,10 +294,9 @@ class qToolFrame(wx.Frame):
         # queue it for writing to the main BoxSizer
         return self.bsButtons
 
-    def __init_statictext__(self, name, text, tooltip='', fontSize=10, color=None):
+    def __init_statictext__(self, parent, text, tooltip='', fontSize=10, color=None):
         '''create a StaticText item'''
-        item = wx.StaticText(id=wx.ID_ANY,
-              label=text, name=name, parent=self,
+        item = wx.StaticText(parent, id=wx.ID_ANY, label=text,
               style=wx.MAXIMIZE_BOX | wx.ALIGN_CENTRE | wx.EXPAND)
         item.SetFont(wx.Font(fontSize, wx.SWISS, wx.NORMAL, wx.NORMAL, False))
         item.SetAutoLayout(True)

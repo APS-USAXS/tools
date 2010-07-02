@@ -25,8 +25,17 @@ Created on Jun 4, 2010
 '''
 
 
+import math
 import os
 import wx
+import pvConnect
+import pprint
+
+connections = {}  # EPICS Channel Access connections, key is PV name
+XREF = {}         # key is PV name, value is descriptive name
+db = {}           # values, key is descriptive name
+widget_list = {}  # widgets with values to get or set
+qTool = None
 
 
 class GUI(wx.App):
@@ -34,10 +43,37 @@ class GUI(wx.App):
 
     def OnInit(self):
         '''run the GUI, always returns True'''
-        self.main = qToolFrame(None)
-        self.main.Show()
-        self.SetTopWindow(self.main)
-        return True
+ 	global qTool
+	if pvConnect.IMPORTED_CACHANNEL:
+ 	    capoll_timer = pvConnect.CaPollWx(0.1)
+ 	    capoll_timer.start()
+	qTool = qToolFrame(None)
+        qTool.Show()
+        self.SetTopWindow(qTool)
+	for name in qTool.PV_LIST:
+	    pv = qTool.PV_LIST[name]
+	    XREF[pv] = name
+	    conn = pvConnect.EpicsPv(pv)
+	    conn.SetUserCallback(_main_callback)
+	    conn.SetUserArgs(pv)
+	    conn.connectw()
+	    conn.monitor()
+	    connections[pv] = conn
+        pprint.pprint(XREF)
+	return True
+
+
+def _main_callback(epics_args, user_args):
+    '''EPICS monitor event received for this code'''
+    value = epics_args['pv_value']
+    pv = user_args[0]
+    # pprint.pprint(epics_args)
+    print '_main_callback:', pv, value
+    name = XREF[pv]
+    db[name] = value
+    # should not do this in an event handler
+    qTool.update()
+    return True
 
 
 class qToolFrame(wx.Frame):
@@ -56,33 +92,44 @@ class qToolFrame(wx.Frame):
         self.BISQUE = wx.ColorRGB(0xaaddee)
         self.MINTCREAM = wx.ColorRGB(0xe5ffea)
         self.COLOR_CALCULATED = self.LIGHTBLUE
-        self.COLOR_EPICS_MONITOR = self.MINTCREAM
+        self.COLOR_EPICS_MONITOR = self.LIGHTBLUE
         self.COLOR_USER_ENTRY = self.BISQUE
         self.NUM_Q_ROWS = 30
         self.USER_HOME = os.getenv('USERPROFILE') or os.getenv('HOME') # windows or Linux/Mac
         self.RC_FILE = os.path.join(self.USER_HOME, '.scanTimeCalcrc')
-        """
-          PV,Lambda        32ida:BraggLambdaAO
-          PV,Scan,Finish    32idbLAX:USAXS:Finish
-          PV,Scan,StartOffset    32idbLAX:USAXS:StartOffset
-          PV,Scan,NumPoints    32idbLAX:USAXS:NumPoints
-          PV,Scan,CountTime    32idbLAX:USAXS:CountTime
-          PV,Scan,AR_center     32idbLAX:USAXS:ARcenter 
-            array set db {
-                GUI_N          150
-                AR_start       10.523
-                AR_end         1
-                GUI_CountTime  5
-                N_samples      1
-                VELO_step      0.02
-                VELO_return    0.4
-                ACCL           0.2
-                t_delay        0.5
-                t_tuning       150
-                A_keV          12.3984244
-            }
-        """
+	self.PV_LIST = {
+          'PV,Lambda'		: '32ida:BraggLambdaAO',
+          'PV,Scan,Finish'	: '15iddLAX:USAXS:Finish',
+          'PV,Scan,StartOffset' : '15iddLAX:USAXS:StartOffset',
+          'PV,Scan,NumPoints'	: '15iddLAX:USAXS:NumPoints',
+          'PV,Scan,CountTime'	: '15iddLAX:USAXS:CountTime',
+          'PV,Scan,AR_center'	: '15iddLAX:USAXS:ARcenter'
+	}
+	# TODO: revise above list and remove list below once beamline has DCM support
+	self.PV_LIST = {
+          'PV,Lambda'		: '15iddLAX:float1',
+          'PV,Scan,Finish'	: '15iddLAX:float2',
+          'PV,Scan,StartOffset' : '15iddLAX:float3',
+          'PV,Scan,NumPoints'	: '15iddLAX:float4',
+          'PV,Scan,CountTime'	: '15iddLAX:float5',
+          'AR_center'	: '15iddLAX:float6'
+	}
+	# these are fall-back values used to start the tool
+	# they should be replaced quickly on startup by EPICS values
+	db['GUI_N']	    = 150
+	db['GUI_keV']       = 11.05
+	db['GUI_Start']     = -0.005   # was 10.523
+	db['GUI_Finish']    = 1
+	db['GUI_CountTime'] = 5
+	db['N_samples']     = 1
+	db['VELO_step']     = 0.02
+	db['VELO_return']   = 0.4
+	db['ACCL']	    = 0.2
+	db['t_delay']	    = 0.5
+	db['t_tuning']	    = 150
+	db['A_keV']	    = 12.3984244
 
+	self.triggerUpdates = False
         # build the GUI
         wx.Frame.__init__(self, parent=parent, id=wx.ID_ANY,
               style=wx.DEFAULT_FRAME_STYLE, title=self.TITLE)
@@ -90,6 +137,9 @@ class qToolFrame(wx.Frame):
         self.__init_statusBar__('status')
         self.__init_bsMain__(parent)
         self.SetStatusText('startup is complete')
+
+	# supply default values to the widgets
+	self.triggerUpdates = True
 
     def __init_statusBar__(self, text):
         '''provides a status bar to say what is happening'''
@@ -158,9 +208,10 @@ class qToolFrame(wx.Frame):
 
             widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
-            widget.SetToolTipString('value of ' + name + ' parameter')
+            widget.SetToolTipString('parameter: ' + name)
             fgs.Add(widget, 1, wx.EXPAND|wx.ALL)
             self.parameterList[name] = { 'entry': widget }
+	    widget_list[name] = widget.SetValue
 
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
@@ -176,11 +227,12 @@ class qToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.StaticText(parent, wx.ID_ANY, "", style=wx.ALIGN_CENTER|wx.SIMPLE_BORDER)
-            widget.SetToolTipString('value of ' + name + ' parameter')
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SIMPLE_BORDER)
+            widget.SetToolTipString('parameter: ' + name)
             widget.SetBackgroundColour(self.COLOR_EPICS_MONITOR)
             fgs.Add(widget, 1, wx.EXPAND)
             self.parameterList[name] = { 'entry': widget }
+	    widget_list[name] = widget.SetValue
 
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
@@ -237,9 +289,10 @@ class qToolFrame(wx.Frame):
 
             widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
-            widget.SetToolTipString('value of ' + name + ' parameter')
+            widget.SetToolTipString('parameter: ' + name)
             fgs.Add(widget, 1, wx.EXPAND)
             self.parameterList[name] = { 'entry': widget }
+	    widget_list[name] = widget.SetValue
 
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
@@ -279,18 +332,22 @@ class qToolFrame(wx.Frame):
 
             widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
             widget.SetBackgroundColour(self.COLOR_CALCULATED)
-            widget.SetToolTipString('value of ' + name + ' parameter')
+            widget.SetToolTipString('parameter: ' + name)
             fgs.Add(widget, 1, wx.EXPAND)
             self.parameterList[name] = { 'entry': widget }
+	    widget_list[name] = widget.SetValue
 
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            st = wx.StaticText(parent, wx.ID_ANY, pct, style=wx.ALIGN_LEFT)
+            st = wx.TextCtrl(parent, wx.ID_ANY, pct, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
             self.parameterList[pct] = { 'text': widget }
+            st.SetToolTipString('parameter: ' + pct)
+	    widget_list[pct] = st.SetValue
 
         fgs.AddGrowableCol(1)
+        fgs.AddGrowableCol(3)
         sbs.Add(fgs, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
         sbox.FitInside()
         
@@ -337,6 +394,78 @@ class qToolFrame(wx.Frame):
         f.close()
         self.SetStatusText('saved settings in: ' + self.RC_FILE)
 
+    def update(self):
+	'''recalculate and update the widgets'''
+	if self.triggerUpdates:
+	    self.recalc()
+	    self.fillWidgets()
+
+    def fillWidgets(self):
+	'''place values in the widgets'''
+	print "filling ..."
+	for name in db:
+	    if name in widget_list:
+	        widget = widget_list[name]
+		text = str(db[name])
+		#print name, text
+		widget(text)
+
+    def recalc(self):
+    	'''
+    	    recalculate the various values
+
+    	     # starting and ending AR positions
+    	     set db(AR_start) [expr $db(GUI_Start) + $db(AR_center)]
+    	     set db(AR_end)   [expr $db(AR_center) - 2*asin( $db(GUI_Finish)*$db(A_keV)/(4 * $db(pi) * $db(GUI_keV))  ) * (180/$db(pi))]
+    	     # estimate the time to complete the set of scans here
+    	     set db(s_motion) [expr abs($db(AR_start)-$db(AR_end))/$db(VELO_step)]
+    	     set db(s_accl)   [expr 2*$db(ACCL)*$db(GUI_N)]
+    	     set db(s_delay)  [expr $db(t_delay)*$db(GUI_N)]
+    	     set db(s_count)  [expr $db(GUI_CountTime)*$db(GUI_N)]
+    	     set db(s_return) [expr abs($db(AR_start)-$db(AR_end))/$db(VELO_return)]
+    	     set db(s_scan)   [expr $db(s_motion)+$db(s_accl)+$db(s_delay)+$db(s_count)+$db(s_return)]
+    	     set db(s_series) [expr ($db(s_scan)+$db(t_tuning))*$db(N_samples)]
+    	     set db(p_motion) [expr $db(s_motion) * 100.0/$db(s_scan)]
+    	     set db(p_accl)   [expr $db(s_accl)   * 100.0/$db(s_scan)]
+    	     set db(p_delay)  [expr $db(s_delay)  * 100.0/$db(s_scan)]
+    	     set db(p_count)  [expr $db(s_count)  * 100.0/$db(s_scan)]
+    	     set db(p_return) [expr $db(s_return) * 100.0/$db(s_scan)]
+    	     foreach item [array names db p_*] {
+    	       catch {$tool($item) configure -text [format %.2f%% $db($item)]}
+    	     }
+    	     set db(s_HMS) [calc_HMS $db(s_series)]
+    	     set db(s_scan_HMS) [calc_HMS $db(s_scan)]
+    	     catch {$tool(s_HMS) configure -text $db(s_HMS)}
+    	     catch {$tool(s_scan_HMS) configure -text $db(s_scan_HMS)}
+    	     save_rcfile
+    	'''
+	try:
+	    print "recalculating ..."
+	    db['AR_start'] = db['GUI_Start'] + db['AR_center']
+	    print db['AR_start']
+ 	    wavelength = db['A_keV'] / db['GUI_keV']
+ 	    pi4 = 4 * math.pi
+ 	    r2d = 180/math.pi
+ 	    db['AR_end'] = db['AR_center'] - 2*math.asin( db['GUI_Finish'] * wavelength/pi4 ) * r2d
+	    print db['AR_end']
+	    db['s_motion'] = math.fabs(db['AR_start']-db['AR_end'])/db['VELO_step']
+	    print db['s_motion']
+	except:
+	    pass
+
+
+def on_exit(timer, epics_db):
+    '''Exit handler to stop the ca.poll()
+        @param timer: CaPollWx object
+        @param epics_db: Python list of pvConnect.EpicsPv objects to be released'''
+    #print __name__, "exit handler"
+    #for item in epics_db:
+    #    item.release()
+    if pvConnect.IMPORTED_CACHANNEL:
+        pvConnect.on_exit(timer)
+
 
 if __name__ == '__main__':
+    capoll_timer = None
     GUI(0).MainLoop()
+    on_exit(capoll_timer, None)

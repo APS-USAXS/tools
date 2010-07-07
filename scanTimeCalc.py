@@ -415,16 +415,13 @@ class qToolFrame(wx.Frame):
         global type_list
         if os.path.exists(self.RC_FILE):
             tree = ElementTree.parse(self.RC_FILE)
-            #print self.MakePrettyXML(tree.getroot())
-            keys = tree.findall("//data")
+            keys = tree.findall("//data")   # use XPATH reference
             for key in keys:
                 name = key.get("name")
                 value = str(key.findtext('widget_list')).strip()
-                print "%s <%s>" % (name, value)
                 if name in widget_list:
                     widget_list[name].SetValue(value)
                 if name in type_list:
-                    print name, type_list[name], value
                     if type_list[name] == 'int':   value = int(value)
                     if type_list[name] == 'float': value = float(value)
                     db[name] = value

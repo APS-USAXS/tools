@@ -18,7 +18,6 @@
 @status: converted from the Tcl code
 
 @TODO: read settings from the RC_FILE I/O
-@TODO: validate widget input against known type
 @TODO: make a bargraph behind the percentage widgets to show fractional time in each row
 '''
 
@@ -230,7 +229,8 @@ class qToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER|wx.TE_PROCESS_ENTER)
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "", 
+                                 style=wx.SUNKEN_BORDER|wx.TE_PROCESS_ENTER)
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
             widget.SetToolTipString(TIP_STR_FMT % name)
             fgs.Add(widget, 1, wx.EXPAND|wx.ALL)
@@ -253,7 +253,8 @@ class qToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SIMPLE_BORDER|wx.TE_PROCESS_ENTER)
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "", 
+                                 style=wx.SIMPLE_BORDER|wx.TE_PROCESS_ENTER)
             widget.SetToolTipString(TIP_STR_FMT % name)
             widget.SetBackgroundColour(self.COLOR_EPICS_MONITOR)
             fgs.Add(widget, 1, wx.EXPAND)
@@ -316,7 +317,8 @@ class qToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER|wx.TE_PROCESS_ENTER)
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "", 
+                                 style=wx.SUNKEN_BORDER|wx.TE_PROCESS_ENTER)
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
             widget.SetToolTipString(TIP_STR_FMT % name)
             fgs.Add(widget, 1, wx.EXPAND)
@@ -361,7 +363,8 @@ class qToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER|wx.TE_READONLY)
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "", 
+                                 style=wx.SUNKEN_BORDER|wx.TE_READONLY)
             widget.SetBackgroundColour(self.COLOR_CALCULATED)
             widget.SetToolTipString('parameter: ' + name)
             fgs.Add(widget, 1, wx.EXPAND)
@@ -373,7 +376,8 @@ class qToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            st = wx.TextCtrl(parent, wx.ID_ANY, pct, style=wx.ALIGN_LEFT|wx.TE_READONLY)
+            st = wx.TextCtrl(parent, wx.ID_ANY, pct, 
+                             style=wx.ALIGN_LEFT|wx.TE_READONLY)
             fgs.Add(st, 0, flag=wx.EXPAND)
             self.parameterList[pct] = { 'text': widget }
             st.SetToolTipString('parameter: ' + pct)

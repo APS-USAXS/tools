@@ -17,19 +17,21 @@
 @requires: CaChannel (for EPICS)
 @status: converted from the Tcl code
 
-@TODO: manage the RC_FILE I/O
-@TODO: Only update from EPICS PVs on request
-@TODO: Respond to keyboard changes of user inputs
+@TODO: read settings from the RC_FILE I/O
 @TODO: show integer values from EPICS as integers and not floats
+@TODO: make a bargraph behind the percentage widgets to show fractional time in each row
 '''
 
 
+import datetime
 import math
 import os
 import pprint
 import shlex
 import subprocess
 import wx
+from xml.dom import minidom
+from xml.etree import ElementTree
 import pvConnect
 
 connections = {}  # EPICS Channel Access connections, key is PV name
@@ -40,6 +42,7 @@ qTool = None
 update_count = 0
 monitor_count = 0
 updated_pvs = {}
+TIP_STR_FMT = "parameter: %s\npress [ENTER] to commit a new value"
 
 RECALC_TIMER_INTERVAL_MS = 100
 RECALC_TIMER_ID = 1941
@@ -51,18 +54,20 @@ class GUI(wx.App):
     def OnInit(self):
         '''run the GUI, always returns True'''
         global qTool
+        # prepare ChannelAccess support
         if pvConnect.IMPORTED_CACHANNEL:
             capoll_timer = pvConnect.CaPollWx(0.1)
             capoll_timer.start()
+
+        # build the GUI now
         qTool = qToolFrame(None)
         qTool.Show()
         self.SetTopWindow(qTool)
+
+        # connect with EPICS now
         for name in qTool.PV_LIST:
             pv = qTool.PV_LIST[name]
             XREF[pv] = name
-            # TODO: for development only
-            #cmd = shlex.split('caput %s.DESC "%s"' % (pv, name))
-            #p = subprocess.Popen(cmd)
             #
             conn = pvConnect.EpicsPv(pv)
             conn.SetUserCallback(pv_monitor_handler)
@@ -70,7 +75,10 @@ class GUI(wx.App):
             conn.connectw()
             conn.monitor()
             connections[pv] = conn
-        #pprint.pprint(XREF)
+
+        # queue an update to the calculated values
+        if not qTool.timer.IsRunning():
+            qTool.timer.Start(RECALC_TIMER_INTERVAL_MS)
         return True
 
 
@@ -82,22 +90,9 @@ def pv_monitor_handler(epics_args, user_args):
     value = epics_args['pv_value']
     pv = user_args[0]
     name = XREF[pv]
-    # pprint.pprint(epics_args)
-    msg = "%s %s: %s(%s)=%s" % ('pv_monitor_handler', monitor_count, pv, name, value)
-    #print msg
-    qTool.SetStatusText(msg)
     db[name] = value
-    if True:
-        #-------------------
-        # for EPICS monitor events, just update the local db cache
-        #-------------------
-        #print "running?", qTool.timer.IsRunning()
-        updated_pvs[name] = value
-        #pprint.pprint(updated_pvs)
-        widget_list['p_motion'].SetValue(str(monitor_count))
-        if not qTool.timer.IsRunning():
-            # queue the update to happen (can't call directly in callback handler)
-            qTool.timer.Start(RECALC_TIMER_INTERVAL_MS)
+    msg = "%s %s: %s(%s)=%s" % ('pv_monitor_handler', monitor_count, pv, name, value)
+    qTool.SetStatusText(msg)
     return True
 
 
@@ -108,8 +103,8 @@ class qToolFrame(wx.Frame):
         '''create the GUI'''
 
         # define some things for the program
-        self.SVN_ID = "$Id$"
         self.TITLE = u'USAXS scan time calculator'
+        self.SVN_ID = "$Id$"
         self.GRAY = wx.ColorRGB(0xababab)
         self.MOVING_COLOR = wx.GREEN
         self.NOT_MOVING_COLOR = wx.LIGHT_GREY
@@ -119,7 +114,6 @@ class qToolFrame(wx.Frame):
         self.COLOR_CALCULATED = self.LIGHTBLUE
         self.COLOR_EPICS_MONITOR = self.LIGHTBLUE
         self.COLOR_USER_ENTRY = self.BISQUE
-        self.NUM_Q_ROWS = 30
         self.USER_HOME = os.getenv('USERPROFILE') or os.getenv('HOME') # windows or Linux/Mac
         self.RC_FILE = os.path.join(self.USER_HOME, '.scanTimeCalcrc')
         self.PV_LIST = {
@@ -165,7 +159,6 @@ class qToolFrame(wx.Frame):
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.update, self.timer)
-        self.timer.Start(RECALC_TIMER_INTERVAL_MS)
 
     def __del__(self):
         """ Class delete event: don't leave timer hanging around! """
@@ -237,10 +230,11 @@ class qToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER|wx.TE_PROCESS_ENTER)
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
-            widget.SetToolTipString('parameter: ' + name)
+            widget.SetToolTipString(TIP_STR_FMT % name)
             fgs.Add(widget, 1, wx.EXPAND|wx.ALL)
+            widget.Bind(wx.EVT_TEXT_ENTER, self.OnEnterKey)
             self.parameterList[name] = { 'entry': widget }
             widget_list[name] = widget
 
@@ -258,10 +252,11 @@ class qToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SIMPLE_BORDER)
-            widget.SetToolTipString('parameter: ' + name)
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SIMPLE_BORDER|wx.TE_PROCESS_ENTER)
+            widget.SetToolTipString(TIP_STR_FMT % name)
             widget.SetBackgroundColour(self.COLOR_EPICS_MONITOR)
             fgs.Add(widget, 1, wx.EXPAND)
+            widget.Bind(wx.EVT_TEXT_ENTER, self.OnEnterKey)
             self.parameterList[name] = { 'entry': widget }
             widget_list[name] = widget
 
@@ -319,10 +314,11 @@ class qToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER|wx.TE_PROCESS_ENTER)
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
-            widget.SetToolTipString('parameter: ' + name)
+            widget.SetToolTipString(TIP_STR_FMT % name)
             fgs.Add(widget, 1, wx.EXPAND)
+            widget.Bind(wx.EVT_TEXT_ENTER, self.OnEnterKey)
             self.parameterList[name] = { 'entry': widget }
             widget_list[name] = widget
 
@@ -362,17 +358,18 @@ class qToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER)
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "", style=wx.SUNKEN_BORDER|wx.TE_READONLY)
             widget.SetBackgroundColour(self.COLOR_CALCULATED)
             widget.SetToolTipString('parameter: ' + name)
             fgs.Add(widget, 1, wx.EXPAND)
+            widget.Bind(wx.EVT_TEXT_ENTER, self.OnEnterKey)
             self.parameterList[name] = { 'entry': widget }
             widget_list[name] = widget
 
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            st = wx.TextCtrl(parent, wx.ID_ANY, pct, style=wx.ALIGN_LEFT)
+            st = wx.TextCtrl(parent, wx.ID_ANY, pct, style=wx.ALIGN_LEFT|wx.TE_READONLY)
             fgs.Add(st, 0, flag=wx.EXPAND)
             self.parameterList[pct] = { 'text': widget }
             st.SetToolTipString('parameter: ' + pct)
@@ -417,14 +414,57 @@ class qToolFrame(wx.Frame):
             reads the widget fields
             writes the resource configuration file
         '''
-        output = ""
-        #
-        # pick data from the widgets and format for output to the RC_FILE
-        #
         f = open(self.RC_FILE, 'w')
-        f.write(output)
+        f.write(repr(self))
         f.close()
         self.SetStatusText('saved settings in: ' + self.RC_FILE)
+
+    def MakePrettyXML(self, raw):
+        '''
+            make the XML look pretty to the eyes
+        '''
+        doc = minidom.parseString(ElementTree.tostring(raw))
+        return doc.toprettyxml(indent = "  ")
+
+    def __repr__(self):
+        '''
+            default representation of memory-resident data
+        '''
+        global widget_list
+        global db
+        t = datetime.datetime.now()
+        yyyymmdd = t.strftime("%Y-%m-%d")
+        hhmmss = t.strftime("%H:%M:%S")
+
+        root = ElementTree.Element("scanTimeCalc")
+        root.set("version", "2.0")
+        root.set("date", yyyymmdd)
+        root.set("time", hhmmss)
+        root.append(ElementTree.Comment("written by: " + self.SVN_ID))
+        #root.append(ElementTree.ProcessingInstruction("example ProcessingInstruction()"))
+
+        # build list of items to be recorded
+        # TODO: Is there a faster, simpler method to do this?
+        master = {}
+        for item in widget_list:
+            master[item] = 1
+        for item in db:
+            master[item] = 2
+        keys = master.keys()
+        keys.sort()
+        # add the items to the XML structure
+        for item in keys:
+            node = ElementTree.SubElement(root, "data")
+            node.set("name", item)
+            if item in widget_list:
+                subnode = ElementTree.SubElement(node, "widget_list")
+                subnode.text = widget_list[item].GetValue()
+            if item in db:
+                node.set("db", str(db[item]))
+            if item in self.PV_LIST:
+                node.set("pv", str(self.PV_LIST[item]))
+
+        return self.MakePrettyXML(root)
 
     def q2angle(self, q):
         '''convert Q (1/A) to degrees'''
@@ -439,6 +479,14 @@ class qToolFrame(wx.Frame):
         m = int(seconds/60) % 60
         h = int(seconds/60/60)
         return "%d:%02d:%02d" % (h, m, s)
+
+    def OnEnterKey(self, event):
+        '''responds to wx Event: enter key pressed in wx.TextCtrl()'''
+        self.SetStatusText("enter key pressed: " + str(event))
+        if not self.timer.IsRunning():
+            # queue an update to happen
+            self.timer.Start(RECALC_TIMER_INTERVAL_MS)
+        event.Skip()
 
     def OnCopyButton(self, event):
         '''responds to wx Event: copies EPICS PVs from cache to user variables'''
@@ -460,6 +508,7 @@ class qToolFrame(wx.Frame):
         # last, update the widgets with the EPICS values
         for item in wlist:
             widget_list[item].SetValue(str(db[item]))
+        event.Skip()
 
     def update(self, event):
         '''responds to wx Event: recalculate and update the widgets when called'''
@@ -469,35 +518,19 @@ class qToolFrame(wx.Frame):
         self.recalc()
         self.fillWidgets()
         self.SetStatusText("update #%d" % update_count)
-        #widget_list['p_count'].SetValue(str(update_count))
-        #print "update", update_count
 
     def fillWidgets(self):
         '''place values in the widgets'''
         for name in db:
             if name in widget_list:
+                # TODO: This is where integers are written as floats!
                 widget = widget_list[name]
                 text = str(db[name])
-                #print "fill: ", name, text
                 widget.SetValue(text)
 
     def recalc(self):
         '''
             recalculate the various values
-
-             set db(p_motion) [expr $db(s_motion) * 100.0/$db(s_scan)]
-             set db(p_accl)   [expr $db(s_accl)   * 100.0/$db(s_scan)]
-             set db(p_delay)  [expr $db(s_delay)  * 100.0/$db(s_scan)]
-             set db(p_count)  [expr $db(s_count)  * 100.0/$db(s_scan)]
-             set db(p_return) [expr $db(s_return) * 100.0/$db(s_scan)]
-             foreach item [array names db p_*] {
-               catch {$tool($item) configure -text [format %.2f%% $db($item)]}
-             }
-             set db(s_HMS) [calc_HMS $db(s_series)]
-             set db(s_scan_HMS) [calc_HMS $db(s_scan)]
-             catch {$tool(s_HMS) configure -text $db(s_HMS)}
-             catch {$tool(s_scan_HMS) configure -text $db(s_scan_HMS)}
-             save_rcfile
         '''
         global widget_list
         global updated_pvs
@@ -571,6 +604,7 @@ class qToolFrame(wx.Frame):
             db['s_HMS'] = self.s2HMS(db['s_series'])
             wlist.append('s_HMS')
 
+            # percentage of total time in each activity
             db['p_motion'] = "%.2f%%" % (db['s_motion'] * 100/db['s_scan'])
             wlist.append('p_motion')
 
@@ -588,19 +622,18 @@ class qToolFrame(wx.Frame):
 
             # last, update the widgets with the newly-calculated values
             for item in wlist:
+                # TODO: This is where integers are written as floats!
                 widget_list[item].SetValue(str(db[item]))
 
         except:
             pass
+        self.save_rcfile(None)
 
 
 def on_exit(timer, epics_db):
     '''Exit handler to stop the ca.poll()
         @param timer: CaPollWx object
         @param epics_db: Python list of pvConnect.EpicsPv objects to be released'''
-    #print __name__, "exit handler"
-    #for item in epics_db:
-    #    item.release()
     if pvConnect.IMPORTED_CACHANNEL:
         pvConnect.on_exit(timer)
 

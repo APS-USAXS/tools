@@ -514,13 +514,11 @@ class qToolFrame(wx.Frame):
         '''responds to wx Event: recalculate and update the widgets when called'''
         global update_count
         update_count += 1
+        self.SetStatusText("update #%d" % update_count)
         self.timer.Stop()
         self.recalc()
-        self.fillWidgets()
-        self.SetStatusText("update #%d" % update_count)
 
-    def fillWidgets(self):
-        '''place values in the widgets'''
+        #place values in the widgets
         for name in db:
             if name in widget_list:
                 # TODO: This is where integers are written as floats!

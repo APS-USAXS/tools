@@ -17,8 +17,8 @@
 @requires: CaChannel (for EPICS)
 @status: converted from the Tcl code
 
-@TODO: read settings from the RC_FILE I/O
 @TODO: make a bargraph behind the percentage widgets to show fractional time in each row
+@TODO: make an event log
 '''
 
 
@@ -154,10 +154,12 @@ class qToolFrame(wx.Frame):
 
         self.__init_statusBar__('status')
         self.__init_bsMain__(parent)
-        self.SetStatusText('startup is complete')
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.update, self.timer)
+        
+        self.read_rcfile()
+        self.SetStatusText('startup is complete')
 
     def __del__(self):
         """ Class delete event: don't leave timer hanging around! """
@@ -404,18 +406,29 @@ class qToolFrame(wx.Frame):
         item.SetBackgroundColour(color)
         return item
 
-    def read_rcfile(self, event):
+    def read_rcfile(self):
         '''
             reads the resource configuration file
             writes the widget fields
         '''
+        global db
+        global type_list
         if os.path.exists(self.RC_FILE):
-            for line in open(self.RC_FILE, 'r'):
-                key = line.split()[0]
-                value = " ".join(line.split()[1:])
-                #
-                # place the data into the widgets
-                #
+            tree = ElementTree.parse(self.RC_FILE)
+            #print self.MakePrettyXML(tree.getroot())
+            keys = tree.findall("//data")
+            for key in keys:
+                name = key.get("name")
+                value = str(key.findtext('widget_list')).strip()
+                print "%s <%s>" % (name, value)
+                if name in widget_list:
+                    widget_list[name].SetValue(value)
+                if name in type_list:
+                    print name, type_list[name], value
+                    if type_list[name] == 'int':   value = int(value)
+                    if type_list[name] == 'float': value = float(value)
+                    db[name] = value
+
             self.SetStatusText('loaded settings from: ' + self.RC_FILE)
 
     def save_rcfile(self, event):
@@ -508,19 +521,19 @@ class qToolFrame(wx.Frame):
           'PV,Scan,AR_center'   : 'GUI,AR_center'
         }
         wlist = []
-        for item in map:
-            #print item, db[map[item]], db[item]
-            db[map[item]] = db[item]
-            wlist.append(map[item])
+        for key in map:
+            #print key, db[map[key]], db[key]
+            db[map[key]] = db[key]
+            wlist.append(map[key])
         self.SetStatusText("EPICS --> local")
 
         # last, update the widgets with the EPICS values
-        for item in wlist:
-            if item in type_list:
-                text = TYPE_FORMATS[type_list[item]] % db[item]
-            else:
-                text = str(db[item])
-            widget_list[item].SetValue(text)
+        for key in wlist:
+            text = str(db[key])
+            if key in type_list:
+                text = TYPE_FORMATS[type_list[key]] % db[key]
+            widget_list[key].SetValue(text)
+        self.update(event)
         event.Skip()
 
     def update(self, event):
@@ -535,10 +548,9 @@ class qToolFrame(wx.Frame):
         for item in db:
             if item in widget_list:
                 widget = widget_list[item]
+                text = str(db[item])
                 if item in type_list:
                     text = TYPE_FORMATS[type_list[item]] % db[item]
-                else:
-                    text = str(db[item])
                 widget.SetValue(text)
 
     def recalc(self):
@@ -564,7 +576,12 @@ class qToolFrame(wx.Frame):
         try:
             # first, grab non-EPICS widget values before calculating
             for item in wlist:
-                db[item] = float(widget_list[item].GetValue())
+                value = widget_list[item].GetValue()
+                if type_list[item] == 'int':
+                    value = int(value)
+                if type_list[item] == 'float':
+                    value = float(value)
+                db[item] = value
             wlist = []
 
             ########################
@@ -627,16 +644,21 @@ class qToolFrame(wx.Frame):
 
             # last, update the widgets with the newly-calculated values
             for item in wlist:
+                text = str(db[item])
                 if item in type_list:
-                    text = TYPE_FORMATS[type_list[item]] % db[name]
-                else:
-                    text = str(db[name])
-                # TODO: This is where integers are written as floats!
-                widget_list[item].SetValue(text)
+                    itemtype = type_list[item]
+                    fmt = TYPE_FORMATS[itemtype]
+                    text = fmt % db[item]
+                if item in widget_list:
+                    widget_list[item].SetValue(text)
+
+            tester = widget_list['AR_start'].GetValue()
+            if len(tester) > 0:
+                # only write this if AR_start has some value
+                self.save_rcfile(None)  # save to the RC file
 
         except:
             pass
-        self.save_rcfile(None)
 
 
 def on_exit(timer, epics_db):

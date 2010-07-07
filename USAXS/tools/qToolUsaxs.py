@@ -30,6 +30,7 @@ to move each of the motors.
 import os
 #import wx
 import wx.lib.scrolledpanel
+import pvConnect
 
 
 class GUI(wx.App):

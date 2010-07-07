@@ -89,13 +89,17 @@ def pv_monitor_handler(epics_args, user_args):
     #print msg
     qTool.SetStatusText(msg)
     db[name] = value
-    #print "running?", qTool.timer.IsRunning()
-    updated_pvs[name] = value
-    #pprint.pprint(updated_pvs)
-    widget_list['p_motion'].SetValue(str(monitor_count))
-    if not qTool.timer.IsRunning():
-        # queue the update to happen (can't call directly in callback handler)
-        qTool.timer.Start(RECALC_TIMER_INTERVAL_MS)
+    if False:
+        #-------------------
+        # for EPICS monitor events, just update the local db cache
+        #-------------------
+        #print "running?", qTool.timer.IsRunning()
+        updated_pvs[name] = value
+        #pprint.pprint(updated_pvs)
+        widget_list['p_motion'].SetValue(str(monitor_count))
+        if not qTool.timer.IsRunning():
+            # queue the update to happen (can't call directly in callback handler)
+            qTool.timer.Start(RECALC_TIMER_INTERVAL_MS)
     return True
 
 
@@ -122,7 +126,7 @@ class qToolFrame(wx.Frame):
         self.RC_FILE = os.path.join(self.USER_HOME, '.scanTimeCalcrc')
         self.PV_LIST = {
           'PV,Energy,keV'       : '32ida:BraggEAO',
-          'PV,Scan,Finish'      : '15iddLAX:USAXS:Finish',
+          'PV,Scan,Q_max'       : '15iddLAX:USAXS:Finish',
           'PV,Scan,StartOffset' : '15iddLAX:USAXS:StartOffset',
           'PV,Scan,NumPoints'   : '15iddLAX:USAXS:NumPoints',
           'PV,Scan,CountTime'   : '15iddLAX:USAXS:CountTime',
@@ -139,18 +143,19 @@ class qToolFrame(wx.Frame):
         }
         # these are fall-back values used to start the tool
         # they should be replaced quickly on startup by EPICS values
-        db['PV,Scan,NumPoints']     = 150
-        db['PV,Energy,keV']         = 11.05
-        db['PV,Scan,StartOffset']     = -0.005   # was 10.523
-        db['PV,Scan,Q_max']         = 1
-        db['PV,Scan,CountTime'] = 5
-        db['N_scans']        = 1
-        db['VELO_step']     = 0.02
-        db['VELO_return']   = 0.4
-        db['ACCL']          = 0.2
-        db['t_delay']       = 0.5
-        db['t_tuning']      = 150
-        db['A_keV']         = 12.3984244
+        db['GUI_N']             = 150
+        db['GUI_energy']        = 11.05
+        db['GUI_StartOffset']   = -0.005   # was 10.523
+        db['GUI_Q_max']         = 1
+        db['GUI_CountTime']     = 5
+        db['GUI_AR_center']     = 13.0
+        db['N_scans']           = 1
+        db['VELO_step']         = 0.02
+        db['VELO_return']       = 0.4
+        db['ACCL']              = 0.2
+        db['t_delay']           = 0.5
+        db['t_tuning']          = 150
+        db['A_keV']             = 12.3984244
 
         # build the GUI
         wx.Frame.__init__(self, parent=parent, id=wx.ID_ANY,
@@ -217,11 +222,11 @@ class qToolFrame(wx.Frame):
             returns container object
         '''
         config = [
-          ['PV,Scan,NumPoints', '# of points', ''],
-          ['PV,Energy,keV', 'energy', 'keV'],
-          ['PV,Scan,StartOffset', 'AR_start_offset', 'degrees'],
-          ['PV,Scan,Q_max', 'Q_max', '1/A'],
-          ['PV,Scan,CountTime', 'count time', 'seconds'],
+          ['GUI_N', '# of points', ''],
+          ['GUI_energy', 'energy', 'keV'],
+          ['GUI_StartOffset', 'AR_start_offset', 'degrees'],
+          ['GUI_Q_max', 'Q_max', '1/A'],
+          ['GUI_CountTime', 'count time', 'seconds'],
           ['N_scans', '# of scans', '']
         ]
         sbox = wx.StaticBox(parent, id=wx.ID_ANY,
@@ -247,7 +252,7 @@ class qToolFrame(wx.Frame):
 
         config = [
           ['AR_start', 'AR start angle', 'degrees'],
-          ['PV,Scan,AR_center', 'AR center angle', 'degrees'],
+          ['GUI_AR_center', 'AR center angle', 'degrees'],
           ['AR_end', 'AR end angle', 'degrees']
         ]
         fgs.SetRows(fgs.GetRows() + len(config))
@@ -425,13 +430,12 @@ class qToolFrame(wx.Frame):
 
     def q2angle(self, q):
         '''convert Q (1/A) to degrees'''
-        term = (q * db['A_keV']) / (4 * math.pi * db['PV,Energy,keV'])
+        term = (q * db['A_keV']) / (4 * math.pi * db['GUI_energy'])
         term = 2 * math.asin(term) * 180/math.pi
-        #print "q=", q, "  angle=", term
         return term
 
     def s2HMS(self, seconds):
-        '''convert seconds to H:M:S format'''
+        '''convert seconds to H:MM:SS format'''
         f = seconds - int(seconds)
         s = int(seconds) % 60
         m = int(seconds/60) % 60
@@ -439,10 +443,9 @@ class qToolFrame(wx.Frame):
         return "%d:%02d:%02d" % (h, m, s)
 
     def update(self, event):
-        '''responds to wx Event: recalculate and update the widgets when self.timer calls us'''
+        '''responds to wx Event: recalculate and update the widgets when called'''
         global update_count
         update_count += 1
-        self.timer.Stop()
         self.timer.Stop()
         self.recalc()
         self.fillWidgets()
@@ -463,13 +466,13 @@ class qToolFrame(wx.Frame):
             recalculate the various values
 
              # starting and ending AR positions
-             set db(AR_start) [expr $db(PV,Scan,StartOffset) + $db(PV,Scan,AR_center)]
-             set db(AR_end)   [expr $db(PV,Scan,AR_center) - 2*asin( $db(PV,Scan,Q_max)*$db(A_keV)/(4 * $db(pi) * $db(PV,Energy,keV))  ) * (180/$db(pi))]
+             set db(AR_start) [expr $db(GUI_StartOffset) + $db(GUI_AR_center)]
+             set db(AR_end)   [expr $db(GUI_AR_center) - 2*asin( $db(GUI_Q_max)*$db(A_keV)/(4 * $db(pi) * $db(GUI_energy))  ) * (180/$db(pi))]
              # estimate the time to complete the set of scans here
              set db(s_motion) [expr abs($db(AR_start)-$db(AR_end))/$db(VELO_step)]
-             set db(s_accl)   [expr 2*$db(ACCL)*$db(PV,Scan,NumPoints)]
-             set db(s_delay)  [expr $db(t_delay)*$db(PV,Scan,NumPoints)]
-             set db(s_count)  [expr $db(PV,Scan,CountTime)*$db(PV,Scan,NumPoints)]
+             set db(s_accl)   [expr 2*$db(ACCL)*$db(GUI_N)]
+             set db(s_delay)  [expr $db(t_delay)*$db(GUI_N)]
+             set db(s_count)  [expr $db(GUI_CountTime)*$db(GUI_N)]
              set db(s_return) [expr abs($db(AR_start)-$db(AR_end))/$db(VELO_return)]
              set db(s_scan)   [expr $db(s_motion)+$db(s_accl)+$db(s_delay)+$db(s_count)+$db(s_return)]
              set db(s_series) [expr ($db(s_scan)+$db(t_tuning))*$db(N_scans)]
@@ -492,13 +495,13 @@ class qToolFrame(wx.Frame):
         global db
         wlist = [
             'ACCL',
+            'GUI_CountTime',
+            'GUI_energy',
+            'GUI_N',
+            'GUI_Q_max',
+            'GUI_StartOffset',
             'N_scans',
-            'PV,Energy,keV',
-            'PV,Scan,AR_center',
-            'PV,Scan,CountTime',
-            'PV,Scan,NumPoints',
-            'PV,Scan,Q_max',
-            'PV,Scan,StartOffset',
+            'GUI_AR_center',
             't_delay',
             't_tuning',
             'VELO_return',
@@ -522,23 +525,23 @@ class qToolFrame(wx.Frame):
             ########################
 
             # starting and ending AR positions
-            db['AR_start'] = db['PV,Scan,StartOffset'] + db['PV,Scan,AR_center']
+            db['AR_start'] = db['GUI_StartOffset'] + db['GUI_AR_center']
             wlist.append('AR_start')
 
-            db['AR_end'] = db['PV,Scan,AR_center'] - self.q2angle( db['PV,Scan,Q_max'] )
+            db['AR_end'] = db['GUI_AR_center'] - self.q2angle( db['GUI_Q_max'] )
             wlist.append('AR_end')
 
             # estimate the time to complete the set of scans here
             db['s_motion'] = math.fabs(db['AR_start']-db['AR_end'])/db['VELO_step']
             wlist.append('s_motion')
 
-            db['s_accl'] = 2 * db['ACCL'] * db['PV,Scan,NumPoints']
+            db['s_accl'] = 2 * db['ACCL'] * db['GUI_N']
             wlist.append('s_accl')
 
-            db['s_delay'] = db['t_delay'] * db['PV,Scan,NumPoints']
+            db['s_delay'] = db['t_delay'] * db['GUI_N']
             wlist.append('s_delay')
 
-            db['s_count'] = db['PV,Scan,CountTime'] * db['PV,Scan,NumPoints']
+            db['s_count'] = db['GUI_CountTime'] * db['GUI_N']
             wlist.append('s_count')
 
             db['s_return'] = math.fabs(db['AR_start']-db['AR_end'])/db['VELO_return']

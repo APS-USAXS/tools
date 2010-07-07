@@ -18,7 +18,7 @@
 @status: converted from the Tcl code
 
 @TODO: read settings from the RC_FILE I/O
-@TODO: show integer values from EPICS as integers and not floats
+@TODO: validate widget input against known type
 @TODO: make a bargraph behind the percentage widgets to show fractional time in each row
 '''
 
@@ -38,14 +38,15 @@ connections = {}  # EPICS Channel Access connections, key is PV name
 XREF = {}         # key is PV name, value is descriptive name
 db = {}           # values, key is descriptive name
 widget_list = {}  # widgets with values to get or set
-qTool = None
-update_count = 0
-monitor_count = 0
-updated_pvs = {}
+type_list = {}    # ['int', 'float', 'string'] for each widget
+qTool = None      # pointer to the GUI
+update_count = 0  # number of recalculation events
+monitor_count = 0 # number of EPICS monitor events
 TIP_STR_FMT = "parameter: %s\npress [ENTER] to commit a new value"
 
 RECALC_TIMER_INTERVAL_MS = 100
 RECALC_TIMER_ID = 1941
+TYPE_FORMATS = {'int' : '%d', 'float': '%g', 'string': '%s'}
 
 
 class GUI(wx.App):
@@ -85,7 +86,6 @@ class GUI(wx.App):
 def pv_monitor_handler(epics_args, user_args):
     '''EPICS monitor event received for this code'''
     global monitor_count
-    global updated_pvs
     monitor_count += 1
     value = epics_args['pv_value']
     pv = user_args[0]
@@ -212,12 +212,12 @@ class qToolFrame(wx.Frame):
             returns container object
         '''
         config = [
-          ['GUI,N', '# of points', ''],
-          ['GUI,energy', 'energy', 'keV'],
-          ['GUI,StartOffset', 'AR_start_offset', 'degrees'],
-          ['GUI,Q_max', 'Q_max', '1/A'],
-          ['GUI,CountTime', 'count time', 'seconds'],
-          ['N_scans', '# of scans', '']
+          ['GUI,N', '# of points', '', 'int'],
+          ['GUI,energy', 'energy', 'keV', 'float'],
+          ['GUI,StartOffset', 'AR_start_offset', 'degrees', 'float'],
+          ['GUI,Q_max', 'Q_max', '1/A', 'float'],
+          ['GUI,CountTime', 'count time', 'seconds', 'float'],
+          ['N_scans', '# of scans', '', 'int']
         ]
         sbox = wx.StaticBox(parent, id=wx.ID_ANY,
               label='user parameters', style=0)
@@ -226,7 +226,7 @@ class qToolFrame(wx.Frame):
 
         self.parameterList = {}
         for row in config:
-            name, desc, units = row
+            name, desc, units, type = row
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
@@ -237,18 +237,19 @@ class qToolFrame(wx.Frame):
             widget.Bind(wx.EVT_TEXT_ENTER, self.OnEnterKey)
             self.parameterList[name] = { 'entry': widget }
             widget_list[name] = widget
+            type_list[name] = type
 
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
         config = [
-          ['AR_start', 'AR start angle', 'degrees'],
-          ['GUI,AR_center', 'AR center angle', 'degrees'],
-          ['AR_end', 'AR end angle', 'degrees']
+          ['AR_start', 'AR start angle', 'degrees', 'float'],
+          ['GUI,AR_center', 'AR center angle', 'degrees', 'float'],
+          ['AR_end', 'AR end angle', 'degrees', 'float']
         ]
         fgs.SetRows(fgs.GetRows() + len(config))
         for row in config:
-            name, desc, units = row
+            name, desc, units, type = row
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
@@ -259,6 +260,7 @@ class qToolFrame(wx.Frame):
             widget.Bind(wx.EVT_TEXT_ENTER, self.OnEnterKey)
             self.parameterList[name] = { 'entry': widget }
             widget_list[name] = widget
+            type_list[name] = type
 
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
@@ -296,11 +298,11 @@ class qToolFrame(wx.Frame):
             returns container object
         '''
         config = [
-          ['VELO_step', 'AR step-scan speed', 'degrees/second'],
-          ['VELO_return', 'AR return speed', 'degrees/second'],
-          ['ACCL', 'AR acceleration time', 'seconds'],
-          ['t_delay', 'delay time/point', 'seconds'],
-          ['t_tuning', 'tuning and dark current time', 'seconds']
+          ['VELO_step', 'AR step-scan speed', 'degrees/second', 'float'],
+          ['VELO_return', 'AR return speed', 'degrees/second', 'float'],
+          ['ACCL', 'AR acceleration time', 'seconds', 'float'],
+          ['t_delay', 'delay time/point', 'seconds', 'float'],
+          ['t_tuning', 'tuning and dark current time', 'seconds', 'float']
         ]
         sbox = wx.StaticBox(parent, id=wx.ID_ANY,
               label='other user parameters', style=0)
@@ -310,7 +312,7 @@ class qToolFrame(wx.Frame):
         self.otherList = {}
 
         for row in config:
-            name, desc, units = row
+            name, desc, units, type = row
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
@@ -321,6 +323,7 @@ class qToolFrame(wx.Frame):
             widget.Bind(wx.EVT_TEXT_ENTER, self.OnEnterKey)
             self.parameterList[name] = { 'entry': widget }
             widget_list[name] = widget
+            type_list[name] = type
 
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
@@ -338,13 +341,13 @@ class qToolFrame(wx.Frame):
             returns container object
         '''
         config = [
-          ['s_motion', 'AR motor step time', 'seconds', 'p_motion'],
-          ['s_count', 'counting time', 'seconds', 'p_count'],
-          ['s_delay', 'delay time', 'seconds', 'p_delay'],
-          ['s_accl', 'AR motor acceleration time', 'seconds', 'p_accl'],
-          ['s_return', 'AR motor return time', 'seconds', 'p_return'],
-          ['s_scan', 'one sample scan time', 'seconds/scan', 's_scan_HMS'],
-          ['s_series', 'total time complete series', 'seconds/series', 's_HMS']
+          ['s_motion', 'AR motor step time', 'seconds', 'p_motion', 'float'],
+          ['s_count', 'counting time', 'seconds', 'p_count', 'float'],
+          ['s_delay', 'delay time', 'seconds', 'p_delay', 'float'],
+          ['s_accl', 'AR motor acceleration time', 'seconds', 'p_accl', 'float'],
+          ['s_return', 'AR motor return time', 'seconds', 'p_return', 'float'],
+          ['s_scan', 'one sample scan time', 'seconds/scan', 's_scan_HMS', 'float'],
+          ['s_series', 'total time complete series', 'seconds/series', 's_HMS', 'float']
         ]
         sbox = wx.StaticBox(parent, id=wx.ID_ANY,
               label='calculated values', style=0)
@@ -354,7 +357,7 @@ class qToolFrame(wx.Frame):
         self.resultsList = {}
 
         for row in config:
-            name, desc, units, pct = row
+            name, desc, units, pct, type = row
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
@@ -365,6 +368,7 @@ class qToolFrame(wx.Frame):
             widget.Bind(wx.EVT_TEXT_ENTER, self.OnEnterKey)
             self.parameterList[name] = { 'entry': widget }
             widget_list[name] = widget
+            type_list[name] = type
 
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
@@ -374,6 +378,7 @@ class qToolFrame(wx.Frame):
             self.parameterList[pct] = { 'text': widget }
             st.SetToolTipString('parameter: ' + pct)
             widget_list[pct] = st
+            type_list[pct] = 'string'
 
         fgs.AddGrowableCol(1)
         fgs.AddGrowableCol(3)
@@ -507,7 +512,11 @@ class qToolFrame(wx.Frame):
 
         # last, update the widgets with the EPICS values
         for item in wlist:
-            widget_list[item].SetValue(str(db[item]))
+            if item in type_list:
+                text = TYPE_FORMATS[type_list[item]] % db[item]
+            else:
+                text = str(db[item])
+            widget_list[item].SetValue(text)
         event.Skip()
 
     def update(self, event):
@@ -519,20 +528,21 @@ class qToolFrame(wx.Frame):
         self.recalc()
 
         #place values in the widgets
-        for name in db:
-            if name in widget_list:
-                # TODO: This is where integers are written as floats!
-                widget = widget_list[name]
-                text = str(db[name])
+        for item in db:
+            if item in widget_list:
+                widget = widget_list[item]
+                if item in type_list:
+                    text = TYPE_FORMATS[type_list[item]] % db[item]
+                else:
+                    text = str(db[item])
                 widget.SetValue(text)
 
     def recalc(self):
         '''
             recalculate the various values
         '''
-        global widget_list
-        global updated_pvs
         global db
+        global widget_list
         wlist = [
             'ACCL',
             'GUI,CountTime',
@@ -552,13 +562,6 @@ class qToolFrame(wx.Frame):
             for item in wlist:
                 db[item] = float(widget_list[item].GetValue())
             wlist = []
-
-            # next, grab any new updates from EPICS
-            for item in updated_pvs:
-                db[item] = updated_pvs[item]
-                if item in widget_list:
-                    widget_list[item].SetValue(str(db[item]))
-            updated_pvs = {}    # empty the update list now
 
             ########################
             # recalculate the values
@@ -620,8 +623,12 @@ class qToolFrame(wx.Frame):
 
             # last, update the widgets with the newly-calculated values
             for item in wlist:
+                if item in type_list:
+                    text = TYPE_FORMATS[type_list[item]] % db[name]
+                else:
+                    text = str(db[name])
                 # TODO: This is where integers are written as floats!
-                widget_list[item].SetValue(str(db[item]))
+                widget_list[item].SetValue(text)
 
         except:
             pass

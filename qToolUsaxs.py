@@ -28,12 +28,12 @@ to move each of the motors.
 '''
 
 
+import datetime
 import os
-#import wx
 import wx.lib.scrolledpanel
+from xml.dom import minidom
+from xml.etree import ElementTree
 import pvConnect
-
-
 
 
 class qToolFrame(wx.Frame):
@@ -43,8 +43,8 @@ class qToolFrame(wx.Frame):
         '''create the GUI'''
 
         # define some things for the program
-        self.SVN_ID = "$Id$"
         self.TITLE = u'USAXS Q positioner'
+        self.SVN_ID = "$Id$"
         self.GRAY = wx.ColorRGB(0xababab)
         self.MOVING_COLOR = wx.GREEN
         self.NOT_MOVING_COLOR = wx.LIGHT_GREY
@@ -59,17 +59,18 @@ class qToolFrame(wx.Frame):
         self.AXIS_NAMES = "AR AY DY"
         self.AXIS_LABELS = "motor readback target"
         self.AXIS_FIELDS = 'RBV VAL'
-        # Tcl configuration items remaining
-        #  PV,Q,Finish        15iddLAX:USAXS:Finish
-        #  PV,AR,enc        15iddLAX:aero:c0:m1.RBV
-        #  PV,AR,enc,center    15iddLAX:USAXS:Q.B
-        #  PV,SDD        15iddLAX:USAXS:SDD.VAL
-        #  PV,SAD        15iddLAX:USAXS:SAD.VAL
-        #  PV,lambda        32ida:BraggLambdaRdbkAO
-        #  PV,AR,motor        15iddLAX:aero:c0:m1
-        #  PV,AY,motor        15iddLAX:m58:c1:m7
-        #  PV,DY,motor        15iddLAX:m58:c2:m5
-        #  motorPVfields        "VAL DESC RBV STOP HLM LLM MOVN"
+        self.PV_MAP = {
+            'PV,energy'        : '15ida:BraggERdbkAO',
+            'PV,Q,Finish'      : '15iddLAX:USAXS:Finish',
+            'PV,AR,enc'        : '15iddLAX:aero:c0:m1.RBV',
+            'PV,AR,enc,center' : '15iddLAX:USAXS:Q.B',
+            'PV,SDD'           : '15iddLAX:USAXS:SDD.VAL',
+            'PV,SAD'           : '15iddLAX:USAXS:SAD.VAL',
+            'PV,AR,motor'      : '15iddLAX:aero:c0:m1',
+            'PV,AY,motor'      : '15iddLAX:m58:c1:m7',
+            'PV,DY,motor'      : '15iddLAX:m58:c2:m5'
+        }
+        self.MOTOR_PV_FIELDS = "VAL DESC RBV STOP HLM LLM MOVN".split()
 
         # build the GUI
         wx.Frame.__init__(self, parent=parent, id=wx.ID_ANY,
@@ -130,7 +131,7 @@ class qToolFrame(wx.Frame):
         sbox = wx.StaticBox(parent, id=wx.ID_ANY,
               label='watch EPICS motors', style=0)
         sbs = wx.StaticBoxSizer(sbox, wx.VERTICAL)
-        fgs = wx.FlexGridSizer(rows=4, cols=3, hgap=10, vgap=5)
+        fgs = wx.FlexGridSizer(rows=4, cols=3, hgap=4, vgap=4)
         
         # column labels
         for item in self.AXIS_LABELS.split():
@@ -173,12 +174,12 @@ class qToolFrame(wx.Frame):
           ['ARenc0', 'AR encoder center, degrees', self.COLOR_CALCULATED],
           ['SDD', 'sample-detector distance, mm', self.COLOR_CALCULATED],
           ['SAD', 'sample-analyzer distance, mm', self.COLOR_CALCULATED],
-          ['lambda', 'wavelength, A', self.COLOR_CALCULATED]
+          ['energy', 'X-ray photon energy, keV', self.COLOR_CALCULATED]
         ]
         sbox = wx.StaticBox(parent, id=wx.ID_ANY,
               label='user parameters', style=0)
         sbs = wx.StaticBoxSizer(sbox, wx.VERTICAL)
-        fgs = wx.FlexGridSizer(rows=len(config), cols=2, hgap=10, vgap=5)
+        fgs = wx.FlexGridSizer(rows=len(config), cols=2, hgap=4, vgap=4)
         
         self.parameterList = {}
         for row in config:
@@ -208,7 +209,7 @@ class qToolFrame(wx.Frame):
         swin = wx.lib.scrolledpanel.ScrolledPanel(parent, wx.ID_ANY, style=wx.VSCROLL)
 
         sbox = wx.StaticBox(parent=swin, id=wx.ID_ANY, label="table of Q positions")
-        fgs = wx.FlexGridSizer(rows=self.NUM_Q_ROWS, cols=len(labels), hgap=10, vgap=5)
+        fgs = wx.FlexGridSizer(rows=self.NUM_Q_ROWS, cols=len(labels), hgap=4, vgap=4)
 
         #--- start of table
         for label in labels:
@@ -302,50 +303,82 @@ class qToolFrame(wx.Frame):
 
     def read_rcfile(self, event):
         '''
-            reads the resource configuration file
+            reads the resource configuration file (XML)
             writes the widget fields
         '''
         if os.path.exists(self.RC_FILE):
-            for line in open(self.RC_FILE, 'r'):
-                key = line.split()[0]
-                value = " ".join(line.split()[1:])
-                if value == '-':
-                    value = ''
-                splits = key.split(',')
-                if len(splits) > 1:
-                    # Q position table
-                    row, item = splits
-                    if int(row) <= self.NUM_Q_ROWS:
-                        # only if row exists
-                        self.positionList[int(row)-1][item]['entry'].SetValue(value)
-                else:
-                    # user parameter
-                    self.parameterList[key]['entry'].SetValue(value)
+            tree = ElementTree.parse(self.RC_FILE)
+
+            for key in tree.findall("//parameter"):
+                name = key.get("name")
+                value = key.text.strip()
+                self.parameterList[name]['entry'].SetValue(value)
+
+            for key in tree.findall("//position"):
+                row = int(key.get("row"))
+                label = key.get("label")
+                Q = key.get("Q")
+                self.positionList[row]['label']['entry'].SetValue(label)
+                self.positionList[row]['Q']['entry'].SetValue(Q)
+                
             self.SetStatusText('loaded settings from: ' + self.RC_FILE)
 
     def save_rcfile(self, event):
         '''
             reads the widget fields
-            writes the resource configuration file
+            writes the resource configuration file (XML)
         '''
-        output = ""
+        f = open(self.RC_FILE, 'w')
+        f.write(repr(self))
+        f.close()
+        self.SetStatusText('saved settings in: ' + self.RC_FILE)
+
+    def MakePrettyXML(self, raw):
+        '''
+            make the XML look pretty to the eyes
+        '''
+        doc = minidom.parseString(ElementTree.tostring(raw))
+        return doc.toprettyxml(indent = "  ")
+
+    def __repr__(self):
+        '''
+            default representation of memory-resident data
+        '''
+        global widget_list
+        global db
+        t = datetime.datetime.now()
+        yyyymmdd = t.strftime("%Y-%m-%d")
+        hhmmss = t.strftime("%H:%M:%S")
+
+        root = ElementTree.Element("qTool")
+        root.set("version", "2.0")
+        root.set("date", yyyymmdd)
+        root.set("time", hhmmss)
+        root.append(ElementTree.Comment("written by: " + self.SVN_ID))
+        #root.append(ElementTree.ProcessingInstruction("example ProcessingInstruction()"))
+
+        ####################################
+        # add the items to the XML structure
+        ####################################
+
         # user parameters
         for key in "AY0 DY0".split():
             value = self.parameterList[key]['entry'].GetValue()
-            if len(value) == 0:
-                value = "-"    # do not write empty strings
-            output += "%s %s\n" % (key, value)
+            node = ElementTree.SubElement(root, "parameter")
+            node.set("name", key)
+            if len(value) > 0:
+                node.text = value
+
         # Q position table
         for row in range(self.NUM_Q_ROWS):
+            node = ElementTree.SubElement(root, "position")
+            node.set("row", str(row))
             for item in "label Q".split():
                 value = self.positionList[row][item]['entry'].GetValue()
-                if len(value) == 0:
-                    value = "-"    # do not write empty strings
-                output += "%d,%s %s\n" % (row+1, item, value)
-        f = open(self.RC_FILE, 'w')
-        f.write(output)
-        f.close()
-        self.SetStatusText('saved settings in: ' + self.RC_FILE)
+                if len(value) == 0: value = ""
+                node.set(item, value)
+
+        return self.MakePrettyXML(root)
 
 
 if __name__ == '__main__':

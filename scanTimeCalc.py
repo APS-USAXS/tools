@@ -42,7 +42,7 @@ type_list = {}    # ['int', 'float', 'string'] for each widget
 stcTool = None    # pointer to the GUI
 update_count = 0  # number of recalculation events
 monitor_count = 0 # number of EPICS monitor events
-TIP_STR_FMT = "parameter: %s\npress [ENTER] to commit a new value"
+TIP_STR_FMT = "parameter: %s\npress [ENTER] to commit new values and recalculate"
 
 RECALC_TIMER_INTERVAL_MS = 100
 RECALC_TIMER_ID = 1941
@@ -322,7 +322,7 @@ class scanTimeCalcToolFrame(wx.Frame):
             widget = wx.TextCtrl(parent, wx.ID_ANY, "", 
                                  style=wx.SUNKEN_BORDER|wx.TE_READONLY)
             widget.SetBackgroundColour(self.COLOR_CALCULATED)
-            widget.SetToolTipString('parameter: ' + name)
+            widget.SetToolTipString('parameter: ' + name + '\ncalculated (read-only)')
             fgs.Add(widget, 1, wx.EXPAND)
             widget.Bind(wx.EVT_TEXT_ENTER, self.OnEnterKey)
             self.parameterList[name] = { 'entry': widget }
@@ -336,7 +336,7 @@ class scanTimeCalcToolFrame(wx.Frame):
                              style=wx.ALIGN_LEFT|wx.TE_READONLY)
             fgs.Add(st, 0, flag=wx.EXPAND)
             self.parameterList[pct] = { 'text': widget }
-            st.SetToolTipString('parameter: ' + pct)
+            st.SetToolTipString('parameter: ' + pct + '\ncalculated (read-only)')
             widget_list[pct] = st
             type_list[pct] = 'string'
 
@@ -362,15 +362,15 @@ class scanTimeCalcToolFrame(wx.Frame):
 
     def read_rcfile(self):
         '''
-            reads the resource configuration file
+            reads the resource configuration file (XML)
             writes the widget fields
         '''
         global db
         global type_list
         if os.path.exists(self.RC_FILE):
             tree = ElementTree.parse(self.RC_FILE)
-            keys = tree.findall("//data")   # use XPATH reference
-            for key in keys:
+
+            for key in tree.findall("//data"):
                 name = key.get("name")
                 value = str(key.findtext('widget_list')).strip()
                 if name in widget_list:
@@ -385,7 +385,7 @@ class scanTimeCalcToolFrame(wx.Frame):
     def save_rcfile(self, event):
         '''
             reads the widget fields
-            writes the resource configuration file
+            writes the resource configuration file (XML)
         '''
         f = open(self.RC_FILE, 'w')
         f.write(repr(self))

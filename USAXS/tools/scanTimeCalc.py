@@ -712,7 +712,8 @@ def main():
 
     # run the GUI
     app.MainLoop()
-    on_exit(capoll_timer)
+    if pvConnect.IMPORTED_CACHANNEL:
+        on_exit(capoll_timer)
 
 
 if __name__ == '__main__':

@@ -655,18 +655,20 @@ def main():
     stcTool = scanTimeCalcToolFrame(None)
     stcTool.Show(True)
 
-    # prepare EPICS
-    # connect with EPICS now
-    for name in stcTool.PV_LIST:
-        pv = stcTool.PV_LIST[name]
-        XREF[pv] = name
-        #
-        conn = pvConnect.EpicsPv(pv)
-        conn.SetUserCallback(pv_monitor_handler)
-        conn.SetUserArgs(pv)
-        conn.connectw()
-        conn.monitor()
-        connections[pv] = conn
+    try:
+        # connect with EPICS now
+        for name in stcTool.PV_LIST:
+            pv = stcTool.PV_LIST[name]
+            XREF[pv] = name
+            #
+            conn = pvConnect.EpicsPv(pv)
+            conn.SetUserCallback(pv_monitor_handler)
+            conn.SetUserArgs(pv)
+            conn.connectw()
+            conn.monitor()
+            connections[pv] = conn
+    except:
+        stcTool.SetStatusText("Problems establishing connections with EPICS")
 
     # queue an update to the calculated values
     if not stcTool.timer.IsRunning():

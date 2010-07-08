@@ -18,8 +18,8 @@
 @status: converted from the Tcl code
 
 @TODO: make a bargraph behind the percentage widgets to show fractional time in each row
-@TODO: make an event log
-@TODO: eliminate the GUI() class
+@TODO: make an event log (preparation is started: logs to stdout)
+@TODO: reduce number of global variables
 '''
 
 
@@ -40,8 +40,6 @@ db = {}           # values, key is descriptive name
 widget_list = {}  # widgets with values to get or set
 type_list = {}    # ['int', 'float', 'string'] for each widget
 stcTool = None    # pointer to the GUI
-update_count = 0  # number of recalculation events
-monitor_count = 0 # number of EPICS monitor events
 TIP_STR_FMT = "parameter: %s\npress [ENTER] to commit new values and recalculate"
 
 RECALC_TIMER_INTERVAL_MS = 100
@@ -69,6 +67,9 @@ class scanTimeCalcToolFrame(wx.Frame):
         self.COLOR_USER_ENTRY = self.BISQUE
         self.USER_HOME = os.getenv('USERPROFILE') or os.getenv('HOME') # windows or Linux/Mac
         self.RC_FILE = os.path.join(self.USER_HOME, '.scanTimeCalcrc')
+        self.message_count = 0 # number of messages posted
+        self.monitor_count = 0 # number of EPICS monitor events
+        self.update_count = 0  # number of recalculation events
         self.PV_LIST = {
           'PV,Energy,keV'       : '32ida:BraggEAO',
           'PV,Scan,Q_max'       : '15iddLAX:USAXS:Finish',
@@ -108,12 +109,14 @@ class scanTimeCalcToolFrame(wx.Frame):
 
         self.__init_statusBar__('status')
         self.__init_bsMain__(parent)
+        self.postMessage('starting: ' + self.SVN_ID)
+        self.postMessage('GUI created')
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.update, self.timer)
         
         self.read_rcfile()
-        self.SetStatusText('startup is complete')
+        self.postMessage('startup is complete')
 
     def __del__(self):
         """ Class delete event: don't leave timer hanging around! """
@@ -380,7 +383,9 @@ class scanTimeCalcToolFrame(wx.Frame):
                     if type_list[name] == 'float': value = float(value)
                     db[name] = value
 
-            self.SetStatusText('loaded settings from: ' + self.RC_FILE)
+            self.postMessage('loaded settings from: ' + self.RC_FILE)
+        else:
+            self.postMessage('RC_FILE does not exist: ' + self.RC_FILE)
 
     def save_rcfile(self, event):
         '''
@@ -390,7 +395,7 @@ class scanTimeCalcToolFrame(wx.Frame):
         f = open(self.RC_FILE, 'w')
         f.write(repr(self))
         f.close()
-        self.SetStatusText('saved settings in: ' + self.RC_FILE)
+        self.postMessage('saved settings in: ' + self.RC_FILE)
 
     def MakePrettyXML(self, raw):
         '''
@@ -399,15 +404,34 @@ class scanTimeCalcToolFrame(wx.Frame):
         doc = minidom.parseString(ElementTree.tostring(raw))
         return doc.toprettyxml(indent = "  ")
 
+    def yyyymmdd(self):
+        '''
+            return the current date as a string
+        '''
+        t = datetime.datetime.now()
+        return t.strftime("%Y-%m-%d")
+
+    def hhmmss(self):
+        '''
+            return the current time as a string
+        '''
+        t = datetime.datetime.now()
+        return t.strftime("%H:%M:%S")
+
+    def timestamp(self):
+        '''
+            return the current date and time as a string
+        '''
+        return self.yyyymmdd() + " " + self.hhmmss()
+
     def __repr__(self):
         '''
             default representation of memory-resident data
         '''
         global widget_list
         global db
-        t = datetime.datetime.now()
-        yyyymmdd = t.strftime("%Y-%m-%d")
-        hhmmss = t.strftime("%H:%M:%S")
+        yyyymmdd = self.yyyymmdd()
+        hhmmss = self.hhmmss()
 
         root = ElementTree.Element("scanTimeCalc")
         root.set("version", "2.0")
@@ -453,9 +477,16 @@ class scanTimeCalcToolFrame(wx.Frame):
         h = int(seconds/60/60)
         return "%d:%02d:%02d" % (h, m, s)
 
+    def postMessage(self, message):
+        '''post a message to the status line and the log'''
+        datetime = self.timestamp()
+        self.SetStatusText(message)
+        self.message_count += 1
+        # post log datetime + ": " + message
+        print "%s, #%d: %s" % (datetime, self.message_count, message)
+
     def OnEnterKey(self, event):
         '''responds to wx Event: enter key pressed in wx.TextCtrl()'''
-        self.SetStatusText("enter key pressed: " + str(event))
         if not self.timer.IsRunning():
             # queue an update to happen
             self.timer.Start(RECALC_TIMER_INTERVAL_MS)
@@ -474,27 +505,32 @@ class scanTimeCalcToolFrame(wx.Frame):
         wlist = []
         for key in map:
             #print key, db[map[key]], db[key]
-            db[map[key]] = db[key]
-            wlist.append(map[key])
-        self.SetStatusText("EPICS --> local")
+            if (map[key] in db) and (key in db):
+                db[map[key]] = db[key]
+                wlist.append(map[key])
 
-        # last, update the widgets with the EPICS values
-        for key in wlist:
-            text = str(db[key])
-            if key in type_list:
-                text = TYPE_FORMATS[type_list[key]] % db[key]
-            widget_list[key].SetValue(text)
-        self.update(event)
-        event.Skip()
+        if len(wlist) == 0:
+            self.postMessage("no values to copy from EPICS --> local")
+        else:
+            # last, update the widgets with the EPICS values
+            # but only if something has been copied
+            self.postMessage("EPICS --> local")
+            for key in wlist:
+                text = str(db[key])
+                if key in type_list:
+                    text = TYPE_FORMATS[type_list[key]] % db[key]
+                widget_list[key].SetValue(text)
+            self.update(event)
+            event.Skip()
 
     def update(self, event):
         '''responds to wx Event: recalculate and update the widgets when called'''
-        global update_count
-        update_count += 1
-        self.SetStatusText("update #%d" % update_count)
+        self.update_count += 1
+        self.postMessage("update #%d" % self.update_count)
         self.timer.Stop()
         self.recalc()
 
+        # @TODO: Is this redundant? (see below)
         #place values in the widgets
         for item in db:
             if item in widget_list:
@@ -614,14 +650,13 @@ class scanTimeCalcToolFrame(wx.Frame):
 
 def pv_monitor_handler(epics_args, user_args):
     '''EPICS monitor event received for this code'''
-    global monitor_count
-    monitor_count += 1
+    stcTool.monitor_count += 1
     value = epics_args['pv_value']
     pv = user_args[0]
     name = XREF[pv]
     db[name] = value
-    msg = "%s %s: %s(%s)=%s" % ('pv_monitor_handler', monitor_count, pv, name, value)
-    stcTool.SetStatusText(msg)
+    msg = "%s %s: %s(%s)=%s" % ('pv_monitor_handler', stcTool.monitor_count, pv, name, value)
+    stcTool.postMessage(msg)
     return True
 
 
@@ -667,8 +702,9 @@ def main():
             conn.connectw()
             conn.monitor()
             connections[pv] = conn
+        stcTool.postMessage("EPICS connections established")
     except:
-        stcTool.SetStatusText("Problems establishing connections with EPICS")
+        stcTool.postMessage("Problems establishing connections with EPICS")
 
     # queue an update to the calculated values
     if not stcTool.timer.IsRunning():

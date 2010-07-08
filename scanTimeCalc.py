@@ -20,7 +20,6 @@
 @TODO: make a bargraph behind the percentage widgets to show fractional time in each row
 @TODO: make an event log
 @TODO: eliminate the GUI() class
-@TODO: rename class qToolFrame() to scanTimeCalcToolFrame (and qTool)
 '''
 
 
@@ -40,7 +39,7 @@ XREF = {}         # key is PV name, value is descriptive name
 db = {}           # values, key is descriptive name
 widget_list = {}  # widgets with values to get or set
 type_list = {}    # ['int', 'float', 'string'] for each widget
-qTool = None      # pointer to the GUI
+stcTool = None    # pointer to the GUI
 update_count = 0  # number of recalculation events
 monitor_count = 0 # number of EPICS monitor events
 TIP_STR_FMT = "parameter: %s\npress [ENTER] to commit a new value"
@@ -50,54 +49,7 @@ RECALC_TIMER_ID = 1941
 TYPE_FORMATS = {'int' : '%d', 'float': '%g', 'string': '%s'}
 
 
-class GUI(wx.App):
-    '''class that runs the qToolFrame and sets up the EPICS PVs'''
-
-    def OnInit(self):
-        '''run the GUI, always returns True'''
-        global qTool
-        # prepare ChannelAccess support
-        if pvConnect.IMPORTED_CACHANNEL:
-            capoll_timer = pvConnect.CaPollWx(0.1)
-            capoll_timer.start()
-
-        # build the GUI now
-        qTool = qToolFrame(None)
-        qTool.Show()
-        self.SetTopWindow(qTool)
-
-        # connect with EPICS now
-        for name in qTool.PV_LIST:
-            pv = qTool.PV_LIST[name]
-            XREF[pv] = name
-            #
-            conn = pvConnect.EpicsPv(pv)
-            conn.SetUserCallback(pv_monitor_handler)
-            conn.SetUserArgs(pv)
-            conn.connectw()
-            conn.monitor()
-            connections[pv] = conn
-
-        # queue an update to the calculated values
-        if not qTool.timer.IsRunning():
-            qTool.timer.Start(RECALC_TIMER_INTERVAL_MS)
-        return True
-
-
-def pv_monitor_handler(epics_args, user_args):
-    '''EPICS monitor event received for this code'''
-    global monitor_count
-    monitor_count += 1
-    value = epics_args['pv_value']
-    pv = user_args[0]
-    name = XREF[pv]
-    db[name] = value
-    msg = "%s %s: %s(%s)=%s" % ('pv_monitor_handler', monitor_count, pv, name, value)
-    qTool.SetStatusText(msg)
-    return True
-
-
-class qToolFrame(wx.Frame):
+class scanTimeCalcToolFrame(wx.Frame):
     '''define and operate the GUI'''
 
     def __init__(self, parent):
@@ -495,7 +447,7 @@ class qToolFrame(wx.Frame):
 
     def s2HMS(self, seconds):
         '''convert seconds to H:MM:SS format'''
-        f = seconds - int(seconds)
+        #f = seconds - int(seconds)
         s = int(seconds) % 60
         m = int(seconds/60) % 60
         h = int(seconds/60/60)
@@ -660,19 +612,70 @@ class qToolFrame(wx.Frame):
             pass
 
 
-def on_exit(timer, epics_db):
-    '''Exit handler to stop the ca.poll()
+def pv_monitor_handler(epics_args, user_args):
+    '''EPICS monitor event received for this code'''
+    global monitor_count
+    monitor_count += 1
+    value = epics_args['pv_value']
+    pv = user_args[0]
+    name = XREF[pv]
+    db[name] = value
+    msg = "%s %s: %s(%s)=%s" % ('pv_monitor_handler', monitor_count, pv, name, value)
+    stcTool.SetStatusText(msg)
+    return True
+
+
+def on_exit(timer):
+    '''
+        Exit handler to stop the ca.poll()
         @param timer: CaPollWx object
-        @param epics_db: Python list of pvConnect.EpicsPv objects to be released'''
+    '''
     if pvConnect.IMPORTED_CACHANNEL:
         pvConnect.on_exit(timer)
 
 
+def main():
+    '''
+        this routine sets up the GUI program,
+        starts the EPICS connections,
+        runs the GUI,
+        then buttons things up at the end
+    '''
+    global stcTool
+
+    # start wx
+    app = wx.PySimpleApp()
+
+    # prepare ChannelAccess support
+    if pvConnect.IMPORTED_CACHANNEL:
+        capoll_timer = pvConnect.CaPollWx(0.1)
+        capoll_timer.start()
+
+    # build the GUI
+    stcTool = scanTimeCalcToolFrame(None)
+    stcTool.Show(True)
+
+    # prepare EPICS
+    # connect with EPICS now
+    for name in stcTool.PV_LIST:
+        pv = stcTool.PV_LIST[name]
+        XREF[pv] = name
+        #
+        conn = pvConnect.EpicsPv(pv)
+        conn.SetUserCallback(pv_monitor_handler)
+        conn.SetUserArgs(pv)
+        conn.connectw()
+        conn.monitor()
+        connections[pv] = conn
+
+    # queue an update to the calculated values
+    if not stcTool.timer.IsRunning():
+        stcTool.timer.Start(RECALC_TIMER_INTERVAL_MS)
+
+    # run the GUI
+    app.MainLoop()
+    on_exit(capoll_timer)
+
+
 if __name__ == '__main__':
-    capoll_timer = None
-    GUI(0).MainLoop()
-    on_exit(capoll_timer, None)
-    #app = wx.PySimpleApp()
-    #frame = qToolFrame(None)
-    #frame.Show(True)
-    #app.MainLoop()
+    main()

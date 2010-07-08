@@ -14,8 +14,9 @@ to move each of the motors.
 @requires: CaChannel (for EPICS)
 @status: converted from the Tcl code
 
-@todo: Calculations
-@todo: Connect with EPICS variables
+@TODO: Calculations
+@TODO: Connect with EPICS variables
+@TODO: in Table of Q positions, put scrollbar inside the box
 
 ########### SVN repository information ###################
 # $Date$
@@ -33,15 +34,6 @@ import wx.lib.scrolledpanel
 import pvConnect
 
 
-class GUI(wx.App):
-    '''class whose only purpose is to run the qToolFrame'''
-
-    def OnInit(self):
-        '''run the GUI, always returns True'''
-        self.main = qToolFrame(None)
-        self.main.Show()
-        self.SetTopWindow(self.main)
-        return True
 
 
 class qToolFrame(wx.Frame):
@@ -68,15 +60,15 @@ class qToolFrame(wx.Frame):
         self.AXIS_LABELS = "motor readback target"
         self.AXIS_FIELDS = 'RBV VAL'
         # Tcl configuration items remaining
-        #  PV,Q,Finish        32idbLAX:USAXS:Finish
-        #  PV,AR,enc        32idbLAX:aero:c0:m1.RBV
-        #  PV,AR,enc,center    32idbLAX:USAXS:Q.B
-        #  PV,SDD        32idbLAX:USAXS:SDD.VAL
-        #  PV,SAD        32idbLAX:USAXS:SAD.VAL
+        #  PV,Q,Finish        15iddLAX:USAXS:Finish
+        #  PV,AR,enc        15iddLAX:aero:c0:m1.RBV
+        #  PV,AR,enc,center    15iddLAX:USAXS:Q.B
+        #  PV,SDD        15iddLAX:USAXS:SDD.VAL
+        #  PV,SAD        15iddLAX:USAXS:SAD.VAL
         #  PV,lambda        32ida:BraggLambdaRdbkAO
-        #  PV,AR,motor        32idbLAX:aero:c0:m1
-        #  PV,AY,motor        32idbLAX:m58:c1:m7
-        #  PV,DY,motor        32idbLAX:m58:c2:m5
+        #  PV,AR,motor        15iddLAX:aero:c0:m1
+        #  PV,AY,motor        15iddLAX:m58:c1:m7
+        #  PV,DY,motor        15iddLAX:m58:c2:m5
         #  motorPVfields        "VAL DESC RBV STOP HLM LLM MOVN"
 
         # build the GUI
@@ -357,4 +349,8 @@ class qToolFrame(wx.Frame):
 
 
 if __name__ == '__main__':
-    GUI(0).MainLoop()
+    app = wx.PySimpleApp()
+    frame = qToolFrame(None)
+    frame.Show(True)
+    app.MainLoop()
+

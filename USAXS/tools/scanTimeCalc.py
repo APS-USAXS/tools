@@ -19,6 +19,8 @@
 
 @TODO: make a bargraph behind the percentage widgets to show fractional time in each row
 @TODO: make an event log
+@TODO: eliminate the GUI() class
+@TODO: rename class qToolFrame() to scanTimeCalcToolFrame (and qTool)
 '''
 
 
@@ -670,3 +672,7 @@ if __name__ == '__main__':
     capoll_timer = None
     GUI(0).MainLoop()
     on_exit(capoll_timer, None)
+    #app = wx.PySimpleApp()
+    #frame = qToolFrame(None)
+    #frame.Show(True)
+    #app.MainLoop()

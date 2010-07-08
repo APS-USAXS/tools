@@ -1,34 +1,40 @@
-AY0 -
-DY0 96
-1,Q 0
-1,label Q = 0
-2,Q 0.00026
-2,label Q = 0.000712
-3,Q 0.001
-3,label Q = 0.001
-4,Q 0.003
-4,label Q = 0.003
-5,Q 0.006
-5,label Q = 0.006
-6,Q 0.01
-6,label Q = 0.01
-7,Q .00022
-7,label Q=0.00022
-8,Q 0.00015
-8,label Q=0.00015
-9,Q -
-9,label -
-10,Q -
-10,label -
-11,Q -
-11,label -
-12,Q -
-12,label -
-13,Q -
-13,label -
-14,Q -
-14,label -
-15,Q -
-15,label -
-16,Q -
-16,label -
+<?xml version="1.0" ?>
+<qTool date="2010-07-07" time="22:43:14" version="2.0">
+  <!-- written by: $Id: qToolUsaxs.py 305 2010-07-08 02:26:49Z jemian $ -->
+  <parameter name="AY0">
+    0
+  </parameter>
+  <parameter name="DY0">
+    21.725
+  </parameter>
+  <position Q="0.0005" label="off main peak" row="0"/>
+  <position Q="0" label="Q = 0" row="1"/>
+  <position Q="0.000712" label="Q = 0.000712" row="2"/>
+  <position Q="0.001" label="Q = 0.001" row="3"/>
+  <position Q="0.003" label="Q = 0.003" row="4"/>
+  <position Q="0.006" label="Q = 0.006" row="5"/>
+  <position Q="0.01" label="Q = 0.01" row="6"/>
+  <position Q="0.00022" label="Q=0.00022" row="7"/>
+  <position Q="0.00015" label="Q=0.00015" row="8"/>
+  <position Q="" label="" row="9"/>
+  <position Q="" label="" row="10"/>
+  <position Q="" label="" row="11"/>
+  <position Q="" label="" row="12"/>
+  <position Q="" label="" row="13"/>
+  <position Q="" label="" row="14"/>
+  <position Q="" label="" row="15"/>
+  <position Q="" label="" row="16"/>
+  <position Q="" label="" row="17"/>
+  <position Q="" label="" row="18"/>
+  <position Q="" label="" row="19"/>
+  <position Q="" label="" row="20"/>
+  <position Q="" label="" row="21"/>
+  <position Q="" label="" row="22"/>
+  <position Q="" label="" row="23"/>
+  <position Q="" label="" row="24"/>
+  <position Q="" label="" row="25"/>
+  <position Q="" label="" row="26"/>
+  <position Q="" label="" row="27"/>
+  <position Q="" label="" row="28"/>
+  <position Q="" label="" row="29"/>
+</qTool>

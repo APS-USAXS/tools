@@ -1,5 +1,11 @@
 '''
-Created on Jun 4, 2010
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 
 @author: Pete Jemian
 @contact: jemian@anl.gov
@@ -17,14 +23,6 @@ to move each of the motors.
 @TODO: Calculations
 @TODO: Connect with EPICS variables
 @TODO: in Table of Q positions, put scrollbar inside the box
-
-########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
-########### SVN repository information ###################
 '''
 
 

@@ -449,7 +449,7 @@ class scanTimeCalcToolFrame(wx.Frame):
         #root.append(ElementTree.ProcessingInstruction("example ProcessingInstruction()"))
 
         # build list of items to be recorded
-        keylist = set(widget_list.keys() + db.keys())
+        keylist = sorted(set(widget_list.keys() + db.keys()))
 
         # add the items to the XML structure
         for item in keylist:

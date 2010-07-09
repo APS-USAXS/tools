@@ -631,6 +631,7 @@ class scanTimeCalcToolFrame(wx.Frame):
             db['p_return'] = "%.2f%%" % (db['s_return'] * 100/db['s_scan'])
             wlist.append('p_return')
 
+            # @TODO: Is this redundant? (see above)
             # last, update the widgets with the newly-calculated values
             for item in wlist:
                 text = str(db[item])

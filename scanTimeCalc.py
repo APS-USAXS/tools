@@ -371,7 +371,11 @@ class scanTimeCalcToolFrame(wx.Frame):
         global db
         global type_list
         if os.path.exists(self.RC_FILE):
-            tree = ElementTree.parse(self.RC_FILE)
+            try:
+	        tree = ElementTree.parse(self.RC_FILE)
+	    except:
+                self.postMessage('could not parse RC_FILE: ' + self.RC_FILE)
+		return
 
             for key in tree.findall("//data"):
                 name = key.get("name")
@@ -392,10 +396,14 @@ class scanTimeCalcToolFrame(wx.Frame):
             reads the widget fields
             writes the resource configuration file (XML)
         '''
-        f = open(self.RC_FILE, 'w')
-        f.write(repr(self))
-        f.close()
-        self.postMessage('saved settings in: ' + self.RC_FILE)
+	output = repr(self)
+	if len(output) > 0:
+ 	    f = open(self.RC_FILE, 'w')
+ 	    f.write(output)
+ 	    f.close()
+ 	    self.postMessage('saved settings in: ' + self.RC_FILE)
+	else:
+ 	    self.postMessage('internal ERROR: len(output)==0, will not write RC_FILE')
 
     def MakePrettyXML(self, raw):
         '''
@@ -441,16 +449,10 @@ class scanTimeCalcToolFrame(wx.Frame):
         #root.append(ElementTree.ProcessingInstruction("example ProcessingInstruction()"))
 
         # build list of items to be recorded
-        # TODO: Is there a faster, simpler method to do this?
-        master = {}
-        for item in widget_list:
-            master[item] = 1
-        for item in db:
-            master[item] = 2
-        keys = master.keys()
-        keys.sort()
+        keylist = set(widget_list.keys() + db.keys())
+
         # add the items to the XML structure
-        for item in keys:
+        for item in keylist:
             node = ElementTree.SubElement(root, "data")
             node.set("name", item)
             if item in widget_list:

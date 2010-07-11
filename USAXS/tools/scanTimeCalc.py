@@ -54,8 +54,10 @@ class scanTimeCalcToolFrame(wx.Frame):
         '''create the GUI'''
 
         # define some things for the program
+        self.TOOL = u'scanTimeCalc'
         self.TITLE = u'USAXS scan time calculator'
         self.SVN_ID = "$Id$"
+        self.PRINT_LOG = False
         self.GRAY = wx.ColorRGB(0xababab)
         self.MOVING_COLOR = wx.GREEN
         self.NOT_MOVING_COLOR = wx.LIGHT_GREY
@@ -67,7 +69,6 @@ class scanTimeCalcToolFrame(wx.Frame):
         self.COLOR_USER_ENTRY = self.BISQUE
         self.USER_HOME = os.getenv('USERPROFILE') or os.getenv('HOME') # windows or Linux/Mac
         self.RC_FILE = os.path.join(self.USER_HOME, '.scanTimeCalcrc')
-        self.message_count = 0 # number of messages posted
         self.monitor_count = 0 # number of EPICS monitor events
         self.update_count = 0  # number of recalculation events
         self.PV_LIST = {
@@ -472,12 +473,18 @@ class scanTimeCalcToolFrame(wx.Frame):
         return "%d:%02d:%02d" % (h, m, s)
 
     def postMessage(self, message):
-        '''post a message to the status line and the log'''
+        '''
+            post a message to the status line and the log
+        '''
         datetime = self.timestamp()
         self.SetStatusText(message)
-        self.message_count += 1
+        try:
+            self.message_count += 1
+        except:
+            self.message_count = 1  # only used here
         # post log datetime + ": " + message
-        print "%s, #%d: %s" % (datetime, self.message_count, message)
+        if self.PRINT_LOG:
+            print "%s (%s) #%d: %s" % (datetime, self.TOOL, self.message_count, message)
 
     def OnEnterKey(self, event):
         '''responds to wx Event: enter key pressed in wx.TextCtrl()'''

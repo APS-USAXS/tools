@@ -28,7 +28,8 @@ to move each of the motors.
 
 import datetime
 import os
-import wx.lib.scrolledpanel
+import wx
+from wx.lib import scrolledpanel
 from xml.dom import minidom
 from xml.etree import ElementTree
 import pvConnect
@@ -204,7 +205,7 @@ class qToolFrame(wx.Frame):
         '''
         labels = ['#', 'description', 'Q, 1/A', 'AR, degrees', 'AY, mm', 'DY, mm']
 
-        swin = wx.lib.scrolledpanel.ScrolledPanel(parent, wx.ID_ANY, style=wx.VSCROLL)
+        swin = scrolledpanel.ScrolledPanel(parent, wx.ID_ANY, style=wx.TAB_TRAVERSAL|wx.VSCROLL)
 
         sbox = wx.StaticBox(parent=swin, id=wx.ID_ANY, label="table of Q positions")
         fgs = wx.FlexGridSizer(rows=self.NUM_Q_ROWS, cols=len(labels), hgap=4, vgap=4)

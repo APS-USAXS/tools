@@ -28,6 +28,7 @@ to move each of the motors.
 
 import datetime
 import os
+import sys
 import wx
 from wx.lib import scrolledpanel
 from xml.dom import minidom
@@ -42,8 +43,10 @@ class qToolFrame(wx.Frame):
         '''create the GUI'''
 
         # define some things for the program
+        self.TOOL = u'qToolUsaxs'
         self.TITLE = u'USAXS Q positioner'
         self.SVN_ID = "$Id$"
+        self.PRINT_LOG = False
         self.GRAY = wx.ColorRGB(0xababab)
         self.MOVING_COLOR = wx.GREEN
         self.NOT_MOVING_COLOR = wx.LIGHT_GREY
@@ -293,15 +296,18 @@ class qToolFrame(wx.Frame):
         return item
 
     def postMessage(self, message):
-        '''post a message to the status line and the log'''
+        '''
+            post a message to the status line and the log
+        '''
         datetime = self.timestamp()
         self.SetStatusText(message)
         try:
             self.message_count += 1
         except:
-            self.message_count = 1
+            self.message_count = 1  # only used here
         # post log datetime + ": " + message
-        print "%s, #%d: %s" % (datetime, self.message_count, message)
+        if self.PRINT_LOG:
+            print "%s (%s) #%d: %s" % (datetime, self.TOOL, self.message_count, message)
 
     def yyyymmdd(self):
         '''

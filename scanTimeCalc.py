@@ -107,14 +107,14 @@ class scanTimeCalcToolFrame(wx.Frame):
         wx.Frame.__init__(self, parent=parent, id=wx.ID_ANY,
               style=wx.DEFAULT_FRAME_STYLE, title=self.TITLE)
 
-        self.__init_statusBar__('status')
+        self.CreateStatusBar()
         self.__init_bsMain__(parent)
         self.postMessage('starting: ' + self.SVN_ID)
         self.postMessage('GUI created')
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.update, self.timer)
-        
+
         self.read_rcfile()
         self.postMessage('startup is complete')
 
@@ -123,14 +123,6 @@ class scanTimeCalcToolFrame(wx.Frame):
         if self.timer.IsRunning():
             self.timer.Stop()
         del self.timer
-
-    def __init_statusBar__(self, text):
-        '''provides a status bar to say what is happening'''
-        bar = wx.StatusBar(parent=self, id=wx.ID_ANY, style=0)
-        bar.SetFieldsCount(1)
-        bar.SetStatusText(number=0, text=text)
-        bar.SetStatusWidths([-1])
-        self.SetStatusBar(bar)
 
     def __init_bsMain__(self, parent):
         '''main box sizer, outermost sizer of the GUI'''
@@ -188,7 +180,7 @@ class scanTimeCalcToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(parent, wx.ID_ANY, "", 
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "",
                                  style=wx.SUNKEN_BORDER|wx.TE_PROCESS_ENTER)
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
             widget.SetToolTipString(TIP_STR_FMT % name)
@@ -212,7 +204,7 @@ class scanTimeCalcToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(parent, wx.ID_ANY, "", 
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "",
                                  style=wx.SIMPLE_BORDER|wx.TE_PROCESS_ENTER)
             widget.SetToolTipString(TIP_STR_FMT % name)
             widget.SetBackgroundColour(self.COLOR_EPICS_MONITOR)
@@ -276,7 +268,7 @@ class scanTimeCalcToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(parent, wx.ID_ANY, "", 
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "",
                                  style=wx.SUNKEN_BORDER|wx.TE_PROCESS_ENTER)
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
             widget.SetToolTipString(TIP_STR_FMT % name)
@@ -322,7 +314,7 @@ class scanTimeCalcToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            widget = wx.TextCtrl(parent, wx.ID_ANY, "", 
+            widget = wx.TextCtrl(parent, wx.ID_ANY, "",
                                  style=wx.SUNKEN_BORDER|wx.TE_READONLY)
             widget.SetBackgroundColour(self.COLOR_CALCULATED)
             widget.SetToolTipString('parameter: ' + name + '\ncalculated (read-only)')
@@ -335,7 +327,7 @@ class scanTimeCalcToolFrame(wx.Frame):
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
 
-            st = wx.TextCtrl(parent, wx.ID_ANY, pct, 
+            st = wx.TextCtrl(parent, wx.ID_ANY, pct,
                              style=wx.ALIGN_LEFT|wx.TE_READONLY)
             fgs.Add(st, 0, flag=wx.EXPAND)
             self.parameterList[pct] = { 'text': widget }
@@ -372,10 +364,10 @@ class scanTimeCalcToolFrame(wx.Frame):
         global type_list
         if os.path.exists(self.RC_FILE):
             try:
-	        tree = ElementTree.parse(self.RC_FILE)
-	    except:
+                tree = ElementTree.parse(self.RC_FILE)
+            except:
                 self.postMessage('could not parse RC_FILE: ' + self.RC_FILE)
-		return
+                return
 
             for key in tree.findall("//data"):
                 name = key.get("name")
@@ -396,14 +388,14 @@ class scanTimeCalcToolFrame(wx.Frame):
             reads the widget fields
             writes the resource configuration file (XML)
         '''
-	output = repr(self)
-	if len(output) > 0:
- 	    f = open(self.RC_FILE, 'w')
- 	    f.write(output)
- 	    f.close()
- 	    self.postMessage('saved settings in: ' + self.RC_FILE)
-	else:
- 	    self.postMessage('internal ERROR: len(output)==0, will not write RC_FILE')
+        output = repr(self)
+        if len(output) > 0:
+            f = open(self.RC_FILE, 'w')
+            f.write(output)
+            f.close()
+            self.postMessage('saved settings in: ' + self.RC_FILE)
+        else:
+            self.postMessage('internal ERROR: len(output)==0, will not write RC_FILE')
 
     def MakePrettyXML(self, raw):
         '''

@@ -13,8 +13,8 @@
 @copyright: Copyright (C) 2010, UChicago Argonne, LLC, All Rights Reserved
 @license: qTool is part of USAXS_tools; See LICENSE (included with this file) for full details.
 @version: $Id$
-@summary: USAXS qTool allows USAXS users to drive AR, AY, and DY based 
-on the desired Q.  It provides a table of known positions and buttons 
+@summary: USAXS qTool allows USAXS users to drive AR, AY, and DY based
+on the desired Q.  It provides a table of known positions and buttons
 to move each of the motors.
 @requires: wxPython
 @requires: CaChannel (for EPICS)
@@ -74,18 +74,10 @@ class qToolFrame(wx.Frame):
         # build the GUI
         wx.Frame.__init__(self, parent=parent, id=wx.ID_ANY,
               style=wx.DEFAULT_FRAME_STYLE, title=self.TITLE)
-        
-        self.__init_statusBar__('status')
-        self.__init_bsMain__(parent)
-        self.SetStatusText('startup is complete')
 
-    def __init_statusBar__(self, text):
-        '''provides a status bar to say what is happening'''
-        bar = wx.StatusBar(parent=self, id=wx.ID_ANY, style=0)
-        bar.SetFieldsCount(1)
-        bar.SetStatusText(number=0, text=text)
-        bar.SetStatusWidths([-1])
-        self.SetStatusBar(bar)
+        self.CreateStatusBar()
+        self.__init_bsMain__(parent)
+        self.postMessage('startup is complete')
 
     def __init_bsMain__(self, parent):
         '''main box sizer, outermost sizer of the GUI'''
@@ -93,11 +85,11 @@ class qToolFrame(wx.Frame):
         itemList = []
 
 
-        self.title = self.__init_statictext__(self, 
+        self.title = self.__init_statictext__(self,
                           text=self.TITLE, fontSize=20)
         itemList.append([0, self.title])
 
-        self.subtitle = self.__init_statictext__(self, 
+        self.subtitle = self.__init_statictext__(self,
                text=self.SVN_ID, fontSize=8,
                tooltip='revision identifier from the version control system')
         itemList.append([0, self.subtitle])
@@ -111,7 +103,7 @@ class qToolFrame(wx.Frame):
         for item in itemList:
             hint, widget = item
             box.Add(widget, hint, flag=wx.EXPAND)
-        
+
         self.SetSizer(box)
         self.SetAutoLayout(True)
         #self.Fit()
@@ -123,25 +115,25 @@ class qToolFrame(wx.Frame):
 
     def __init_motor_controls__(self, parent):
         '''
-            create the control items, 
-            defines self.motorList dictionary, 
+            create the control items,
+            defines self.motorList dictionary,
             returns FlexGridSizer object
         '''
         sbox = wx.StaticBox(parent, id=wx.ID_ANY,
               label='watch EPICS motors', style=0)
         sbs = wx.StaticBoxSizer(sbox, wx.VERTICAL)
         fgs = wx.FlexGridSizer(rows=4, cols=3, hgap=4, vgap=4)
-        
+
         # column labels
         for item in self.AXIS_LABELS.split():
             fgs.Add(
-                 wx.StaticText(parent, wx.ID_ANY, item, style=wx.ALIGN_RIGHT), 
+                 wx.StaticText(parent, wx.ID_ANY, item, style=wx.ALIGN_RIGHT),
                  0, flag=wx.EXPAND)
         # one motor axis per row
         self.motorList = {}
         for axis in self.AXIS_NAMES.split():
             fgs.Add(
-                 wx.StaticText(parent, wx.ID_ANY, axis, style=wx.ALIGN_RIGHT), 
+                 wx.StaticText(parent, wx.ID_ANY, axis, style=wx.ALIGN_RIGHT),
                  0, flag=wx.EXPAND)
             dict = {}
             for field in self.AXIS_FIELDS.split():
@@ -149,21 +141,21 @@ class qToolFrame(wx.Frame):
                 widget = wx.StaticText(parent, wx.ID_ANY, text, style=wx.ALIGN_RIGHT)
                 widget.SetBackgroundColour(self.NOT_MOVING_COLOR)
                 widget.SetToolTipString('most recent EPICS value of ' + text + ' PV')
-                fgs.Add(widget, 0, flag=wx.EXPAND) 
+                fgs.Add(widget, 0, flag=wx.EXPAND)
                 dict[field] = widget
             self.motorList[axis] = dict
-        
+
         fgs.AddGrowableCol(1)
         fgs.AddGrowableCol(2)
-        
+
         sbs.Add(fgs, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
-        
+
         return sbs
 
     def __init_parameters__(self, parent):
         '''
-            create the table of user parameters, 
-            defines parameterList dictionary, 
+            create the table of user parameters,
+            defines parameterList dictionary,
             returns FlexGridSizer object
         '''
         config = [
@@ -179,12 +171,12 @@ class qToolFrame(wx.Frame):
               label='user parameters', style=0)
         sbs = wx.StaticBoxSizer(sbox, wx.VERTICAL)
         fgs = wx.FlexGridSizer(rows=len(config), cols=2, hgap=4, vgap=4)
-        
+
         self.parameterList = {}
         for row in config:
             name, desc, color = row
             fgs.Add(
-                 wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT), 
+                 wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT),
                  0, flag=wx.EXPAND)
             widget = wx.TextCtrl(parent, wx.ID_ANY, "")
             widget.SetBackgroundColour(color)
@@ -194,7 +186,7 @@ class qToolFrame(wx.Frame):
 
         fgs.AddGrowableCol(1)
         sbs.Add(fgs, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
-        
+
         return sbs
 
     def __init_positions_controls__(self, parent):
@@ -262,8 +254,8 @@ class qToolFrame(wx.Frame):
 
     def __init_button_bar__(self, parent):
         '''
-            create the button bar, 
-            defines buttonList dictionary, 
+            create the button bar,
+            defines buttonList dictionary,
             returns BoxSizer object
         '''
         labels = ['save settings', 'read settings', 'stop motors']
@@ -300,13 +292,48 @@ class qToolFrame(wx.Frame):
         item.SetBackgroundColour(color)
         return item
 
+    def postMessage(self, message):
+        '''post a message to the status line and the log'''
+        datetime = self.timestamp()
+        self.SetStatusText(message)
+        try:
+            self.message_count += 1
+        except:
+            self.message_count = 1
+        # post log datetime + ": " + message
+        print "%s, #%d: %s" % (datetime, self.message_count, message)
+
+    def yyyymmdd(self):
+        '''
+            return the current date as a string
+        '''
+        t = datetime.datetime.now()
+        return t.strftime("%Y-%m-%d")
+
+    def hhmmss(self):
+        '''
+            return the current time as a string
+        '''
+        t = datetime.datetime.now()
+        return t.strftime("%H:%M:%S")
+
+    def timestamp(self):
+        '''
+            return the current date and time as a string
+        '''
+        return self.yyyymmdd() + " " + self.hhmmss()
+
     def read_rcfile(self, event):
         '''
             reads the resource configuration file (XML)
             writes the widget fields
         '''
         if os.path.exists(self.RC_FILE):
-            tree = ElementTree.parse(self.RC_FILE)
+            try:
+                tree = ElementTree.parse(self.RC_FILE)
+            except:
+                self.postMessage('could not parse RC_FILE: ' + self.RC_FILE)
+                return
 
             for key in tree.findall("//parameter"):
                 name = key.get("name")
@@ -319,8 +346,8 @@ class qToolFrame(wx.Frame):
                 Q = key.get("Q")
                 self.positionList[row]['label']['entry'].SetValue(label)
                 self.positionList[row]['Q']['entry'].SetValue(Q)
-                
-            self.SetStatusText('loaded settings from: ' + self.RC_FILE)
+
+            self.postMessage('loaded settings from: ' + self.RC_FILE)
 
     def save_rcfile(self, event):
         '''
@@ -330,7 +357,7 @@ class qToolFrame(wx.Frame):
         f = open(self.RC_FILE, 'w')
         f.write(repr(self))
         f.close()
-        self.SetStatusText('saved settings in: ' + self.RC_FILE)
+        self.postMessage('saved settings in: ' + self.RC_FILE)
 
     def MakePrettyXML(self, raw):
         '''
@@ -385,4 +412,3 @@ if __name__ == '__main__':
     frame = qToolFrame(None)
     frame.Show(True)
     app.MainLoop()
-

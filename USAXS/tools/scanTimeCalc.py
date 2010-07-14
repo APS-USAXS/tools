@@ -82,11 +82,11 @@ class scanTimeCalcToolFrame(wx.Frame):
         # TODO: revise above list and remove list below once beamline has DCM support
         self.PV_LIST = {
           'PV,Energy,keV'       : '15iddLAX:float1',
-          'PV,Scan,Q_max'       : '15iddLAX:float2',
-          'PV,Scan,StartOffset' : '15iddLAX:float3',
-          'PV,Scan,NumPoints'   : '15iddLAX:float4',
-          'PV,Scan,CountTime'   : '15iddLAX:float5',
-          'PV,Scan,AR_center'   : '15iddLAX:float6'
+          'PV,Scan,Q_max'       : '15iddLAX:USAXS:Finish',
+          'PV,Scan,StartOffset' : '15iddLAX:USAXS:StartOffset',
+          'PV,Scan,NumPoints'   : '15iddLAX:USAXS:NumPoints',
+          'PV,Scan,CountTime'   : '15iddLAX:USAXS:CountTime',
+          'PV,Scan,AR_center'   : '15iddLAX:USAXS:ARcenter'
         }
         # these are fall-back values used to start the tool
         # they should be replaced quickly on startup by EPICS values

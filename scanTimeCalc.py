@@ -372,13 +372,13 @@ class scanTimeCalcToolFrame(wx.Frame):
 
             for key in tree.findall("//data"):
                 name = key.get("name")
-                value = str(key.findtext('widget_list')).strip()
+                value = key.get("value")
                 if name in widget_list:
                     widget_list[name].SetValue(value)
-                if name in type_list:
-                    if type_list[name] == 'int':   value = int(value)
-                    if type_list[name] == 'float': value = float(value)
-                    db[name] = value
+                #if name in type_list:
+                #    if type_list[name] == 'int':   value = int(value)
+                #    if type_list[name] == 'float': value = float(value)
+                #    db[name] = value
 
             self.postMessage('loaded settings from: ' + self.RC_FILE)
         else:
@@ -448,13 +448,14 @@ class scanTimeCalcToolFrame(wx.Frame):
         for item in keylist:
             node = ElementTree.SubElement(root, "data")
             node.set("name", item)
+            if item == "A_keV":     # special case, show the constant
+                 node.set("value_constant", str(db[item]))
             if item in widget_list:
-                subnode = ElementTree.SubElement(node, "widget_list")
-                subnode.text = widget_list[item].GetValue()
-            if item in db:
-                node.set("db", str(db[item]))
+                node.set("value", widget_list[item].GetValue())
             if item in self.PV_LIST:
                 node.set("pv", str(self.PV_LIST[item]))
+                if item in db:
+                    node.set("pv_VAL", str(db[item]))
 
         return self.MakePrettyXML(root)
 

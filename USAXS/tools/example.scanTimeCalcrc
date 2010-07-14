@@ -1,151 +1,39 @@
 <?xml version="1.0" ?>
-<scanTimeCalc date="2010-07-07" time="21:51:39" version="2.0">
-  <!-- written by: $Id: scanTimeCalc.py 306 2010-07-08 02:45:24Z jemian $ -->
-  <data db="0.2" name="ACCL">
-    <widget_list>
-      0.2
-    </widget_list>
-  </data>
-  <data db="2.56767962707" name="AR_end">
-    <widget_list>
-      2.56768
-    </widget_list>
-  </data>
-  <data db="12.005" name="AR_start">
-    <widget_list>
-      12.005
-    </widget_list>
-  </data>
-  <data db="12.3984244" name="A_keV"/>
-  <data db="12.0" name="GUI,AR_center">
-    <widget_list>
-      12
-    </widget_list>
-  </data>
-  <data db="1.0" name="GUI,CountTime">
-    <widget_list>
-      1
-    </widget_list>
-  </data>
-  <data db="150" name="GUI,N">
-    <widget_list>
-      150
-    </widget_list>
-  </data>
-  <data db="1.0" name="GUI,Q_max">
-    <widget_list>
-      1
-    </widget_list>
-  </data>
-  <data db="0.005" name="GUI,StartOffset">
-    <widget_list>
-      0.005
-    </widget_list>
-  </data>
-  <data db="12.0" name="GUI,energy">
-    <widget_list>
-      12
-    </widget_list>
-  </data>
-  <data db="1" name="N_scans">
-    <widget_list>
-      1
-    </widget_list>
-  </data>
-  <data db="12.0" name="PV,Energy,keV" pv="15iddLAX:float1"/>
-  <data db="12.0" name="PV,Scan,AR_center" pv="15iddLAX:float6"/>
-  <data db="1.0" name="PV,Scan,CountTime" pv="15iddLAX:float5"/>
-  <data db="150.0" name="PV,Scan,NumPoints" pv="15iddLAX:float4"/>
-  <data db="1.0" name="PV,Scan,Q_max" pv="15iddLAX:float2"/>
-  <data db="0.005" name="PV,Scan,StartOffset" pv="15iddLAX:float3"/>
-  <data db="0.4" name="VELO_return">
-    <widget_list>
-      0.4
-    </widget_list>
-  </data>
-  <data db="0.02" name="VELO_step">
-    <widget_list>
-      0.02
-    </widget_list>
-  </data>
-  <data db="7.69%" name="p_accl">
-    <widget_list>
-      7.69%
-    </widget_list>
-  </data>
-  <data db="19.22%" name="p_count">
-    <widget_list>
-      19.22%
-    </widget_list>
-  </data>
-  <data db="9.61%" name="p_delay">
-    <widget_list>
-      9.61%
-    </widget_list>
-  </data>
-  <data db="60.46%" name="p_motion">
-    <widget_list>
-      60.46%
-    </widget_list>
-  </data>
-  <data db="3.02%" name="p_return">
-    <widget_list>
-      3.02%
-    </widget_list>
-  </data>
-  <data db="0:15:30" name="s_HMS">
-    <widget_list>
-      0:15:30
-    </widget_list>
-  </data>
-  <data db="60.0" name="s_accl">
-    <widget_list>
-      60
-    </widget_list>
-  </data>
-  <data db="150.0" name="s_count">
-    <widget_list>
-      150
-    </widget_list>
-  </data>
-  <data db="75.0" name="s_delay">
-    <widget_list>
-      75
-    </widget_list>
-  </data>
-  <data db="471.866018646" name="s_motion">
-    <widget_list>
-      471.866
-    </widget_list>
-  </data>
-  <data db="23.5933009323" name="s_return">
-    <widget_list>
-      23.5933
-    </widget_list>
-  </data>
-  <data db="780.459319579" name="s_scan">
-    <widget_list>
-      780.459
-    </widget_list>
-  </data>
-  <data db="0:13:00" name="s_scan_HMS">
-    <widget_list>
-      0:13:00
-    </widget_list>
-  </data>
-  <data db="930.459319579" name="s_series">
-    <widget_list>
-      930.459
-    </widget_list>
-  </data>
-  <data db="0.5" name="t_delay">
-    <widget_list>
-      0.5
-    </widget_list>
-  </data>
-  <data db="150.0" name="t_tuning">
-    <widget_list>
-      150
-    </widget_list>
-  </data>
+<scanTimeCalc date="2010-07-14" time="13:15:40" version="2.0">
+  <!-- written by: $Id: scanTimeCalc.py 319 2010-07-14 17:57:00Z jemian $ -->
+  <data name="ACCL" value="0"/>
+  <data name="AR_end" value="2.41768"/>
+  <data name="AR_start" value="11.855"/>
+  <data name="A_keV"/>
+  <data name="GUI,AR_center" value="11.85"/>
+  <data name="GUI,CountTime" value="1"/>
+  <data name="GUI,N" value="150"/>
+  <data name="GUI,Q_max" value="1"/>
+  <data name="GUI,StartOffset" value="0.005"/>
+  <data name="GUI,energy" value="12"/>
+  <data name="N_scans" value="1"/>
+  <data name="PV,Energy,keV" pv="15iddLAX:float1" pv_VAL="12.0"/>
+  <data name="PV,Scan,AR_center" pv="15iddLAX:USAXS:ARcenter" pv_VAL="11.85"/>
+  <data name="PV,Scan,CountTime" pv="15iddLAX:USAXS:CountTime" pv_VAL="1.0"/>
+  <data name="PV,Scan,NumPoints" pv="15iddLAX:USAXS:NumPoints" pv_VAL="150.0"/>
+  <data name="PV,Scan,Q_max" pv="15iddLAX:USAXS:Finish" pv_VAL="1.0"/>
+  <data name="PV,Scan,StartOffset" pv="15iddLAX:USAXS:StartOffset" pv_VAL="0.005"/>
+  <data name="VELO_return" value="2"/>
+  <data name="VELO_step" value="0.2"/>
+  <data name="p_accl" value="0.00%"/>
+  <data name="p_count" value="74.29%"/>
+  <data name="p_delay" value="0.00%"/>
+  <data name="p_motion" value="23.37%"/>
+  <data name="p_return" value="2.34%"/>
+  <data name="s_HMS" value="0:05:51"/>
+  <data name="s_accl" value="0"/>
+  <data name="s_count" value="150"/>
+  <data name="s_delay" value="0"/>
+  <data name="s_motion" value="47.1866"/>
+  <data name="s_return" value="4.71866"/>
+  <data name="s_scan" value="201.905"/>
+  <data name="s_scan_HMS" value="0:03:21"/>
+  <data name="s_series" value="351.905"/>
+  <data name="t_delay" value="0"/>
+  <data name="t_tuning" value="150"/>
 </scanTimeCalc>

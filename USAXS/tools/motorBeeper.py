@@ -10,7 +10,7 @@
 @author: Pete Jemian
 @contact: jemian@anl.gov
 @organization: Advanced Photon Source, Argonne National Laboratory
-@license: scanTimeCalc is part of USAXS_tools; See LICENSE (included with this file) for full details.
+@license: motorBeeper is part of USAXS_tools; See LICENSE (included with this file) for full details.
 @version: $Id$
 @summary: .sound a beep when all motors have stopped moving
 @requires: CaChannel (for EPICS, called from pvConnect)
@@ -33,7 +33,8 @@ def monitor(epics_args, user_args):
     rec['last'] = rec['current']
     rec['current'] = value
     if (rec['current'] == 1) and (rec['last'] == 0):
-        print "\a",
+        #print "\a",
+        print chr(7) + chr(8),  # ASCII bell and backspace
 	sys.stdout.flush()
 
 

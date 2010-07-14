@@ -72,22 +72,14 @@ class scanTimeCalcToolFrame(wx.Frame):
         self.monitor_count = 0 # number of EPICS monitor events
         self.update_count = 0  # number of recalculation events
         self.PV_LIST = {
-          'PV,Energy,keV'       : '32ida:BraggEAO',
+          'PV,Energy,keV'       : '15ida:BraggEAO',
           'PV,Scan,Q_max'       : '15iddLAX:USAXS:Finish',
           'PV,Scan,StartOffset' : '15iddLAX:USAXS:StartOffset',
           'PV,Scan,NumPoints'   : '15iddLAX:USAXS:NumPoints',
           'PV,Scan,CountTime'   : '15iddLAX:USAXS:CountTime',
           'PV,Scan,AR_center'   : '15iddLAX:USAXS:ARcenter'
         }
-        # TODO: revise above list and remove list below once beamline has DCM support
-        self.PV_LIST = {
-          'PV,Energy,keV'       : '15iddLAX:float1',
-          'PV,Scan,Q_max'       : '15iddLAX:USAXS:Finish',
-          'PV,Scan,StartOffset' : '15iddLAX:USAXS:StartOffset',
-          'PV,Scan,NumPoints'   : '15iddLAX:USAXS:NumPoints',
-          'PV,Scan,CountTime'   : '15iddLAX:USAXS:CountTime',
-          'PV,Scan,AR_center'   : '15iddLAX:USAXS:ARcenter'
-        }
+        self.PV_LIST['PV,Energy,keV'] = '15iddLAX:float1'   # TODO: revise once beamline has DCM
         # these are fall-back values used to start the tool
         # they should be replaced quickly on startup by EPICS values
         db['GUI,N']             = 150

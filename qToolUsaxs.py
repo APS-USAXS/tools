@@ -72,6 +72,7 @@ class qToolFrame(wx.Frame):
             'PV,AY,motor'      : '15iddLAX:m58:c1:m7',
             'PV,DY,motor'      : '15iddLAX:m58:c2:m5'
         }
+        self.PV_MAP['PV,energy'] = '15iddLAX:float1'   # @TODO: no DCM yet at 15ID
         self.MOTOR_PV_FIELDS = "VAL DESC RBV STOP HLM LLM MOVN".split()
 
         # build the GUI

@@ -44,6 +44,11 @@ Provides these utility routines:
     receiver(value)
         Example response to an EPICS monitor on the channel
         @param value: str(epics_args['pv_value'])
+    
+    MonitoredConnection(callback, pv = None)
+        Connect to the EPICS PV and monitor it.
+        Invoke the callback routine specified by the caller.
+        Set the PV name to be reported in the user_args term of the callback
 
 @version: 
 ########### SVN repository information ###################
@@ -204,6 +209,20 @@ class EpicsPv:
             self.chan.add_masked_array_event(type, 
                 None, self.mask, self.callback, self.user_args)
 
+    def MonitoredConnection(self, callback, pv = None):
+        '''
+        Connect to the EPICS PV and monitor it.
+        Invoke the callback routine specified by the caller.
+        Set the PV name to be reported in the user_args term of the callback
+        '''
+        if pv == None:
+            pv = self.pv
+        self.connectw()
+        self.SetUserCallback(callback)
+        self.SetUserArgs(pv)
+        self.monitor()
+        return self
+
     def GetPv(self):
         '''@return: PV name'''
         return self.pv
@@ -332,10 +351,7 @@ if __name__ == '__main__':
         test_pv = 'S:SRcurrentAI'
         if testConnect(test_pv):
             print "recordType(%s) = %s" % (test_pv, GetRTYP(test_pv))
-            ch = EpicsPv(test_pv)
-            ch.connectw()
-            ch.SetUserCallback(receiver)
-            ch.monitor()
+            ch = EpicsPv(test_pv).MonitoredConnection(receiver)
             ch.chan.pend_event()
             import time
             count = 5

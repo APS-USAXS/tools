@@ -21,6 +21,7 @@
 
 import pvConnect
 import sys
+import time
 
 
 def monitor(epics_args, user_args):
@@ -53,15 +54,16 @@ if __name__ == '__main__':
             except:
                 errorList.append(pv)
         if len(errorList) > 0:
-            print "Problems connecting with these EPICS PVs: ", errorList
-            print "Cannot continue.  Please correct problems and restart motorBeeper."
-        else:
-            if ch == None:
-                ch.chan.pend_event()
-                import time
-                while True:
-                    time.sleep(0.2)
-                    ch.chan.pend_event()
+            print "Problems connecting with these EPICS PVs: ", ", ".join(errorList)
+            print "Cannot continue.  Please correct problems and restart motorBeeper.\n"
+	    exit(1)
+        if not ch == None:
+	    print "ch == None: should not happen, cannot continue"
+	    exit(1)
+        ch.chan.pend_event()
+        while True:
+            time.sleep(0.2)
+            ch.chan.pend_event()
         for pv in pvList:
             ch = db[pv]['ch']
             time.sleep(1)

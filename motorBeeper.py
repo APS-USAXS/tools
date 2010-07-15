@@ -35,27 +35,35 @@ def monitor(epics_args, user_args):
     if (rec['current'] == 1) and (rec['last'] == 0):
         #print "\a",
         print chr(7) + chr(8),  # ASCII bell and backspace
-	sys.stdout.flush()
+        sys.stdout.flush()      # make sure it rings *now*
 
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-	db = {}
-	pvList = sys.argv[1:]
-	for pv in pvList:
-	    ch = pvConnect.EpicsPv(pv)
- 	    ch.connectw()
- 	    ch.SetUserCallback(monitor)
- 	    ch.SetUserArgs(pv)
- 	    ch.monitor()
-	    db[pv] = {'ch' : ch, 'last' : 0, 'current' : 0}
- 	ch.chan.pend_event()
- 	import time
-	while True:
- 	    time.sleep(0.2)
- 	    ch.chan.pend_event()
-	for pv in pvList:
-	    ch = db[pv]['ch']
-	    time.sleep(1)
-	    ch.release()
- 	pvConnect.on_exit()
+        db = {}         # global data cache for EPICS data
+        pvList = []     # list of successful PV connections
+        errorList = []  # list of failed PV connections
+        ch = None       # most recent PV connection (instance of pvConnect.EpicsPv)
+        for pv in sys.argv[1:]:
+            try:
+                # in case the EPICS PV connection were to fail ...
+                ch = pvConnect.EpicsPv(pv).MonitoredConnection(monitor)
+                pvList.append(pv)
+                db[pv] = {'ch' : ch, 'last' : 0, 'current' : 0}
+            except:
+                errorList.append(pv)
+        if len(errorList) > 0:
+            print "Problems connecting with these EPICS PVs: ", errorList
+            print "Cannot continue.  Please correct problems and restart motorBeeper."
+        else:
+            if ch == None:
+                ch.chan.pend_event()
+                import time
+                while True:
+                    time.sleep(0.2)
+                    ch.chan.pend_event()
+        for pv in pvList:
+            ch = db[pv]['ch']
+            time.sleep(1)
+            ch.release()
+        pvConnect.on_exit()

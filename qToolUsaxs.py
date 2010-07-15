@@ -36,6 +36,10 @@ from xml.etree import ElementTree
 import pvConnect
 
 
+XREF = {}         # key is PV name, value is descriptive name
+qTool = None      # pointer to the GUI
+
+
 class qToolFrame(wx.Frame):
     '''define and operate the GUI'''
 
@@ -47,6 +51,7 @@ class qToolFrame(wx.Frame):
         self.TITLE = u'USAXS Q positioner'
         self.SVN_ID = "$Id$"
         self.PRINT_LOG = False
+        self.monitor_count = 0   # number of EPICS monitor events received
         self.GRAY = wx.ColorRGB(0xababab)
         self.MOVING_COLOR = wx.GREEN
         self.NOT_MOVING_COLOR = wx.LIGHT_GREY
@@ -62,15 +67,15 @@ class qToolFrame(wx.Frame):
         self.AXIS_LABELS = "motor readback target"
         self.AXIS_FIELDS = 'RBV VAL'
         self.PV_MAP = {
-            'PV,energy'        : '15ida:BraggERdbkAO',
-            'PV,Q,Finish'      : '15iddLAX:USAXS:Finish',
-            'PV,AR,enc'        : '15iddLAX:aero:c0:m1.RBV',
-            'PV,AR,enc,center' : '15iddLAX:USAXS:Q.B',
-            'PV,SDD'           : '15iddLAX:USAXS:SDD.VAL',
-            'PV,SAD'           : '15iddLAX:USAXS:SAD.VAL',
-            'PV,AR,motor'      : '15iddLAX:aero:c0:m1',
-            'PV,AY,motor'      : '15iddLAX:m58:c1:m7',
-            'PV,DY,motor'      : '15iddLAX:m58:c2:m5'
+            'energy'        : '15ida:BraggERdbkAO',
+            'Q,Finish'      : '15iddLAX:USAXS:Finish',
+            'AR,enc'        : '15iddLAX:aero:c0:m1.RBV',
+            'AR,enc,center' : '15iddLAX:USAXS:Q.B',
+            'SDD'           : '15iddLAX:USAXS:SDD.VAL',
+            'SAD'           : '15iddLAX:USAXS:SAD.VAL',
+            'motor,AR'      : '15iddLAX:aero:c0:m1',
+            'motor,AY'      : '15iddLAX:m58:c1:m7',
+            'motor,DY'      : '15iddLAX:m58:c2:m5'
         }
         self.PV_MAP['PV,energy'] = '15iddLAX:float1'   # @TODO: no DCM yet at 15ID
         self.MOTOR_PV_FIELDS = "VAL DESC RBV STOP HLM LLM MOVN".split()
@@ -415,6 +420,19 @@ class qToolFrame(wx.Frame):
         return self.MakePrettyXML(root)
 
 
+
+def pv_monitor_handler(epics_args, user_args):
+    '''EPICS monitor event received for this code'''
+    qTool.monitor_count += 1
+    value = epics_args['pv_value']
+    pv = user_args[0]
+    msg = "%s %s: %s=%s" % ('pv_monitor_handler', qTool.monitor_count, pv, value)
+    qTool.PRINT_LOG = True
+    qTool.postMessage(msg)
+    qTool.PRINT_LOG = False
+    return True
+
+
 def main():
     '''
         this routine sets up the GUI program,
@@ -434,17 +452,27 @@ def main():
     qTool = qToolFrame(None)
     qTool.Show(True)
 
-    try:
-        # connect with EPICS now
-        for name in qTool.PV_LIST:
-            pv = qTool.PV_LIST[name]
-            XREF[pv] = name
-            #
+    errorList = []  # list of PVs that did not connect
+    pvList = []     # complete list of PVs to connect
+    for item in qTool.PV_MAP:
+        parts = item.split(",")
+        if parts[0] == "motor":
+            for field in qTool.MOTOR_PV_FIELDS:
+                pvList.append("%s.%s" % (qTool.PV_MAP[item], field) )
+        else:
+            pvList.append(qTool.PV_MAP[item])
+    for pv in pvList:
+        print "Seeking EPICS PV connection with", pv
+        try:  # connect with EPICS now
             conn = pvConnect.EpicsPv(pv).MonitoredConnection(pv_monitor_handler)
             connections[pv] = conn
-        qTool.postMessage("EPICS connections established")
-    except:
-        qTool.postMessage("Problems establishing connections with EPICS")
+        except:
+            errorList.append(pv)
+
+    if len(errorList) > 0:
+        print "Problems connecting these EPICS PVs:\n  " + "\n  ".join(errorList)
+        exit(1)
+    qTool.postMessage("EPICS connections established")
 
     # run the GUI
     app.MainLoop()

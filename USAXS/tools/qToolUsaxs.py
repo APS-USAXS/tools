@@ -414,8 +414,45 @@ class qToolFrame(wx.Frame):
         return self.MakePrettyXML(root)
 
 
-if __name__ == '__main__':
+def main():
+    '''
+        this routine sets up the GUI program,
+        starts the EPICS connections,
+        runs the GUI,
+        then buttons things up at the end
+    '''
+
+    # start wx
     app = wx.PySimpleApp()
-    frame = qToolFrame(None)
-    frame.Show(True)
+
+    # prepare ChannelAccess support
+    if pvConnect.IMPORTED_CACHANNEL:
+        capoll_timer = pvConnect.CaPollWx(0.1)
+        capoll_timer.start()
+
+    qTool = qToolFrame(None)
+    qTool.Show(True)
+
+    try:
+        # connect with EPICS now
+        for name in qTool.PV_LIST:
+            pv = qTool.PV_LIST[name]
+            XREF[pv] = name
+            #
+            conn = pvConnect.EpicsPv(pv).MonitoredConnection(pv_monitor_handler)
+            connections[pv] = conn
+        qTool.postMessage("EPICS connections established")
+    except:
+        qTool.postMessage("Problems establishing connections with EPICS")
+
+    # queue an update to the calculated values
+    if not qTool.timer.IsRunning():
+        qTool.timer.Start(RECALC_TIMER_INTERVAL_MS)
+
+    # run the GUI
     app.MainLoop()
+
+
+if __name__ == '__main__':
+    main()
+

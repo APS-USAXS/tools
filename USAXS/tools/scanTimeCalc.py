@@ -17,9 +17,7 @@
 @requires: CaChannel (for EPICS)
 @status: converted from the Tcl code
 
-@TODO: make a bargraph behind the percentage widgets to show fractional time in each row
 @TODO: make an event log (preparation is started: logs to stdout)
-@TODO: reduce number of global variables
 '''
 
 
@@ -34,17 +32,9 @@ from xml.dom import minidom
 from xml.etree import ElementTree
 import pvConnect
 
-connections = {}  # EPICS Channel Access connections, key is PV name
-XREF = {}         # key is PV name, value is descriptive name
-db = {}           # values, key is descriptive name
-widget_list = {}  # widgets with values to get or set
-type_list = {}    # ['int', 'float', 'string'] for each widget
-stcTool = None    # pointer to the GUI
-TIP_STR_FMT = "parameter: %s\npress [ENTER] to commit new values and recalculate"
 
-RECALC_TIMER_INTERVAL_MS = 100
-RECALC_TIMER_ID = 1941
-TYPE_FORMATS = {'int' : '%d', 'float': '%g', 'string': '%s'}
+XREF = {}         # key is PV name, value is descriptive name
+stcTool = None    # pointer to the GUI
 
 
 class scanTimeCalcToolFrame(wx.Frame):
@@ -58,6 +48,11 @@ class scanTimeCalcToolFrame(wx.Frame):
         self.TITLE = u'USAXS scan time calculator'
         self.SVN_ID = "$Id$"
         self.PRINT_LOG = False
+
+        self.db = {}           # values, key is descriptive name
+        self.type_list = {}    # ['int', 'float', 'string'] for each widget
+        self.widget_list = {}  # widgets with values to get or set
+
         self.GRAY = wx.ColorRGB(0xababab)
         self.MOVING_COLOR = wx.GREEN
         self.NOT_MOVING_COLOR = wx.LIGHT_GREY
@@ -69,6 +64,9 @@ class scanTimeCalcToolFrame(wx.Frame):
         self.COLOR_USER_ENTRY = self.BISQUE
         self.USER_HOME = os.getenv('USERPROFILE') or os.getenv('HOME') # windows or Linux/Mac
         self.RC_FILE = os.path.join(self.USER_HOME, '.scanTimeCalcrc')
+        self.RECALC_TIMER_INTERVAL_MS = 100
+        self.TYPE_FORMATS = {'int' : '%d', 'float': '%g', 'string': '%s'}
+        self.TIP_STR_FMT = "parameter: %s\npress [ENTER] to commit new values and recalculate"
         self.monitor_count = 0 # number of EPICS monitor events
         self.update_count = 0  # number of recalculation events
         self.PV_LIST = {
@@ -82,19 +80,19 @@ class scanTimeCalcToolFrame(wx.Frame):
         self.PV_LIST['PV,Energy,keV'] = '15iddLAX:float1'   # TODO: revise once beamline has DCM
         # these are fall-back values used to start the tool
         # they should be replaced quickly on startup by EPICS values
-        db['GUI,N']             = 150
-        db['GUI,energy']        = 11.05
-        db['GUI,StartOffset']   = -0.005   # was 10.523
-        db['GUI,Q_max']         = 1
-        db['GUI,CountTime']     = 5
-        db['GUI,AR_center']     = 13.0
-        db['N_scans']           = 1
-        db['VELO_step']         = 0.02
-        db['VELO_return']       = 0.4
-        db['ACCL']              = 0.2
-        db['t_delay']           = 0.5
-        db['t_tuning']          = 150
-        db['A_keV']             = 12.3984244
+        self.db['GUI,N']             = 150
+        self.db['GUI,energy']        = 11.05
+        self.db['GUI,StartOffset']   = -0.005   # was 10.523
+        self.db['GUI,Q_max']         = 1
+        self.db['GUI,CountTime']     = 5
+        self.db['GUI,AR_center']     = 13.0
+        self.db['N_scans']           = 1
+        self.db['VELO_step']         = 0.02
+        self.db['VELO_return']       = 0.4
+        self.db['ACCL']              = 0.2
+        self.db['t_delay']           = 0.5
+        self.db['t_tuning']          = 150
+        self.db['A_keV']             = 12.3984244
 
         # build the GUI
         wx.Frame.__init__(self, parent=parent, id=wx.ID_ANY,
@@ -104,6 +102,13 @@ class scanTimeCalcToolFrame(wx.Frame):
         self.__init_bsMain__(parent)
         self.postMessage('starting: ' + self.SVN_ID)
         self.postMessage('GUI created')
+
+        w = self.widget_list['GUI,energy']     # GUI,energy
+        w.SetToolTipString(
+            "TODO: revise energy PV once beamline has DCM\n"
+             + "============================================\n"
+             + w.GetToolTip().GetTip()
+        )
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.update, self.timer)
@@ -176,12 +181,12 @@ class scanTimeCalcToolFrame(wx.Frame):
             widget = wx.TextCtrl(parent, wx.ID_ANY, "",
                                  style=wx.SUNKEN_BORDER|wx.TE_PROCESS_ENTER)
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
-            widget.SetToolTipString(TIP_STR_FMT % name)
+            widget.SetToolTipString(self.TIP_STR_FMT % name)
             fgs.Add(widget, 1, wx.EXPAND|wx.ALL)
             widget.Bind(wx.EVT_TEXT_ENTER, self.OnEnterKey)
             self.parameterList[name] = { 'entry': widget }
-            widget_list[name] = widget
-            type_list[name] = type
+            self.widget_list[name] = widget
+            self.type_list[name] = type
 
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
@@ -199,13 +204,13 @@ class scanTimeCalcToolFrame(wx.Frame):
 
             widget = wx.TextCtrl(parent, wx.ID_ANY, "",
                                  style=wx.SIMPLE_BORDER|wx.TE_PROCESS_ENTER)
-            widget.SetToolTipString(TIP_STR_FMT % name)
+            widget.SetToolTipString(self.TIP_STR_FMT % name)
             widget.SetBackgroundColour(self.COLOR_EPICS_MONITOR)
             fgs.Add(widget, 1, wx.EXPAND)
             widget.Bind(wx.EVT_TEXT_ENTER, self.OnEnterKey)
             self.parameterList[name] = { 'entry': widget }
-            widget_list[name] = widget
-            type_list[name] = type
+            self.widget_list[name] = widget
+            self.type_list[name] = type
 
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
@@ -264,12 +269,12 @@ class scanTimeCalcToolFrame(wx.Frame):
             widget = wx.TextCtrl(parent, wx.ID_ANY, "",
                                  style=wx.SUNKEN_BORDER|wx.TE_PROCESS_ENTER)
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
-            widget.SetToolTipString(TIP_STR_FMT % name)
+            widget.SetToolTipString(self.TIP_STR_FMT % name)
             fgs.Add(widget, 1, wx.EXPAND)
             widget.Bind(wx.EVT_TEXT_ENTER, self.OnEnterKey)
             self.parameterList[name] = { 'entry': widget }
-            widget_list[name] = widget
-            type_list[name] = type
+            self.widget_list[name] = widget
+            self.type_list[name] = type
 
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
@@ -314,8 +319,8 @@ class scanTimeCalcToolFrame(wx.Frame):
             fgs.Add(widget, 1, wx.EXPAND)
             widget.Bind(wx.EVT_TEXT_ENTER, self.OnEnterKey)
             self.parameterList[name] = { 'entry': widget }
-            widget_list[name] = widget
-            type_list[name] = type
+            self.widget_list[name] = widget
+            self.type_list[name] = type
 
             st = wx.StaticText(parent, wx.ID_ANY, units, style=wx.ALIGN_LEFT)
             fgs.Add(st, 0, flag=wx.EXPAND)
@@ -325,8 +330,8 @@ class scanTimeCalcToolFrame(wx.Frame):
             fgs.Add(st, 0, flag=wx.EXPAND)
             self.parameterList[pct] = { 'text': widget }
             st.SetToolTipString('parameter: ' + pct + '\ncalculated (read-only)')
-            widget_list[pct] = st
-            type_list[pct] = 'string'
+            self.widget_list[pct] = st
+            self.type_list[pct] = 'string'
 
         fgs.AddGrowableCol(1)
         fgs.AddGrowableCol(3)
@@ -353,8 +358,6 @@ class scanTimeCalcToolFrame(wx.Frame):
             reads the resource configuration file (XML)
             writes the widget fields
         '''
-        global db
-        global type_list
         if os.path.exists(self.RC_FILE):
             try:
                 tree = ElementTree.parse(self.RC_FILE)
@@ -365,12 +368,8 @@ class scanTimeCalcToolFrame(wx.Frame):
             for key in tree.findall("//data"):
                 name = key.get("name")
                 value = key.get("value")
-                if name in widget_list:
-                    widget_list[name].SetValue(value)
-                #if name in type_list:
-                #    if type_list[name] == 'int':   value = int(value)
-                #    if type_list[name] == 'float': value = float(value)
-                #    db[name] = value
+                if name in self.widget_list:
+                    self.widget_list[name].SetValue(value)
 
             self.postMessage('loaded settings from: ' + self.RC_FILE)
         else:
@@ -421,8 +420,6 @@ class scanTimeCalcToolFrame(wx.Frame):
         '''
             default representation of memory-resident data
         '''
-        global widget_list
-        global db
         yyyymmdd = self.yyyymmdd()
         hhmmss = self.hhmmss()
 
@@ -434,25 +431,26 @@ class scanTimeCalcToolFrame(wx.Frame):
         #root.append(ElementTree.ProcessingInstruction("example ProcessingInstruction()"))
 
         # build list of items to be recorded
-        keylist = sorted(set(widget_list.keys() + db.keys()))
+        keylist = sorted(set(self.widget_list.keys() + self.db.keys()))
 
         # add the items to the XML structure
         for item in keylist:
             node = ElementTree.SubElement(root, "data")
             node.set("name", item)
             if item == "A_keV":     # special case, show the constant
-                 node.set("value_constant", str(db[item]))
-            if item in widget_list:
-                node.set("value", widget_list[item].GetValue())
+                 node.set("value_constant", str(self.db[item]))
+            if item in self.widget_list:
+                node.set("value", self.widget_list[item].GetValue())
             if item in self.PV_LIST:
                 node.set("pv", str(self.PV_LIST[item]))
-                if item in db:
-                    node.set("pv_VAL", str(db[item]))
+                if item in self.db:
+                    node.set("pv_VAL", str(self.db[item]))
 
         return self.MakePrettyXML(root)
 
     def q2angle(self, q):
         '''convert Q (1/A) to degrees'''
+        db = self.db
         term = (q * db['A_keV']) / (4 * math.pi * db['GUI,energy'])
         term = 2 * math.asin(term) * 180/math.pi
         return term
@@ -483,7 +481,7 @@ class scanTimeCalcToolFrame(wx.Frame):
         '''responds to wx Event: enter key pressed in wx.TextCtrl()'''
         if not self.timer.IsRunning():
             # queue an update to happen
-            self.timer.Start(RECALC_TIMER_INTERVAL_MS)
+            self.timer.Start(self.RECALC_TIMER_INTERVAL_MS)
         event.Skip()
 
     def OnCopyButton(self, event):
@@ -498,9 +496,8 @@ class scanTimeCalcToolFrame(wx.Frame):
         }
         wlist = []
         for key in map:
-            #print key, db[map[key]], db[key]
-            if (map[key] in db) and (key in db):
-                db[map[key]] = db[key]
+            if (map[key] in self.db) and (key in self.db):
+                self.db[map[key]] = self.db[key]
                 wlist.append(map[key])
 
         if len(wlist) == 0:
@@ -510,10 +507,10 @@ class scanTimeCalcToolFrame(wx.Frame):
             # but only if something has been copied
             self.postMessage("EPICS --> local")
             for key in wlist:
-                text = str(db[key])
-                if key in type_list:
-                    text = TYPE_FORMATS[type_list[key]] % db[key]
-                widget_list[key].SetValue(text)
+                text = str(self.db[key])
+                if key in self.type_list:
+                    text = self.TYPE_FORMATS[self.type_list[key]] % self.db[key]
+                self.widget_list[key].SetValue(text)
             self.update(event)
             event.Skip()
 
@@ -524,22 +521,27 @@ class scanTimeCalcToolFrame(wx.Frame):
         self.timer.Stop()
         self.recalc()
 
-        # @TODO: Is this redundant? (see below)
         #place values in the widgets
-        for item in db:
-            if item in widget_list:
-                widget = widget_list[item]
-                text = str(db[item])
-                if item in type_list:
-                    text = TYPE_FORMATS[type_list[item]] % db[item]
+        keyList = self.db.keys()
+        keyList.sort()
+        for item in keyList:
+            if item in self.widget_list:
+                widget = self.widget_list[item]
+                text = str(self.db[item])
+                if item in self.type_list:
+                    text = self.TYPE_FORMATS[self.type_list[item]] % self.db[item]
                 widget.SetValue(text)
+
+        tester = self.widget_list['AR_start'].GetValue()
+        if len(tester) > 0:
+            # only write this if AR_start has some value
+            self.save_rcfile(None)  # save to the RC file
 
     def recalc(self):
         '''
             recalculate the various values
         '''
-        global db
-        global widget_list
+        db = self.db
         wlist = [
             'ACCL',
             'GUI,CountTime',
@@ -557,10 +559,10 @@ class scanTimeCalcToolFrame(wx.Frame):
         try:
             # first, grab non-EPICS widget values before calculating
             for item in wlist:
-                value = widget_list[item].GetValue()
-                if type_list[item] == 'int':
+                value = self.widget_list[item].GetValue()
+                if self.type_list[item] == 'int':
                     value = int(value)
-                if type_list[item] == 'float':
+                if self.type_list[item] == 'float':
                     value = float(value)
                 db[item] = value
             wlist = []
@@ -623,22 +625,6 @@ class scanTimeCalcToolFrame(wx.Frame):
             db['p_return'] = "%.2f%%" % (db['s_return'] * 100/db['s_scan'])
             wlist.append('p_return')
 
-            # @TODO: Is this redundant? (see above)
-            # last, update the widgets with the newly-calculated values
-            for item in wlist:
-                text = str(db[item])
-                if item in type_list:
-                    itemtype = type_list[item]
-                    fmt = TYPE_FORMATS[itemtype]
-                    text = fmt % db[item]
-                if item in widget_list:
-                    widget_list[item].SetValue(text)
-
-            tester = widget_list['AR_start'].GetValue()
-            if len(tester) > 0:
-                # only write this if AR_start has some value
-                self.save_rcfile(None)  # save to the RC file
-
         except:
             pass
 
@@ -649,7 +635,7 @@ def pv_monitor_handler(epics_args, user_args):
     value = epics_args['pv_value']
     pv = user_args[0]
     name = XREF[pv]
-    db[name] = value
+    stcTool.db[name] = value
     msg = "%s %s: %s(%s)=%s" % ('pv_monitor_handler', stcTool.monitor_count, pv, name, value)
     stcTool.postMessage(msg)
     return True
@@ -685,6 +671,7 @@ def main():
     stcTool = scanTimeCalcToolFrame(None)
     stcTool.Show(True)
 
+    connections = {}  # EPICS Channel Access connections, key is PV name
     try:
         # connect with EPICS now
         for name in stcTool.PV_LIST:
@@ -699,7 +686,7 @@ def main():
 
     # queue an update to the calculated values
     if not stcTool.timer.IsRunning():
-        stcTool.timer.Start(RECALC_TIMER_INTERVAL_MS)
+        stcTool.timer.Start(stcTool.RECALC_TIMER_INTERVAL_MS)
 
     # run the GUI
     app.MainLoop()

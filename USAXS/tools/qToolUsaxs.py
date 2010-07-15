@@ -81,6 +81,7 @@ class qToolFrame(wx.Frame):
 
         self.CreateStatusBar()
         self.__init_bsMain__(parent)
+
         self.postMessage('startup is complete')
 
     def __init_bsMain__(self, parent):
@@ -444,10 +445,6 @@ def main():
         qTool.postMessage("EPICS connections established")
     except:
         qTool.postMessage("Problems establishing connections with EPICS")
-
-    # queue an update to the calculated values
-    if not qTool.timer.IsRunning():
-        qTool.timer.Start(RECALC_TIMER_INTERVAL_MS)
 
     # run the GUI
     app.MainLoop()

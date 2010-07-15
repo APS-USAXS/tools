@@ -691,11 +691,7 @@ def main():
             pv = stcTool.PV_LIST[name]
             XREF[pv] = name
             #
-            conn = pvConnect.EpicsPv(pv)
-            conn.SetUserCallback(pv_monitor_handler)
-            conn.SetUserArgs(pv)
-            conn.connectw()
-            conn.monitor()
+            conn = pvConnect.EpicsPv(pv).MonitoredConnection(pv_monitor_handler)
             connections[pv] = conn
         stcTool.postMessage("EPICS connections established")
     except:

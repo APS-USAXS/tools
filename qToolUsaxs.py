@@ -20,13 +20,13 @@ to move each of the motors.
 @requires: CaChannel (for EPICS)
 @status: converted from the Tcl code
 
-@TODO: Calculations
 @TODO: Move EPICS motors from calculated button
 @TODO: in Table of Q positions, put scrollbar inside the box
 '''
 
 
 import datetime
+import math
 import os
 import pprint
 import sys
@@ -35,9 +35,6 @@ from wx.lib import scrolledpanel
 from xml.dom import minidom
 from xml.etree import ElementTree
 import CaChannel
-
-
-qTool = None      # pointer to the GUI
 
 
 class qToolFrame(wx.Frame):
@@ -65,6 +62,7 @@ class qToolFrame(wx.Frame):
         #print "parameterList: "; pprint.pprint(self.parameterList)
         #print "XREF: "; pprint.pprint(self.XREF)
         #print "motorList: "; pprint.pprint(self.motorList)
+        #print "positionList: "; pprint.pprint(self.positionList)
         name = "motor,AR,RBV"
         pv = self.XREF[name]
         value = self.db[pv]['ch'].getw()
@@ -444,10 +442,12 @@ class qToolFrame(wx.Frame):
                     m['VAL'].SetBackgroundColour(self.MOVN_COLORS[value])
                 if parts[2] in m:       # a new value is reported
                     m[parts[2]].SetValue(str(value))
+            # some user parameter has changed in EPICS?
             if name in self.parameterList:
                 #print pv, name
                 w = self.parameterList[name]['entry']
                 w.SetValue(str(value))
+        self.recalc()       # recalculate all the buttons
 
     def postMessage(self, message):
         '''
@@ -507,6 +507,7 @@ class qToolFrame(wx.Frame):
                 self.positionList[row]['label']['entry'].SetValue(label)
                 self.positionList[row]['Q']['entry'].SetValue(Q)
 
+            self.recalc()
             self.postMessage('loaded settings from: ' + self.RC_FILE)
 
     def save_rcfile(self, event):
@@ -566,6 +567,39 @@ class qToolFrame(wx.Frame):
 
         return self.MakePrettyXML(root)
 
+    def recalc(self):
+        '''
+            recalculate all the buttons
+        '''
+        A_keV = 12.3984244 # Angstrom * keV
+        try:   # get initial parameters
+            arEnc0 = float(self.parameterList['AR,enc,center']['entry'].GetValue())
+            ar = float(self.motorList['AR']['RBV'].GetValue())
+            arEnc = float(self.parameterList['AR,enc']['entry'].GetValue())
+            ar0 = arEnc0 + ar - arEnc
+            energy = float(self.parameterList['energy']['entry'].GetValue())
+            lambda_over_4pi = A_keV / (energy * 4 * math.pi)
+            sad = float(self.parameterList['SAD']['entry'].GetValue())
+            sdd = float(self.parameterList['SDD']['entry'].GetValue())
+            ay0 = float(self.parameterList['AY0']['entry'].GetValue())
+            dy0 = float(self.parameterList['DY0']['entry'].GetValue())
+        except:
+            return
+
+        for row in range(len(self.positionList)):
+            try:
+                q = float(self.positionList[row]['Q']['entry'].GetValue())
+                x = -q * lambda_over_4pi
+                ar = ar0 + 2*math.degrees(math.asin( x ))
+                dy = dy0 + sdd * math.tan( x )
+                ay = ay0 + sad * math.tan( x )
+            except:
+                ar = 'ar ' + str(row)
+                ay = 'ay ' + str(row)
+                dy = 'dy ' + str(row)
+            self.positionList[row]['AR']['entry'].SetLabel(str(ar))
+            self.positionList[row]['AY']['entry'].SetLabel(str(ay))
+            self.positionList[row]['DY']['entry'].SetLabel(str(dy))
 
 def main():
     '''

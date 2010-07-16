@@ -21,22 +21,22 @@ to move each of the motors.
 @status: converted from the Tcl code
 
 @TODO: Calculations
-@TODO: Connect with EPICS variables
 @TODO: in Table of Q positions, put scrollbar inside the box
 '''
 
 
 import datetime
 import os
+import pprint
 import sys
 import wx
 from wx.lib import scrolledpanel
 from xml.dom import minidom
 from xml.etree import ElementTree
 import pvConnect
+import CaChannel
 
 
-XREF = {}         # key is PV name, value is descriptive name
 qTool = None      # pointer to the GUI
 
 
@@ -51,6 +51,22 @@ class qToolFrame(wx.Frame):
         '''create the GUI'''
 
         # define some things for the program
+        self.__init_variables__()
+        self.__init_EPICS__()
+
+        # build the GUI
+        wx.Frame.__init__(self, parent=parent, id=wx.ID_ANY,
+              style=wx.DEFAULT_FRAME_STYLE, title=self.TITLE)
+
+        self.CreateStatusBar()
+        self.__init_bsMain__(parent)
+
+        self.postMessage('startup is complete')
+
+    def __init_variables__(self, ):
+        '''
+        define the variables used by this class
+        '''
         self.TOOL = u'qToolUsaxs'
         self.TITLE = u'USAXS Q positioner'
         self.SVN_ID = "$Id$"
@@ -81,20 +97,71 @@ class qToolFrame(wx.Frame):
             'motor,AY'      : '15iddLAX:m58:c1:m7',
             'motor,DY'      : '15iddLAX:m58:c2:m5'
         }
-        self.PV_MAP['PV,energy'] = '15iddLAX:float1'   # @TODO: no DCM yet at 15ID
+        self.PV_MAP['energy'] = '15iddLAX:float1'   # @TODO: no DCM yet at 15ID
         self.MOTOR_PV_FIELDS = "VAL DESC RBV STOP HLM LLM MOVN".split()
 
-        # build the GUI
-        wx.Frame.__init__(self, parent=parent, id=wx.ID_ANY,
-              style=wx.DEFAULT_FRAME_STYLE, title=self.TITLE)
+    def __init_EPICS__(self):
+        '''
+        start the EPICS connections
+        '''
+        self.CA_monitor_count = 0
+        # poll EPICS ChannelAccess periodically for updates
+        self.timer_interval_s = 0.05  # poll CA using a wxTimer for monitored events
+        self.timer = wx.PyTimer(self.__poll_CA__)
+        self.__start_Timer_Poll_CA__()
+        
+        self.db = {}  # dictionary for EPICS PV info
 
-        self.CreateStatusBar()
-        self.__init_bsMain__(parent)
+        errorList = {}  # dictionary of PVs that did not connect and reported status
+        self.pvList = []     # complete list of PVs to connect
+        self.XREF = {}       # cross-reference dictionary
+        for item in self.PV_MAP:
+            parts = item.split(",")
+            if parts[0] == "motor":
+                for field in self.MOTOR_PV_FIELDS:
+                    fullpv = "%s.%s" % (self.PV_MAP[item], field)
+                    fullitem = "%s,%s" % (item, field)
+                    self.pvList.append(fullpv)
+                    self.XREF[fullpv] = fullitem
+                    self.XREF[fullitem] = fullpv
+            else:
+                self.pvList.append(self.PV_MAP[item])
+                self.XREF[self.PV_MAP[item]] = item
+                self.XREF[item] = self.PV_MAP[item]
+        self.pvList.sort()
+        #print "XREF:\n  ", "\n  ".join(self.XREF)
+        #print "XREF: ",
+        #pprint.pprint(self.XREF)
 
-        self.postMessage('startup is complete')
+        mask = CaChannel.ca.DBE_VALUE
+        #self.pvList = ['curly', 'S:SRcurrentAI']
+        self.pvList.append('S:SRcurrentAI')
+        self.XREF['S:SRcurrentAI'] = 'APS,current,mA'
+        self.XREF['APS,current,mA'] = 'S:SRcurrentAI'
+        for pv in self.pvList:
+            #print "Seeking EPICS PV connection with", pv
+            try:
+                ch = CaChannel.CaChannel(str(pv))
+                ch.searchw()
+                ch.add_masked_array_event(None, None, mask, self.CA_event, pv)
+                name = self.XREF[pv]
+                self.db[pv] = {'pv': pv, 'ch': ch, 'value': None, 
+                               'count': 0, 'name': name}
+            except CaChannel.CaChannelException, status:
+                errorList[pv] = CaChannel.ca.message(status)
+        if len(errorList) > 0:
+            print "Problems connecting with EPICS PVs:"
+            for pv in errorList:
+                print "  %s: %s" % (pv, errorList[pv])
+            self.__del__()
+            exit(0)
+        #print "db: ",
+        #pprint.pprint(self.db)
 
     def __init_bsMain__(self, parent):
-        '''main box sizer, outermost sizer of the GUI'''
+        '''
+        main box sizer, outermost sizer of the GUI
+        '''
         # list of items to add to the main BoxSizer
         itemList = []
 
@@ -306,6 +373,56 @@ class qToolFrame(wx.Frame):
         item.SetBackgroundColour(color)
         return item
 
+    def __poll_CA__(self):
+        '''Poll for changes in Channel Access'''
+        CaChannel.ca.poll()
+
+    def __start_Timer_Poll_CA__(self):
+        '''start the timer that triggers CA polling'''
+        self.running = True
+        self.timer.Start(int(1000*self.timer_interval_s)) # use milliseconds
+
+    def __stop_Timer_Poll_CA__(self):
+        '''stop polling'''# only if wx was imported
+        self.running = False
+        self.timer.Stop()
+
+    def __del__(self):
+        '''
+        Class delete event: don't leave timer hanging around!
+        '''
+        for pv in self.db.keys():     # release all the EPICS connections
+            del self.db[pv]['ch']
+
+        if self.timer.IsRunning():    # stop the wxTimer and dispose it
+            self.timer.Stop()
+        del self.timer
+
+        CaChannel.ca.task_exit()      # stop the CaChannel task
+        # @FIXME: sometimes, python still reports a seg fault on exit
+
+    # ------------------------------------------
+
+    def CA_event(self, epics_args, user_args):
+        '''
+        receive an EPICS event callback
+        '''
+        self.CA_monitor_count += 1
+        pv = user_args[0]
+        if pv in self.db:
+            value = epics_args['pv_value']
+            self.db[pv]['value'] = value
+            self.db[pv]['count'] += 1
+            name = self.db[pv]['name']
+            #print pv, name, "=",
+            #pprint.pprint(self.db[pv])
+            try:
+                msg = "%s %s: %s(%s)=%s" % (
+                    'CA_event', self.CA_monitor_count, pv, name, value)
+                self.postMessage(msg)
+            except:
+                pass
+
     def postMessage(self, message):
         '''
             post a message to the status line and the log
@@ -437,63 +554,14 @@ def pv_monitor_handler(epics_args, user_args):
     return True
 
 
-def SetupEPICS(qTool):
-    '''
-    Connect with EPICS Process Variables (PVs)
-    '''
-
-    # prepare ChannelAccess support
-    if pvConnect.IMPORTED_CACHANNEL:
-        capoll_timer = pvConnect.CaPollWx(0.1)
-        capoll_timer.start()
-
-    #@TODO: Can the EPICS connection be deferred?
-    # Perhaps some seconds after the GUI is drawn?
-    #
-    #@TODO: Also, perhaps don't wait for each PV to connect, might make the startup faster
-
-    errorList = []  # list of PVs that did not connect
-    pvList = []     # complete list of PVs to connect
-    for item in qTool.PV_MAP:
-        parts = item.split(",")
-        if parts[0] == "motor":
-            for field in qTool.MOTOR_PV_FIELDS:
-                pvList.append("%s.%s" % (qTool.PV_MAP[item], field) )
-        else:
-            pvList.append(qTool.PV_MAP[item])
-
-    for pv in pvList:
-        print "Seeking EPICS PV connection with", pv
-        try:  # connect with EPICS now
-            conn = pvConnect.EpicsPv(pv).MonitoredConnection(pv_monitor_handler)
-            connections[pv] = conn
-        except:
-            errorList.append(pv)
-
-    if len(errorList) > 0:
-        print "Problems connecting these EPICS PVs:\n  " + "\n  ".join(errorList)
-        exit(1)
-    qTool.postMessage("EPICS connections established")
-
-
 def main():
     '''
-        this routine sets up the GUI program,
-        starts the EPICS connections,
-        runs the GUI,
-        then buttons things up at the end
+        this runs the GUI program (standard wxPython procedure)
     '''
-
-    # start wx
-    app = wx.PySimpleApp()
-
-    qTool = qToolFrame(None)
-    qTool.Show(True)
-
-    SetupEPICS(qTool)
-
-    # run the GUI
-    app.MainLoop()
+    app = wx.PySimpleApp()   # start wx with a 1 frame GUI
+    qTool = qToolFrame(None) # build the GUI
+    qTool.Show(True)         # make it visible
+    app.MainLoop()           # run the GUI
 
 
 if __name__ == '__main__':

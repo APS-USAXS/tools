@@ -110,13 +110,13 @@ class CaPollWx:
             self.interval_s = interval_s
             self.TIMER_ID = 100
             self.timer = wx.PyTimer(self.poll)
-            self.timer.Start(self.TIMER_ID)
+            self.start()
 
     def start(self):
         '''start polling'''
         if IMPORTED_WX:     # only if wx was imported
             self.running = True
-            self.timer.Start(self.TIMER_ID)
+            self.timer.Start(int(1000*self.interval_s))  # argument is in ms
 
     def stop(self):
         '''stop polling'''

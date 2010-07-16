@@ -41,7 +41,11 @@ qTool = None      # pointer to the GUI
 
 
 class qToolFrame(wx.Frame):
-    '''define and operate the GUI'''
+    '''
+    USAXS qTool allows USAXS users to drive AR, AY, and DY based
+    on the desired Q.  It provides a table of known positions and buttons
+    to move each of the motors.
+    '''
 
     def __init__(self, parent):
         '''create the GUI'''
@@ -451,6 +455,11 @@ def main():
 
     qTool = qToolFrame(None)
     qTool.Show(True)
+
+    #@TODO: Can the EPICS connection be deferred?
+    # Perhaps some seconds after the GUI is drawn?
+    #
+    #@TODO: Also, perhaps don't wait for each PV to connect, might make the startup faster
 
     errorList = []  # list of PVs that did not connect
     pvList = []     # complete list of PVs to connect

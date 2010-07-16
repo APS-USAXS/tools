@@ -21,6 +21,7 @@ to move each of the motors.
 @status: converted from the Tcl code
 
 @TODO: Calculations
+@TODO: Move EPICS motors from calculated button
 @TODO: in Table of Q positions, put scrollbar inside the box
 '''
 
@@ -51,7 +52,6 @@ class qToolFrame(wx.Frame):
 
         # define some things for the program
         self.__init_variables__()
-        self.__init_EPICS__()
 
         # build the GUI
         wx.Frame.__init__(self, parent=parent, id=wx.ID_ANY,
@@ -59,8 +59,17 @@ class qToolFrame(wx.Frame):
 
         self.CreateStatusBar()
         self.__init_bsMain__(parent)
+        self.__init_EPICS__()
 
         self.postMessage('startup is complete')
+        #print "parameterList: "; pprint.pprint(self.parameterList)
+        #print "XREF: "; pprint.pprint(self.XREF)
+        #print "motorList: "; pprint.pprint(self.motorList)
+        name = "motor,AR,RBV"
+        pv = self.XREF[name]
+        value = self.db[pv]['ch'].getw()
+        self.motorList['AR']['RBV'].SetValue(str(value))
+        #print name, pv, value
 
     def __init_variables__(self, ):
         '''
@@ -74,6 +83,7 @@ class qToolFrame(wx.Frame):
         self.GRAY = wx.ColorRGB(0xababab)
         self.MOVING_COLOR = wx.GREEN
         self.NOT_MOVING_COLOR = wx.LIGHT_GREY
+        self.MOVN_COLORS = (self.NOT_MOVING_COLOR, self.MOVING_COLOR)
         self.LIGHTBLUE = wx.ColorRGB(0xffddcc)
         self.BISQUE = wx.ColorRGB(0xaaddee)
         self.COLOR_USER_ENTRY = self.BISQUE
@@ -92,11 +102,15 @@ class qToolFrame(wx.Frame):
             'AR,enc,center' : '15iddLAX:USAXS:Q.B',
             'SDD'           : '15iddLAX:USAXS:SDD.VAL',
             'SAD'           : '15iddLAX:USAXS:SAD.VAL',
+            'AY0'           : '15iddLAX:USAXS:AY0.VAL',
+            'DY0'           : '15iddLAX:USAXS:DY0.VAL',
             'motor,AR'      : '15iddLAX:aero:c0:m1',
             'motor,AY'      : '15iddLAX:m58:c1:m7',
             'motor,DY'      : '15iddLAX:m58:c2:m5'
         }
         self.PV_MAP['energy'] = '15iddLAX:float1'   # @TODO: no DCM yet at 15ID
+        self.PV_MAP['AY0'] = '15iddLAX:float2'      # @TODO: must add to database
+        self.PV_MAP['DY0'] = '15iddLAX:float3'      # @TODO: must add to database
         self.MOTOR_PV_FIELDS = "VAL DESC RBV STOP HLM LLM MOVN".split()
 
     def __init_EPICS__(self):
@@ -175,7 +189,7 @@ class qToolFrame(wx.Frame):
         itemList.append([0, self.subtitle])
 
         itemList.append([0, self.__init_button_bar__(self)])
-        itemList.append([0, self.__init_motor_controls__(self)])
+        itemList.append([0, self.__init_motor_values__(self)])
         itemList.append([0, self.__init_parameters__(self)])
         itemList.append([1, self.__init_positions_controls__(self)])
 
@@ -193,7 +207,7 @@ class qToolFrame(wx.Frame):
         self.SetMinSize(size)
         self.SetMaxSize(self.MAX_GUI_SIZE)
 
-    def __init_motor_controls__(self, parent):
+    def __init_motor_values__(self, parent):
         '''
             create the control items,
             defines self.motorList dictionary,
@@ -207,7 +221,7 @@ class qToolFrame(wx.Frame):
         # column labels
         for item in self.AXIS_LABELS.split():
             fgs.Add(
-                 wx.StaticText(parent, wx.ID_ANY, item, style=wx.ALIGN_RIGHT),
+                 wx.StaticText(parent, wx.ID_ANY, item),
                  0, flag=wx.EXPAND)
         # one motor axis per row
         self.motorList = {}
@@ -218,7 +232,7 @@ class qToolFrame(wx.Frame):
             dict = {}
             for field in self.AXIS_FIELDS.split():
                 text = '[%s].%s' % (axis, field)
-                widget = wx.StaticText(parent, wx.ID_ANY, text, style=wx.ALIGN_RIGHT)
+                widget = wx.TextCtrl(parent, wx.ID_ANY, text, style=wx.TE_READONLY|wx.ALIGN_RIGHT)
                 widget.SetBackgroundColour(self.NOT_MOVING_COLOR)
                 widget.SetToolTipString('most recent EPICS value of ' + text + ' PV')
                 fgs.Add(widget, 0, flag=wx.EXPAND)
@@ -241,8 +255,8 @@ class qToolFrame(wx.Frame):
         config = [
           ['AY0', 'AY position at beam center, mm', self.COLOR_USER_ENTRY],
           ['DY0', 'DY position at beam center, mm', self.COLOR_USER_ENTRY],
-          ['ARenc', 'AR encoder reading, degrees', self.COLOR_CALCULATED],
-          ['ARenc0', 'AR encoder center, degrees', self.COLOR_CALCULATED],
+          ['AR,enc', 'AR encoder reading, degrees', self.COLOR_CALCULATED],
+          ['AR,enc,center', 'AR encoder center, degrees', self.COLOR_CALCULATED],
           ['SDD', 'sample-detector distance, mm', self.COLOR_CALCULATED],
           ['SAD', 'sample-analyzer distance, mm', self.COLOR_CALCULATED],
           ['energy', 'X-ray photon energy, keV', self.COLOR_CALCULATED]
@@ -421,6 +435,19 @@ class qToolFrame(wx.Frame):
                 self.postMessage(msg)
             except:
                 pass
+            # perhaps a motor has been moving?
+            parts = name.split(",")
+            if len(parts) > 1 and parts[1] in self.motorList:
+                m = self.motorList[parts[1]]
+                if parts[2] == 'MOVN':  # is it moving or done?
+                    m['RBV'].SetBackgroundColour(self.MOVN_COLORS[value])
+                    m['VAL'].SetBackgroundColour(self.MOVN_COLORS[value])
+                if parts[2] in m:       # a new value is reported
+                    m[parts[2]].SetValue(str(value))
+            if name in self.parameterList:
+                #print pv, name
+                w = self.parameterList[name]['entry']
+                w.SetValue(str(value))
 
     def postMessage(self, message):
         '''
@@ -538,19 +565,6 @@ class qToolFrame(wx.Frame):
                 node.set(item, value)
 
         return self.MakePrettyXML(root)
-
-
-
-def pv_monitor_handler(epics_args, user_args):
-    '''EPICS monitor event received for this code'''
-    qTool.monitor_count += 1
-    value = epics_args['pv_value']
-    pv = user_args[0]
-    msg = "%s %s: %s=%s" % ('pv_monitor_handler', qTool.monitor_count, pv, value)
-    qTool.PRINT_LOG = True
-    qTool.postMessage(msg)
-    qTool.PRINT_LOG = False
-    return True
 
 
 def main():

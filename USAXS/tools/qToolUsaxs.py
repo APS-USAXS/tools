@@ -90,9 +90,11 @@ class qToolFrame(wx.Frame):
         self.MAX_GUI_SIZE = (-1, -1)
         self.USER_HOME = os.getenv('USERPROFILE') or os.getenv('HOME') # windows or Linux/Mac
         self.RC_FILE = os.path.join(self.USER_HOME, '.qToolUsaxsrc')
-        self.AXIS_NAMES = "AR AY DY"
-        self.AXIS_LABELS = "motor readback target"
-        self.AXIS_FIELDS = 'RBV VAL'
+        self.AXIS_NAMES = "AR AY DY".split()
+        self.AXIS_LABELS = "motor readback target".split()
+        self.AXIS_FIELDS = 'RBV VAL'.split()
+        self.MOTOR_PV_FIELDS = "VAL DESC RBV STOP HLM LLM MOVN".split()
+        self.EPICS_STOP_MOTOR_VALUE = 1
         self.PV_MAP = {
             'energy'        : '15ida:BraggERdbkAO',
             'Q,Finish'      : '15iddLAX:USAXS:Finish',
@@ -109,7 +111,6 @@ class qToolFrame(wx.Frame):
         self.PV_MAP['energy'] = '15iddLAX:float1'   # @TODO: no DCM yet at 15ID
         self.PV_MAP['AY0'] = '15iddLAX:float2'      # @TODO: must add to database
         self.PV_MAP['DY0'] = '15iddLAX:float3'      # @TODO: must add to database
-        self.MOTOR_PV_FIELDS = "VAL DESC RBV STOP HLM LLM MOVN".split()
 
     def __init_EPICS__(self):
         '''
@@ -198,8 +199,6 @@ class qToolFrame(wx.Frame):
 
         self.SetSizer(box)
         self.SetAutoLayout(True)
-        #self.Fit()
-        #size = self.GetSize()
         size = (600, 600)
         self.SetSize(size)
         self.SetMinSize(size)
@@ -217,22 +216,23 @@ class qToolFrame(wx.Frame):
         fgs = wx.FlexGridSizer(rows=4, cols=3, hgap=4, vgap=4)
 
         # column labels
-        for item in self.AXIS_LABELS.split():
+        for item in self.AXIS_LABELS:
             fgs.Add(
                  wx.StaticText(parent, wx.ID_ANY, item),
                  0, flag=wx.EXPAND)
         # one motor axis per row
         self.motorList = {}
-        for axis in self.AXIS_NAMES.split():
+        for axis in self.AXIS_NAMES:
             fgs.Add(
                  wx.StaticText(parent, wx.ID_ANY, axis, style=wx.ALIGN_RIGHT),
                  0, flag=wx.EXPAND)
             dict = {}
-            for field in self.AXIS_FIELDS.split():
+            for field in self.AXIS_FIELDS:
                 text = '[%s].%s' % (axis, field)
                 widget = wx.TextCtrl(parent, wx.ID_ANY, text, style=wx.TE_READONLY|wx.ALIGN_RIGHT)
                 widget.SetBackgroundColour(self.NOT_MOVING_COLOR)
                 widget.SetToolTipString('most recent EPICS value of ' + text + ' PV')
+                # @TODO: bind <enter> key to put the value to EPICS (not wx.TE_READONLY then)
                 fgs.Add(widget, 0, flag=wx.EXPAND)
                 dict[field] = widget
             self.motorList[axis] = dict
@@ -273,6 +273,7 @@ class qToolFrame(wx.Frame):
             widget = wx.TextCtrl(parent, wx.ID_ANY, "")
             widget.SetBackgroundColour(color)
             widget.SetToolTipString('value of ' + name + ' parameter')
+            # @TODO: bind <enter> key to put the value to EPICS
             fgs.Add(widget, 1, wx.EXPAND)
             self.parameterList[name] = { 'entry': widget }
 
@@ -288,6 +289,7 @@ class qToolFrame(wx.Frame):
             returns container object
         '''
         labels = ['#', 'description', 'Q, 1/A', 'AR, degrees', 'AY, mm', 'DY, mm']
+        self.idList = {}  # use when responding to button presses to move a motor
 
         swin = scrolledpanel.ScrolledPanel(parent, wx.ID_ANY, style=wx.TAB_TRAVERSAL|wx.VSCROLL)
 
@@ -318,13 +320,17 @@ class qToolFrame(wx.Frame):
             fgs.Add(widget, 2, wx.EXPAND)
             dict['Q'] = { 'entry': widget }
 
-            for axis in self.AXIS_NAMES.split():
+            for axis in self.AXIS_NAMES:
                 label = "%s%d" % (axis, row+1)
-                widget = wx.Button(parent=swin, id=wx.ID_ANY, label=label )
+                id = wx.NewId()
+                widget = wx.Button(parent=swin, id=id, label=label )
                 widget.SetBackgroundColour(self.COLOR_CALCULATED)
                 widget.SetToolTipString('move ' + axis + ' to this value')
+                widget.Bind(wx.EVT_BUTTON, self.move_motor)
+                # 
                 fgs.Add(widget, 2, wx.EXPAND)
-                dict[axis] = { 'entry': widget }
+                dict[axis] = { 'entry': widget, 'id': id }
+                self.idList[id] = [row, axis]
 
             self.positionList.append(dict)
 
@@ -365,6 +371,7 @@ class qToolFrame(wx.Frame):
             self.buttonList[label] = dict
         self.buttonList['stop']['button'].SetBackgroundColour(wx.RED)
         self.buttonList['stop']['button'].SetForegroundColour(wx.WHITE)
+        self.buttonList['stop']['button'].Bind(wx.EVT_BUTTON, self.stop_motors)
         self.buttonList['save']['button'].Bind(wx.EVT_BUTTON, self.save_rcfile)
         self.buttonList['read']['button'].Bind(wx.EVT_BUTTON, self.read_rcfile)
 
@@ -520,6 +527,45 @@ class qToolFrame(wx.Frame):
         f.close()
         self.postMessage('saved settings in: ' + self.RC_FILE)
 
+    def stop_motors(self, event):
+        '''
+            sends a STOP to each EPICS motor
+        '''
+        self.postMessage('motors told to STOP')
+        for axis in self.AXIS_NAMES:
+            name = "motor,%s,STOP" % axis
+            pv = self.XREF[name]
+            ch = self.db[pv]['ch']
+            ch.putw(self.EPICS_STOP_MOTOR_VALUE)
+
+    def move_motor(self, event):
+        '''
+            sends a new position to the EPICS motor
+        '''
+        id = event.GetId()
+        row, axis = self.idList[id]
+        text = self.positionList[row][axis]['entry'].GetLabel()
+        #text = event.GetEventObject().GetLabel()
+        pv = self.XREF["motor,%s,VAL" % axis]
+        try:
+            value = float(text)
+            if self.motorLimitsOK(axis, value):
+                ch = self.db[pv]['ch']
+                print "caput", pv, value
+                #THIS WILL DO IT# ch.putw(value)
+        except:
+            pass
+
+    def motorLimitsOK(self, axis, value):
+        '''
+            tests if value is within the limits of the named motor axis
+        '''
+        if not axis in self.AXIS_NAMES:
+            return False 
+        hlm = self.db[self.XREF["motor,%s,HLM" % axis]]['ch'].getw()
+        llm = self.db[self.XREF["motor,%s,LLM" % axis]]['ch'].getw()
+        return (llm <= value) and (value <= hlm)
+
     def MakePrettyXML(self, raw):
         '''
             make the XML look pretty to the eyes
@@ -593,6 +639,13 @@ class qToolFrame(wx.Frame):
                 ar = ar0 + 2*math.degrees(math.asin( x ))
                 dy = dy0 + sdd * math.tan( x )
                 ay = ay0 + sad * math.tan( x )
+                # #TODO: trouble here somehow
+                #if not self.motorLimitsOK("AR", ar):
+                #    print "AR limits not OK"
+                #if not self.motorLimitsOK("AY", ay):
+                #    print "AY limits not OK"
+                #if not self.motorLimitsOK("DY", dy):
+                #    print "DY limits not OK"
             except:
                 ar = 'ar ' + str(row)
                 ay = 'ay ' + str(row)

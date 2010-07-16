@@ -33,7 +33,6 @@ import wx
 from wx.lib import scrolledpanel
 from xml.dom import minidom
 from xml.etree import ElementTree
-import pvConnect
 import CaChannel
 
 

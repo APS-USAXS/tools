@@ -437,24 +437,15 @@ def pv_monitor_handler(epics_args, user_args):
     return True
 
 
-def main():
+def SetupEPICS(qTool):
     '''
-        this routine sets up the GUI program,
-        starts the EPICS connections,
-        runs the GUI,
-        then buttons things up at the end
+    Connect with EPICS Process Variables (PVs)
     '''
-
-    # start wx
-    app = wx.PySimpleApp()
 
     # prepare ChannelAccess support
     if pvConnect.IMPORTED_CACHANNEL:
         capoll_timer = pvConnect.CaPollWx(0.1)
         capoll_timer.start()
-
-    qTool = qToolFrame(None)
-    qTool.Show(True)
 
     #@TODO: Can the EPICS connection be deferred?
     # Perhaps some seconds after the GUI is drawn?
@@ -470,6 +461,7 @@ def main():
                 pvList.append("%s.%s" % (qTool.PV_MAP[item], field) )
         else:
             pvList.append(qTool.PV_MAP[item])
+
     for pv in pvList:
         print "Seeking EPICS PV connection with", pv
         try:  # connect with EPICS now
@@ -482,6 +474,23 @@ def main():
         print "Problems connecting these EPICS PVs:\n  " + "\n  ".join(errorList)
         exit(1)
     qTool.postMessage("EPICS connections established")
+
+
+def main():
+    '''
+        this routine sets up the GUI program,
+        starts the EPICS connections,
+        runs the GUI,
+        then buttons things up at the end
+    '''
+
+    # start wx
+    app = wx.PySimpleApp()
+
+    qTool = qToolFrame(None)
+    qTool.Show(True)
+
+    SetupEPICS(qTool)
 
     # run the GUI
     app.MainLoop()

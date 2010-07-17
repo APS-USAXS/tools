@@ -58,15 +58,10 @@ class qToolFrame(wx.Frame):
         self.__init_EPICS__()
 
         self.postMessage('startup is complete')
-        #print "parameterList: "; pprint.pprint(self.parameterList)
-        #print "XREF: "; pprint.pprint(self.XREF)
-        #print "motorList: "; pprint.pprint(self.motorList)
-        #print "positionList: "; pprint.pprint(self.positionList)
         name = "motor,AR,RBV"
         pv = self.XREF[name]
         value = self.db[pv]['ch'].getw()
         self.motorList['AR']['RBV'].SetValue(str(value))
-        #print name, pv, value
 
     def __init_variables__(self, ):
         '''
@@ -146,17 +141,12 @@ class qToolFrame(wx.Frame):
                 self.XREF[self.PV_MAP[item]] = item
                 self.XREF[item] = self.PV_MAP[item]
         self.pvList.sort()
-        #print "XREF:\n  ", "\n  ".join(self.XREF)
-        #print "XREF: ",
-        #pprint.pprint(self.XREF)
 
         mask = CaChannel.ca.DBE_VALUE
-        #self.pvList = ['curly', 'S:SRcurrentAI']
         self.pvList.append('S:SRcurrentAI')
         self.XREF['S:SRcurrentAI'] = 'APS,current,mA'
         self.XREF['APS,current,mA'] = 'S:SRcurrentAI'
         for pv in self.pvList:
-            #print "Seeking EPICS PV connection with", pv
             try:
                 ch = CaChannel.CaChannel(str(pv))
                 ch.searchw()
@@ -172,8 +162,6 @@ class qToolFrame(wx.Frame):
                 print "  %s: %s" % (pv, errorList[pv])
             self.__del__()
             exit(0)
-        #print "db: ",
-        #pprint.pprint(self.db)
 
     def __init_bsMain__(self, parent):
         '''
@@ -443,8 +431,6 @@ class qToolFrame(wx.Frame):
             self.db[pv]['value'] = value
             self.db[pv]['count'] += 1
             name = self.db[pv]['name']
-            #print pv, name, "=",
-            #pprint.pprint(self.db[pv])
             try:
                 msg = "%s %s: %s(%s)=%s" % (
                     'CA_event', self.CA_monitor_count, pv, name, value)
@@ -462,9 +448,7 @@ class qToolFrame(wx.Frame):
                     m[parts[2]].SetValue(str(value))
             # some user parameter has changed in EPICS?
             if name in self.parameterList:
-                #print pv, name
-                w = self.parameterList[name]['entry']
-                w.SetValue(str(value))
+                self.parameterList[name]['entry'].SetValue(str(value))
         self.recalc()       # recalculate all the buttons
 
     def postMessage(self, message):

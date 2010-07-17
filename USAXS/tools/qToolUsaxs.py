@@ -20,7 +20,6 @@ to move each of the motors.
 @requires: CaChannel (for EPICS)
 @status: converted from the Tcl code
 
-@TODO: Move EPICS motors from calculated button
 @TODO: in Table of Q positions, put scrollbar inside the box
 '''
 
@@ -78,6 +77,7 @@ class qToolFrame(wx.Frame):
         self.SVN_ID = "$Id$"
         self.PRINT_LOG = False
         self.monitor_count = 0   # number of EPICS monitor events received
+        self.basicFont = wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL)
         self.GRAY = wx.ColorRGB(0xababab)
         self.MOVING_COLOR = wx.GREEN
         self.NOT_MOVING_COLOR = wx.LIGHT_GREY
@@ -86,6 +86,11 @@ class qToolFrame(wx.Frame):
         self.BISQUE = wx.ColorRGB(0xaaddee)
         self.COLOR_USER_ENTRY = self.BISQUE
         self.COLOR_CALCULATED = self.LIGHTBLUE
+        self.COLOR_LIMITS_PROBLEM = wx.Colour(255,255,0)  # wx.YELLOW
+        self.BUTTON_COLORS = {
+              True: self.COLOR_CALCULATED, 
+              False: self.COLOR_LIMITS_PROBLEM
+        }
         self.NUM_Q_ROWS = 30
         self.MAX_GUI_SIZE = (-1, -1)
         self.USER_HOME = os.getenv('USERPROFILE') or os.getenv('HOME') # windows or Linux/Mac
@@ -231,8 +236,8 @@ class qToolFrame(wx.Frame):
                 text = '[%s].%s' % (axis, field)
                 widget = wx.TextCtrl(parent, wx.ID_ANY, text, style=wx.TE_READONLY|wx.ALIGN_RIGHT)
                 widget.SetBackgroundColour(self.NOT_MOVING_COLOR)
-                widget.SetToolTipString('most recent EPICS value of ' + text + ' PV')
-                # @TODO: bind <enter> key to put the value to EPICS (not wx.TE_READONLY then)
+                widget.SetToolTipString("motor,%s,%s" % (axis, field))
+                widget.SetFont(self.basicFont)
                 fgs.Add(widget, 0, flag=wx.EXPAND)
                 dict[field] = widget
             self.motorList[axis] = dict
@@ -270,12 +275,14 @@ class qToolFrame(wx.Frame):
             fgs.Add(
                  wx.StaticText(parent, wx.ID_ANY, desc, style=wx.ALIGN_RIGHT),
                  0, flag=wx.EXPAND)
-            widget = wx.TextCtrl(parent, wx.ID_ANY, "")
+            id = wx.NewId()
+            widget = wx.TextCtrl(parent, id, "", style=wx.TE_PROCESS_ENTER)
             widget.SetBackgroundColour(color)
-            widget.SetToolTipString('value of ' + name + ' parameter')
-            # @TODO: bind <enter> key to put the value to EPICS
+            widget.SetToolTipString("%s" % ( name))
+            widget.SetFont(self.basicFont)
+            widget.Bind(wx.EVT_TEXT_ENTER, self.caputParameter)
             fgs.Add(widget, 1, wx.EXPAND)
-            self.parameterList[name] = { 'entry': widget }
+            self.parameterList[name] = { 'entry': widget, 'id': id }
 
         fgs.AddGrowableCol(1)
         sbs.Add(fgs, 0, wx.EXPAND|wx.ALIGN_CENTRE|wx.ALL, 5)
@@ -311,12 +318,14 @@ class qToolFrame(wx.Frame):
             widget = wx.TextCtrl(swin, wx.ID_ANY, "")
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
             widget.SetToolTipString('user description of this position (row)')
+            widget.SetFont(self.basicFont)
             fgs.Add(widget, 3, wx.EXPAND)
             dict['label'] = { 'entry': widget }
 
             widget = wx.TextCtrl(swin, wx.ID_ANY, "")
             widget.SetBackgroundColour(self.COLOR_USER_ENTRY)
             widget.SetToolTipString('Q value of this position (row)')
+            widget.SetFont(self.basicFont)
             fgs.Add(widget, 2, wx.EXPAND)
             dict['Q'] = { 'entry': widget }
 
@@ -326,6 +335,7 @@ class qToolFrame(wx.Frame):
                 widget = wx.Button(parent=swin, id=id, label=label )
                 widget.SetBackgroundColour(self.COLOR_CALCULATED)
                 widget.SetToolTipString('move ' + axis + ' to this value')
+                widget.SetFont(self.basicFont)
                 widget.Bind(wx.EVT_BUTTON, self.move_motor)
                 # 
                 fgs.Add(widget, 2, wx.EXPAND)
@@ -366,6 +376,7 @@ class qToolFrame(wx.Frame):
             widget = wx.Button(parent, id=wx.ID_ANY, label=text)
             widget.SetBackgroundColour(self.COLOR_CALCULATED)
             widget.SetToolTipString(text)
+            widget.SetFont(self.basicFont)
             self.bsButtons.Add(widget, 1, wx.EXPAND)
             dict = { 'button': widget }
             self.buttonList[label] = dict
@@ -556,15 +567,33 @@ class qToolFrame(wx.Frame):
         except:
             pass
 
+    def caputParameter(self, event):
+        '''
+            sends the parameter to EPICS
+        '''
+        id = event.GetId()
+        for item in self.parameterList:
+            if id == self.parameterList[item]['id']:
+                name = item
+        try:
+            value = self.parameterList[name]['entry'].GetValue()
+            pv = self.XREF[name]
+            self.db[pv]['ch'].putw(float(value))
+            message = "caputParameter: caput %s %s" % (pv, value)
+            self.postMessage(message)
+        except:
+            pass
+
     def motorLimitsOK(self, axis, value):
         '''
             tests if value is within the limits of the named motor axis
         '''
         if not axis in self.AXIS_NAMES:
             return False 
-        hlm = self.db[self.XREF["motor,%s,HLM" % axis]]['ch'].getw()
-        llm = self.db[self.XREF["motor,%s,LLM" % axis]]['ch'].getw()
-        return (llm <= value) and (value <= hlm)
+        hlm = self.db[self.XREF["motor,%s,HLM" % axis]]['value']
+        llm = self.db[self.XREF["motor,%s,LLM" % axis]]['value']
+        result = (llm <= value) and (value <= hlm)
+        return result
 
     def MakePrettyXML(self, raw):
         '''
@@ -639,17 +668,21 @@ class qToolFrame(wx.Frame):
                 ar = ar0 + 2*math.degrees(math.asin( x ))
                 dy = dy0 + sdd * math.tan( x )
                 ay = ay0 + sad * math.tan( x )
-                # #TODO: trouble here somehow
-                #if not self.motorLimitsOK("AR", ar):
-                #    print "AR limits not OK"
-                #if not self.motorLimitsOK("AY", ay):
-                #    print "AY limits not OK"
-                #if not self.motorLimitsOK("DY", dy):
-                #    print "DY limits not OK"
+                # indicate limit problems with a yellow background
+                self.positionList[row]['AR']['entry'].SetBackgroundColour(
+                    self.BUTTON_COLORS[self.motorLimitsOK("AR", ar)]
+                )
+                self.positionList[row]['AY']['entry'].SetBackgroundColour(
+                    self.BUTTON_COLORS[self.motorLimitsOK("AY", ay)]
+                )
+                self.positionList[row]['DY']['entry'].SetBackgroundColour(
+                    self.BUTTON_COLORS[self.motorLimitsOK("DY", dy)]
+                )
             except:
                 ar = 'ar ' + str(row)
                 ay = 'ay ' + str(row)
                 dy = 'dy ' + str(row)
+            # put the values into the button labels
             self.positionList[row]['AR']['entry'].SetLabel(str(ar))
             self.positionList[row]['AY']['entry'].SetLabel(str(ay))
             self.positionList[row]['DY']['entry'].SetLabel(str(dy))

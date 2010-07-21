@@ -436,7 +436,8 @@ class qToolFrame(wx.Frame):
                     'CA_event', self.CA_monitor_count, pv, name, value)
                 self.postMessage(msg)
             except:
-                pass
+                message = "CA_event:\t Error: " + sys.exc_info()[1]
+                self.postMessage(message)
             # perhaps a motor has been moving?
             parts = name.split(",")
             if len(parts) > 1 and parts[1] in self.motorList:
@@ -546,10 +547,11 @@ class qToolFrame(wx.Frame):
             value = float(text)
             if self.motorLimitsOK(axis, value):
                 ch = self.db[pv]['ch']
-                print "caput", pv, value
-                #THIS WILL DO IT# ch.putw(value)
+                ch.putw(value)
         except:
-            pass
+            message = "move_motor: %s %s" % (axis, value)
+            message += "\t Error: " + sys.exc_info()[1]
+            self.postMessage(message)
 
     def caputParameter(self, event):
         '''
@@ -566,7 +568,8 @@ class qToolFrame(wx.Frame):
             message = "caputParameter: caput %s %s" % (pv, value)
             self.postMessage(message)
         except:
-            pass
+            message = "caputParameter:\t Error: " + sys.exc_info()[1]
+            self.postMessage(message)
 
     def motorLimitsOK(self, axis, value):
         '''
@@ -643,6 +646,8 @@ class qToolFrame(wx.Frame):
             ay0 = float(self.parameterList['AY0']['entry'].GetValue())
             dy0 = float(self.parameterList['DY0']['entry'].GetValue())
         except:
+            message = "recalc:\t Error: " + sys.exc_info()[1]
+            self.postMessage(message)
             return
 
         for row in range(len(self.positionList)):
@@ -663,6 +668,8 @@ class qToolFrame(wx.Frame):
                     self.BUTTON_COLORS[self.motorLimitsOK("DY", dy)]
                 )
             except:
+                message = "recalc:\t Error: " + sys.exc_info()[1]
+                self.postMessage(message)
                 ar = 'ar ' + str(row)
                 ay = 'ay ' + str(row)
                 dy = 'dy ' + str(row)

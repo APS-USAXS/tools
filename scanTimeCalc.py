@@ -626,7 +626,8 @@ class scanTimeCalcToolFrame(wx.Frame):
             wlist.append('p_return')
 
         except:
-            pass
+            message = "recalc:\t Error: " + sys.exc_info()[1]
+            self.postMessage(message)
 
 
 def pv_monitor_handler(epics_args, user_args):

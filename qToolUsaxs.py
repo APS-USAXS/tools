@@ -646,7 +646,7 @@ class qToolFrame(wx.Frame):
             ay0 = float(self.parameterList['AY0']['entry'].GetValue())
             dy0 = float(self.parameterList['DY0']['entry'].GetValue())
         except:
-            message = "recalc:\t Error: " + sys.exc_info()[1]
+            message = "recalc:  Error: " + str(sys.exc_info()[1])
             self.postMessage(message)
             return
 

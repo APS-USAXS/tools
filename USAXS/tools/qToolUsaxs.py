@@ -83,7 +83,7 @@ class qToolFrame(wx.Frame):
         self.COLOR_CALCULATED = self.LIGHTBLUE
         self.COLOR_LIMITS_PROBLEM = wx.Colour(255,255,0)  # wx.YELLOW
         self.BUTTON_COLORS = {
-              True: self.COLOR_CALCULATED, 
+              True: self.COLOR_CALCULATED,
               False: self.COLOR_LIMITS_PROBLEM
         }
         self.NUM_Q_ROWS = 30
@@ -121,7 +121,7 @@ class qToolFrame(wx.Frame):
         self.timer_interval_s = 0.05  # poll CA using a wxTimer for monitored events
         self.timer = wx.PyTimer(self.__poll_CA__)
         self.__start_Timer_Poll_CA__()
-        
+
         self.db = {}  # dictionary for EPICS PV info
 
         errorList = {}  # dictionary of PVs that did not connect and reported status
@@ -152,7 +152,7 @@ class qToolFrame(wx.Frame):
                 ch.searchw()
                 ch.add_masked_array_event(None, None, mask, self.CA_event, pv)
                 name = self.XREF[pv]
-                self.db[pv] = {'pv': pv, 'ch': ch, 'value': None, 
+                self.db[pv] = {'pv': pv, 'ch': ch, 'value': None,
                                'count': 0, 'name': name}
             except CaChannel.CaChannelException, status:
                 errorList[pv] = CaChannel.ca.message(status)
@@ -325,7 +325,7 @@ class qToolFrame(wx.Frame):
                 widget.SetToolTipString('move ' + axis + ' to this value')
                 widget.SetFont(self.basicFont)
                 widget.Bind(wx.EVT_BUTTON, self.move_motor)
-                # 
+                #
                 fgs.Add(widget, 2, wx.EXPAND)
                 dict[axis] = { 'entry': widget, 'id': id }
                 self.idList[id] = [row, axis]
@@ -576,7 +576,7 @@ class qToolFrame(wx.Frame):
             tests if value is within the limits of the named motor axis
         '''
         if not axis in self.AXIS_NAMES:
-            return False 
+            return False
         hlm = self.db[self.XREF["motor,%s,HLM" % axis]]['value']
         llm = self.db[self.XREF["motor,%s,LLM" % axis]]['value']
         result = (llm <= value) and (value <= hlm)
@@ -651,28 +651,30 @@ class qToolFrame(wx.Frame):
             return
 
         for row in range(len(self.positionList)):
+            ar = 'ar ' + str(row)
+            ay = 'ay ' + str(row)
+            dy = 'dy ' + str(row)
             try:
-                q = float(self.positionList[row]['Q']['entry'].GetValue())
-                x = -q * lambda_over_4pi
-                ar = ar0 + 2*math.degrees(math.asin( x ))
-                dy = dy0 + sdd * math.tan( x )
-                ay = ay0 + sad * math.tan( x )
-                # indicate limit problems with a yellow background
-                self.positionList[row]['AR']['entry'].SetBackgroundColour(
-                    self.BUTTON_COLORS[self.motorLimitsOK("AR", ar)]
-                )
-                self.positionList[row]['AY']['entry'].SetBackgroundColour(
-                    self.BUTTON_COLORS[self.motorLimitsOK("AY", ay)]
-                )
-                self.positionList[row]['DY']['entry'].SetBackgroundColour(
-                    self.BUTTON_COLORS[self.motorLimitsOK("DY", dy)]
-                )
+                strQ = self.positionList[row]['Q']['entry'].GetValue()
+                if len(strQ.strip()) > 0:
+                    q = float(strQ)
+                    x = -q * lambda_over_4pi
+                    ar = ar0 + 2*math.degrees(math.asin( x ))
+                    dy = dy0 + sdd * math.tan( x )
+                    ay = ay0 + sad * math.tan( x )
+                    # indicate limit problems with a yellow background
+                    self.positionList[row]['AR']['entry'].SetBackgroundColour(
+                        self.BUTTON_COLORS[self.motorLimitsOK("AR", ar)]
+                    )
+                    self.positionList[row]['AY']['entry'].SetBackgroundColour(
+                        self.BUTTON_COLORS[self.motorLimitsOK("AY", ay)]
+                    )
+                    self.positionList[row]['DY']['entry'].SetBackgroundColour(
+                        self.BUTTON_COLORS[self.motorLimitsOK("DY", dy)]
+                    )
             except:
                 message = "recalc:\t Error: " + sys.exc_info()[1]
                 self.postMessage(message)
-                ar = 'ar ' + str(row)
-                ay = 'ay ' + str(row)
-                dy = 'dy ' + str(row)
             # put the values into the button labels
             self.positionList[row]['AR']['entry'].SetLabel(str(ar))
             self.positionList[row]['AY']['entry'].SetLabel(str(ay))
@@ -690,4 +692,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

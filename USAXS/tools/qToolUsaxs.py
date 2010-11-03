@@ -96,7 +96,7 @@ class qToolFrame(wx.Frame):
         self.MOTOR_PV_FIELDS = "VAL DESC RBV STOP HLM LLM MOVN".split()
         self.EPICS_STOP_MOTOR_VALUE = 1
         self.PV_MAP = {
-            'energy'        : '15ida:BraggERdbkAO',
+            'energy'        : '15IDA:BraggERdbkAO',
             'Q,Finish'      : '15iddLAX:USAXS:Finish',
             'AR,enc'        : '15iddLAX:aero:c0:m1.RBV',
             'AR,enc,center' : '15iddLAX:USAXS:Q.B',
@@ -108,9 +108,8 @@ class qToolFrame(wx.Frame):
             'motor,AY'      : '15iddLAX:m58:c1:m7',
             'motor,DY'      : '15iddLAX:m58:c2:m5'
         }
-        self.PV_MAP['energy'] = '15iddLAX:float1'   # @TODO: no DCM yet at 15ID
-        self.PV_MAP['AY0'] = '15iddLAX:float2'      # @TODO: must add to database
-        self.PV_MAP['DY0'] = '15iddLAX:float3'      # @TODO: must add to database
+        self.PV_MAP['AY0'] = '15iddLAX:USAXS:AY0'
+        self.PV_MAP['DY0'] = '15iddLAX:USAXS:DY0'
 
     def __init_EPICS__(self):
         '''

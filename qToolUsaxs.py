@@ -108,8 +108,6 @@ class qToolFrame(wx.Frame):
             'motor,AY'      : '15iddLAX:m58:c1:m7',
             'motor,DY'      : '15iddLAX:m58:c2:m5'
         }
-        self.PV_MAP['AY0'] = '15iddLAX:USAXS:AY0'
-        self.PV_MAP['DY0'] = '15iddLAX:USAXS:DY0'
 
     def __init_EPICS__(self):
         '''

@@ -635,7 +635,7 @@ class qToolFrame(wx.Frame):
             arEnc0 = float(self.parameterList['AR,enc,center']['entry'].GetValue())
             ar = float(self.motorList['AR']['RBV'].GetValue())
             arEnc = float(self.parameterList['AR,enc']['entry'].GetValue())
-            ar0 = arEnc0 + ar - arEnc
+            ar0 = arEnc0
             energy = float(self.parameterList['energy']['entry'].GetValue())
             lambda_over_4pi = A_keV / (energy * 4 * math.pi)
             sad = float(self.parameterList['SAD']['entry'].GetValue())

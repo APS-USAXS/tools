@@ -77,7 +77,7 @@ class scanTimeCalcToolFrame(wx.Frame):
           'PV,Scan,CountTime'   : '15iddLAX:USAXS:CountTime',
           'PV,Scan,AR_center'   : '15iddLAX:USAXS:ARcenter'
         }
-        self.PV_LIST['PV,Energy,keV'] = '15iddLAX:float1'   # TODO: revise once beamline has DCM
+        self.PV_LIST['PV,Energy,keV'] = '15IDA:BraggERdbkAO'
         # these are fall-back values used to start the tool
         # they should be replaced quickly on startup by EPICS values
         self.db['GUI,N']             = 150
@@ -105,7 +105,7 @@ class scanTimeCalcToolFrame(wx.Frame):
 
         w = self.widget_list['GUI,energy']     # GUI,energy
         w.SetToolTipString(
-            "TODO: revise energy PV once beamline has DCM\n"
+            "15ID DCM energy\n"
              + "============================================\n"
              + w.GetToolTip().GetTip()
         )

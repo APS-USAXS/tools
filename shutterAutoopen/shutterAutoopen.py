@@ -1,18 +1,18 @@
 '''
 ########### SVN repository information ###################
-# $Date: 2010-07-15 12:31:46 -0500 (Thu, 15 Jul 2010) $
-# $Author: jemian $
-# $Revision: 329 $
-# $URL: https://subversion.xor.aps.anl.gov/small_angle/USAXS/tools/motorBeeper.py $
-# $Id: motorBeeper.py 329 2010-07-15 17:31:46Z jemian $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 
-@author: Pete Jemian
-@contact: jemian@anl.gov
+@author: Peter Beaucage
+@contact: pbeaucage@aps.anl.gov
 @organization: Advanced Photon Source, Argonne National Laboratory
-@license: motorBeeper is part of USAXS_tools; See LICENSE (included with this file) for full details.
-@version: $Id: motorBeeper.py 329 2010-07-15 17:31:46Z jemian $
-@summary: .sound a beep when all motors have stopped moving
+@license: shutterAutoopen is part of USAXS_tools; See LICENSE (included with this file) for full details.
+@version: $Id$
+@summary: when hutch is not beam active, push "open shutter" button PV until it is beam active
 @requires: CaChannel (for EPICS, called from pvConnect)
 @requires: pvConnect (for EPICS)
 @status: converted from the Tcl code

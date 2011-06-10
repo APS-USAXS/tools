@@ -1,15 +1,16 @@
 #test5.py changed to a single line span
 #! /usr/local/bin/python
 
+import setup_PyEpics_uc2
 from epics import PV
 from epics import caget
 import sys, epics, time, string, os
 
-
+# Create global variables with lists of PVs for various groups of information 
 
 #			PV name[0]		   PV name[1]			    Message[2]             Use?[3]
-undulator = 	[	('15IDA:ID15_gap',     '15IDA:ID15_gap',	  'Undelator gap (mm)',	 	    'Y'),
-	                ('15IDA:ID15_energy',  '15IDA:ID15_energy',       'Undelator energy (keV)',         'Y')]
+undulator = 	[	('15IDA:ID15_gap',     '15IDA:ID15_gap',	  'Undulator gap (mm)',	 	    'Y'),
+	                ('15IDA:ID15_energy',  '15IDA:ID15_energy',       'Undulator energy (keV)',         'Y')]
 
 HHL_Slits = 	[   	('15IDA:m17.RBV',     '15IDA:m17.DRBV',  	  '(m17) HHL-Hor-Slit-Up(mm)',       'Y'),
        			('15IDA:m18.RBV',     '15IDA:m18.DRBV',	          '(m18) HHL-Vert-Slit-Up(mm)',      'Y'),
@@ -39,8 +40,9 @@ Mirrors = 	[	('15IDA:m4.RBV',      '15IDA:m4.DRBV',   	  '(m4) VFM-Translation(m
 
 size2 = 33
 
-# Open file
-f=file('/home/epics/Elog/15IDB/ID_elog_data','w+')
+# end of global definitions
+
+# create some functions...
 
 def createTitle():
     #space1 = size1 - len('PV Name')+1
@@ -66,8 +68,6 @@ def writeLines(list):
 	space2 = size2 - len(str(caget(list[i][0])))-10 
         line = list[i][2]+space1*' '+str(s1) + space2*' ' + str(s2)
         return line 
-
-    
 
     #Enter the entries 
     """
@@ -95,8 +95,6 @@ def numCheck(list):
         f.write('\n')
 
 
-#Write into respective columns
-createTitle()
 
 #Create categories
 def createCategory(title):
@@ -106,6 +104,18 @@ def createCategory(title):
     createLine = "\n" + dashes + ">" + title + "<" + dashes + "\n"
     f.write(createLine)
 
+
+#  End of create functions...
+
+# write the log file.... 
+  
+    
+# and this now gets run when all above was setup....    
+# Open file
+f=file('/share1/Elog/ID_elog_data','w+')
+
+#Write into respective columns
+createTitle()
 createCategory("Undulator")
 numCheck(undulator)
 createCategory("HHL Slits")
@@ -120,8 +130,12 @@ createCategory("OXFORD BPM (downstream)")
 numCheck(bpm_down)
 createCategory("Mirrors")
 numCheck(Mirrors)
-
 f.close()
 
 #Run elog client to add to logbook. Have to add as an attachment. Table is messed up if it is sent as text.
-os.system('elog -h 164.54.162.133 -p 8081 -l 15-ID-B -a Author=?? -a Type=Routine -a Subject="System snapshot" -f /home/epics/Elog/15IDB/ID_elog_data " "')
+
+os.system('elog -h 164.54.162.133 -p 8081 -l 15-ID-D -a Author=SYSTEM -a Type=Routine -a Subject="System snapshot" -f /share1/Elog/ID_elog_data " "')
+
+os.system('elog -h 15id.xor.aps.anl.gov -d elog -l controls_discussion -a Author="Peter Beaucage" -a Type=Configuration -a Subject="Instrument/PV Snapshot" -f /share1/Elog/ID_elog_data " "')
+
+

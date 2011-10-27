@@ -105,8 +105,8 @@ class qToolFrame(wx.Frame):
             'AY0'           : '15iddLAX:USAXS:AY0.VAL',
             'DY0'           : '15iddLAX:USAXS:DY0.VAL',
             'motor,AR'      : '15iddLAX:aero:c0:m1',
-            'motor,AY'      : '15iddLAX:m58:c1:m7',
-            'motor,DY'      : '15iddLAX:m58:c2:m5'
+            'motor,AY'      : '15iddLAX:m58:c0:m6',
+            'motor,DY'      : '15iddLAX:m58:c2:m4'
         }
 
     def __init_EPICS__(self):

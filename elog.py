@@ -1,5 +1,5 @@
-#test5.py changed to a single line span
 #! /usr/local/bin/python
+#test5.py changed to a single line span
 
 import setup_PyEpics_uc2
 from epics import PV

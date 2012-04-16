@@ -13,7 +13,7 @@ write current instrument conditions to the elog
 ########### SVN repository information ###################
 
 
-import setup_PyEpics_uc2
+#import setup_PyEpics_uc2	# remove dependency until needed
 from epics import PV
 from epics import caget
 import sys, epics, time, string, os

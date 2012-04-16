@@ -1,5 +1,17 @@
-#! /usr/local/bin/python
-#test5.py changed to a single line span
+#!/usr/bin/env python
+
+'''
+write current instrument conditions to the elog
+'''
+
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
+
 
 import setup_PyEpics_uc2
 from epics import PV

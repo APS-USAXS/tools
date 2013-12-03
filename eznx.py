@@ -2,9 +2,10 @@
 
 
 '''
-eznx: routines to support reading & writing NeXus HDF5 files using h5py
+eznx: (Easy NeXus) support reading & writing NeXus HDF5 files using h5py
 
-source: NeXus h5py example code: ``eznx.py``
+:source: NeXus h5py example code: ``my_lib.py``
+:URL: http://download.nexusformat.org/doc/html/examples/h5py/index.html#mylib-support-module
 '''
 
 

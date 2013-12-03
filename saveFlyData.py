@@ -22,6 +22,12 @@ mca_pv_list = '''
   15iddLAX:3820:mca3 
   15iddLAX:3820:mca4'''.split()
 
+metadata_dict = {
+  'SR_current'  : 'S:SRcurrentAI',
+  'ID_E'        : 'ID15:Energy',
+  #'DCM_energy'  : '????',
+  'string1'     : '15iddLAX:string1',
+}
 
 class SaveFlyScan(object):
   '''watch USAXS fly scan, save data to NeXus file after scan is done'''
@@ -29,6 +35,9 @@ class SaveFlyScan(object):
   def __init__(self, hdf5_file):
     self.hdf5_file = hdf5_file
     self.mca = [epics.PV(pv) for pv in mca_pv_list]
+    self.metadata = {}
+    for key, value in metadata_dict.items():
+      self.metadata[key] = epics.PV(value)
     self.saveFile()	# development version
 
   def saveFile(self):
@@ -51,6 +60,17 @@ class SaveFlyScan(object):
     nxcollection = eznx.makeGroup(nxdata, 'metadata', 'NXcollection')
     
     # save any metadata
+    for key, pv in self.metadata.items():
+      #cv = pv.get_ctrlvars()
+      value = pv.get(as_numpy=False)
+      #print key, pv, value, type(value)
+      ds = eznx.makeDataset(nxcollection, key, [value],
+        # dataset attributes
+	epics_pv = pv.pvname,
+	units = pv.units or '',
+	epics_type = pv.type,
+	epics_description = epics.caget(pv.pvname+'.DESC'),
+      )
 
     # save the MCA data
     index = 0
@@ -60,7 +80,7 @@ class SaveFlyScan(object):
       ds = eznx.makeDataset(nxdata, label, mca.get(), 
         # dataset attributes
 	epics_pv = mca.pvname,
-	epics_units = mca.units,
+	units = mca.units or '',
         epics_nelm = mca.nelm,
 	epics_description = epics.caget(mca.pvname+'.DESC'),
       )

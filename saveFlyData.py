@@ -16,7 +16,11 @@ import epics		# PyEpics support
 import eznx		# NeXus r/w support using h5py
 
 
-mca_pv_list = "15iddLAX:3820:mca1 15iddLAX:3820:mca2 15iddLAX:3820:mca3 15iddLAX:3820:mca4".split()
+mca_pv_list = '''
+  15iddLAX:3820:mca1
+  15iddLAX:3820:mca2 
+  15iddLAX:3820:mca3 
+  15iddLAX:3820:mca4'''.split()
 
 
 class SaveFlyScan(object):
@@ -33,9 +37,11 @@ class SaveFlyScan(object):
 
     # create the file and internal structure
     f = eznx.makeFile(self.hdf5_file,
+      # the following are attributes to the root element of the HDF5 file
       file_name = self.hdf5_file,
       timestamp = timestamp,
-      instrument = "APS USAXS at 15ID-C",
+      instrument = "APS USAXS at 15ID-D",
+      scan_mode = 'USAXS fly scan',
       creator = '$Id$',
       HDF5_Version = h5py.version.hdf5_version,
       h5py_version = h5py.version.version,
@@ -52,13 +58,15 @@ class SaveFlyScan(object):
       index += 1		# 1-based indexing
       label = 'mca' + str(index)
       ds = eznx.makeDataset(nxdata, label, mca.get(), 
-        epics_pv = mca.pvname,
+        # dataset attributes
+	epics_pv = mca.pvname,
 	epics_units = mca.units,
         epics_nelm = mca.nelm,
 	epics_description = epics.caget(mca.pvname+'.DESC'),
       )
       if index == 1:
-        eznx.addAttributes(ds, {'signal': 1})
+        # NeXus requires that one (& only 1) dataset have this attribute
+	eznx.addAttributes(ds, signal=1)
 	# units='counts', signal=1, axes='two_theta'
 
     f.close()	# be CERTAIN to close the file

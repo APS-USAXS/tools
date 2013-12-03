@@ -1,12 +1,16 @@
 #!/usr/bin/env python
+
+
 '''
 eznx: routines to support reading & writing NeXus HDF5 files using h5py
 
-source: NeXus h5py example code: ``my_lib.py``
+source: NeXus h5py example code: ``eznx.py``
 '''
+
 
 import h5py    # HDF5 support
 import numpy   # in this case, provides data structures
+
 
 def makeFile(filename, **attr):
     """
@@ -21,8 +25,9 @@ def makeFile(filename, **attr):
     :return: h5py file object
     """
     obj = h5py.File(filename, "w")
-    addAttributes(obj, attr)
+    addAttributes(obj, **attr)
     return obj
+
 
 def makeGroup(parent, name, nxclass, **attr):
     """
@@ -40,8 +45,9 @@ def makeGroup(parent, name, nxclass, **attr):
     """
     obj = parent.create_group(name)
     obj.attrs["NX_class"] = nxclass
-    addAttributes(obj, attr)
+    addAttributes(obj, **attr)
     return obj
+
 
 def makeDataset(parent, name, data = None, **attr):
     '''
@@ -60,8 +66,9 @@ def makeDataset(parent, name, data = None, **attr):
         obj = parent.create_dataset(name)
     else:
         obj = parent.create_dataset(name, data=data)
-    addAttributes(obj, attr)
+    addAttributes(obj, **attr)
     return obj
+
 
 def makeLink(parent, sourceObject, targetName):
     """
@@ -76,6 +83,7 @@ def makeLink(parent, sourceObject, targetName):
         # NeXus link, NOT an HDF5 link!
         sourceObject.attrs["target"] = str(sourceObject.name)
     parent._id.link(sourceObject.name, targetName, h5py.h5g.LINK_HARD)
+
 
 def makeExternalLink(hdf5FileObject, sourceFile, sourcePath, targetPath):
     """
@@ -98,7 +106,8 @@ def makeExternalLink(hdf5FileObject, sourceFile, sourcePath, targetPath):
     """
     hdf5FileObject[targetPath] = h5py.ExternalLink(sourceFile, sourcePath)
 
-def addAttributes(parent, attr):
+
+def addAttributes(parent, **attr):
     """
     add attributes to an h5py data item
 
@@ -109,6 +118,7 @@ def addAttributes(parent, attr):
         # attr is a dictionary of attributes
         for k, v in attr.items():
             parent.attrs[k] = v
+
 
 def get2ColumnData(fileName):
     '''

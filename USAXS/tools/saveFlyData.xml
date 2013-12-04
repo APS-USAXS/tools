@@ -1,27 +1,41 @@
 <?xml version="1.0"?>
 
 <saveFlyData version="1">
+  <triggerPV pvname="15iddLAX:USAXSfly:Start" start_value="1" start_text="Busy" done_value="0" done_text="Done" />
+
   <NX_structure>
     <dir name="/" class="file">							<!-- file -->
       <dir name="entry" class="NXentry">				<!-- entry:NXentry -->
 
         <dir name="flyScan" class="NXdata">				<!-- flyScan:NXdata -->
-          <PV label="mca1" pvname="15iddLAX:3820:mca1">
+
+          <!-- positioners -->
+          <PV label="AR" pvname="15iddLAX:traj1:M1Traj" />
+          <PV label="AR_count" pvname="15iddLAX:traj1:Nelements" />
+
+          <!-- detectors -->
+          <PV label="mca1" pvname="15iddLAX:3820:mca1" />		<!-- counts of 50 MHz clock -->
+          <PV label="mca2" pvname="15iddLAX:3820:mca2">
             <attribute name="signal" value="1" />
             <!-- <attribute name="axes" value="??? label here ???" /> -->
             <!-- <attribute name="units" value="???" /> -->
           </PV>
-          <PV label="mca2" pvname="15iddLAX:3820:mca2" />
           <PV label="mca3" pvname="15iddLAX:3820:mca3" />
           <PV label="mca4" pvname="15iddLAX:3820:mca4" />
-          <!-- positioners? -->
+          <PV label="mca_count" pvname="15iddLAX:3820:CurrentChannel" />
+          <PV label="mca_count_max" pvname="15iddLAX:3820:MaxChannels" />
 
+          <!-- metadata -->
           <dir name="metadata" class="NXcollection">	<!-- metadata:NXcollection -->
-            <PV label="SR_current" pvname="S:SRcurrentAI">
-            <PV label="ID_E"       pvname="ID15:Energy">
-            <!-- <PV label="DCM_energy" pvname="????"> -->
-            <!-- <PV label="" pvname=""> -->
-            <PV label="string1"    pvname="15iddLAX:string1">
+            <PV label="SR_current" pvname="S:SRcurrentAI" />
+            <PV label="ID_E"       pvname="ID15:Energy" />
+            <!-- <PV label="DCM_energy" pvname="????" /> -->
+            <!-- <PV label="" pvname="" /> -->
+            <PV label="SPEC_macro_file"    pvname="15iddLAX:string19" />
+            <PV label="mca1_name" pvname="15iddLAX:3820:scaler1.NM1">
+            <PV label="mca2_name" pvname="15iddLAX:3820:scaler1.NM2">
+            <PV label="mca3_name" pvname="15iddLAX:3820:scaler1.NM3">
+            <PV label="mca4_name" pvname="15iddLAX:3820:scaler1.NM4">
           </dir>										<!-- metadata:NXcollection -->
         </dir>											<!-- flyScan:NXdata -->
 
@@ -30,6 +44,40 @@
   </NX_structure>
 </saveFlyData>
 
+
+<!-- 
+
+ Here are the PVs you need to write to:
+
+15iddLAX:traj1:M1Traj
+    the array of AR positions
+15iddLAX:traj1:Nelements
+    the number of AR positions written
+15iddLAX:USAXSfly:Start
+    write the number 1, or the string "Busy", to start the fly scan
+    when the scan is over, this PV will be reset to the number 0  (the string "Done")
+
+
+Here are the PVs you need to read after the scan is over:
+
+15iddLAX:3820:CurrentChannel
+    number of MCS data points actually acquired
+15iddLAX:3820:mca1.VAL
+    array of counts of 50 MHz clock
+15iddLAX:3820:mca2.VAL
+15iddLAX:3820:mca3.VAL
+15iddLAX:3820:mca4.VAL
+    arrays of other MCS data.  Currently, you have to guess which channel contains which data.
+    Eventually, you should be able to read the data descriptions from the following PVs:
+15iddLAX:3820:scaler1.NM1
+15iddLAX:3820:scaler1.NM2
+15iddLAX:3820:scaler1.NM3
+15iddLAX:3820:scaler1.NM4
+
+You will need to set EPICS_CA_MAX_ARRAY_BYTES to >= 1280000 to read the maximum
+number of data points the MCS can be told to acquire (15iddLAX:3820:MaxChannels).
+
+ -->
 
 <!--
 ########### SVN repository information ###################

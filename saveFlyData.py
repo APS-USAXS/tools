@@ -8,6 +8,7 @@ import datetime
 import os
 import sys
 import h5py
+import numpy
 
 # matches IOC for big arrays
 os.environ['EPICS_CA_MAX_ARRAY_BYTES'] = '200000000'
@@ -27,69 +28,93 @@ metadata_dict = {
   'ID_E'        : 'ID15:Energy',
   #'DCM_energy'  : '????',
   'string1'     : '15iddLAX:string1',
+  'string19'    : '15iddLAX:string19',
+  'string20'    : '15iddLAX:string20',
+  'float1'      : '15iddLAX:float1',
+  'float19'     : '15iddLAX:float19',
+  'float20'     : '15iddLAX:float20',
 }
 
 class SaveFlyScan(object):
   '''watch USAXS fly scan, save data to NeXus file after scan is done'''
 
   def __init__(self, hdf5_file):
-    self.hdf5_file = hdf5_file
+    self.hdf5_file_name = hdf5_file
+    self.structure = {}
     self.mca = [epics.PV(pv) for pv in mca_pv_list]
     self.metadata = {}
     for key, value in metadata_dict.items():
       self.metadata[key] = epics.PV(value)
-    self.saveFile()	# development version
-
-  def saveFile(self):
-    t = datetime.datetime.now()
-    timestamp = ' '.join((t.strftime("%Y-%m-%d"), t.strftime("%H:%M:%S")))
-
+    self._createFile()
+  
+  def _createFile(self):
+    '''create the HDF5 file and structure'''
     # create the file and internal structure
-    f = eznx.makeFile(self.hdf5_file,
+    f = eznx.makeFile(self.hdf5_file_name,
       # the following are attributes to the root element of the HDF5 file
-      file_name = self.hdf5_file,
-      timestamp = timestamp,
+      file_name = self.hdf5_file_name,
       instrument = "APS USAXS at 15ID-D",
       scan_mode = 'USAXS fly scan',
       creator = '$Id$',
       HDF5_Version = h5py.version.hdf5_version,
       h5py_version = h5py.version.version,
     )
-    nxentry = eznx.makeGroup(f, 'entry', 'NXentry')
-    nxdata = eznx.makeGroup(nxentry, 'data', 'NXdata')
-    nxcollection = eznx.makeGroup(nxdata, 'metadata', 'NXcollection')
+    self.structure['/'] = f
+    self.structure['/entry'] = eznx.makeGroup(f, 'entry', 'NXentry')
+    self.structure['/entry/data'] = eznx.makeGroup(self.structure['/entry'], 'data', 'NXdata')
+    self.structure['/entry/data/metadata'] = eznx.makeGroup(self.structure['/entry/data'], 'metadata', 'NXcollection')
+
+  def _attachEpicsAttributes(self, node, pv):
+      '''attach common attributes from EPICS to the HDF5 tree node'''
+      eznx.addAttributes(node, 
+        epics_pv = pv.pvname,
+        units = pv.units or '',
+        epics_type = pv.type,
+        epics_description = epics.caget(pv.pvname+'.DESC'),
+      )
+
+  def waitForData(self):
+      '''wait until the data is ready, then save it'''
+      # TODO: watch a PV and wait for it to hit the desired value
+      self.saveFile()    # development version
+
+  def saveFile(self):
+    '''write all desired data to the file and exit this code'''
+    t = datetime.datetime.now()
+    timestamp = ' '.join((t.strftime("%Y-%m-%d"), t.strftime("%H:%M:%S")))
+    eznx.addAttributes(self.structure['/'], timestamp = timestamp)
+    
+    # convenience names
+    nxentry = self.structure['/entry']
+    nxdata = self.structure['/entry/data']
+    nxcollection = self.structure['/entry/data/metadata']
     
     # save any metadata
     for key, pv in self.metadata.items():
       #cv = pv.get_ctrlvars()
-      value = pv.get(as_numpy=False)
+      value = pv.get()
+      if not isinstance(value, numpy.ndarray):
+          value = [value]
+      #print pv.pvname, type(value)
       #print key, pv, value, type(value)
-      ds = eznx.makeDataset(nxcollection, key, [value],
-        # dataset attributes
-	epics_pv = pv.pvname,
-	units = pv.units or '',
-	epics_type = pv.type,
-	epics_description = epics.caget(pv.pvname+'.DESC'),
-      )
-
+      ds = eznx.makeDataset(nxcollection, key, value)
+      self._attachEpicsAttributes(ds, pv)
+    
     # save the MCA data
     index = 0
     for mca in self.mca:
       index += 1		# 1-based indexing
       label = 'mca' + str(index)
-      ds = eznx.makeDataset(nxdata, label, mca.get(), 
-        # dataset attributes
-	epics_pv = mca.pvname,
-	units = mca.units or '',
-        epics_nelm = mca.nelm,
-	epics_description = epics.caget(mca.pvname+'.DESC'),
-      )
+      value = mca.get()
+      #print mca.pvname, type(value)
+      ds = eznx.makeDataset(nxdata, label, value, epics_nelm = mca.nelm)
+      self._attachEpicsAttributes(ds, mca)
       if index == 1:
         # NeXus requires that one (& only 1) dataset have this attribute
-	eznx.addAttributes(ds, signal=1)
-	# units='counts', signal=1, axes='two_theta'
-
-    f.close()	# be CERTAIN to close the file
+        eznx.addAttributes(ds, signal=1)
+        # units='counts', signal=1, axes='two_theta'
+    
+    self.structure['/'].close()	# be CERTAIN to close the file
 
 
 def main():
@@ -107,6 +132,7 @@ def main():
     raise RuntimeError, msg
 
   sfs = SaveFlyScan(dataFile)
+  sfs.waitForData()
   print 'wrote file: ' + dataFile
 
 

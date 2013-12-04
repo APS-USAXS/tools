@@ -9,6 +9,7 @@ import os
 import sys
 import h5py
 import numpy
+import time
 
 # matches IOC for big arrays
 os.environ['EPICS_CA_MAX_ARRAY_BYTES'] = '1280000'    # was 200000000 
@@ -35,6 +36,10 @@ metadata_dict = {
   'float20'     : '15iddLAX:float20',
 }
 
+TRIGGER_POLL_INTERVAL_S = 0.1
+trigger_pv = '15iddLAX:bit2'
+ACCEPTABLE_COMPLETION_VALUES = (0, 'Done')
+
 
 class SaveFlyScan(object):
     '''watch USAXS fly scan, save data to NeXus file after scan is done'''
@@ -47,6 +52,24 @@ class SaveFlyScan(object):
         for key, value in metadata_dict.items():
             self.metadata[key] = epics.PV(value)
         self._createFile()
+
+    def waitForData(self):
+        '''wait until the data is ready, then save it'''
+        trigger = epics.PV(trigger_pv)
+        while trigger.get() not in ACCEPTABLE_COMPLETION_VALUES:
+            time.sleep(TRIGGER_POLL_INTERVAL_S)
+        self.saveFile()
+
+    def saveFile(self):
+        '''write all desired data to the file and exit this code'''
+        t = datetime.datetime.now()
+        timestamp = ' '.join((t.strftime("%Y-%m-%d"), t.strftime("%H:%M:%S")))
+        eznx.addAttributes(self.structure['/'], timestamp = timestamp)
+        
+        self._save_maindata(self.structure['/entry/data'])
+        self._save_metadata(self.structure['/entry/data/metadata'])
+        
+        self.structure['/'].close()    # be CERTAIN to close the file
   
     def _createFile(self):
         '''create the HDF5 file and structure'''
@@ -73,23 +96,23 @@ class SaveFlyScan(object):
           epics_type = pv.type,
           epics_description = epics.caget(pv.pvname+'.DESC'),
         )
+    
+    def _save_maindata(self, group):
+        # save the MCA data
+        index = 0
+        for mca in self.mca:
+            index += 1        # 1-based indexing
+            label = 'mca' + str(index)
+            value = mca.get()
+            #print mca.pvname, type(value)
+            ds = eznx.makeDataset(group, label, value, epics_nelm = mca.nelm)
+            self._attachEpicsAttributes(ds, mca)
+            if index == 1:
+                # NeXus requires that one (& only 1) dataset have this attribute
+                eznx.addAttributes(ds, signal=1)
+                # units='counts', signal=1, axes='two_theta'
 
-    def waitForData(self):
-        '''wait until the data is ready, then save it'''
-        # TODO: watch a PV and wait for it to hit the desired value
-        self.saveFile()    # development version
-
-    def saveFile(self):
-        '''write all desired data to the file and exit this code'''
-        t = datetime.datetime.now()
-        timestamp = ' '.join((t.strftime("%Y-%m-%d"), t.strftime("%H:%M:%S")))
-        eznx.addAttributes(self.structure['/'], timestamp = timestamp)
-        
-        # convenience names
-        nxentry = self.structure['/entry']
-        nxdata = self.structure['/entry/data']
-        nxcollection = self.structure['/entry/data/metadata']
-        
+    def _save_metadata(self, group):
         # save any metadata
         for key, pv in self.metadata.items():
             #cv = pv.get_ctrlvars()
@@ -98,43 +121,27 @@ class SaveFlyScan(object):
                 value = [value]
             #print pv.pvname, type(value)
             #print key, pv, value, type(value)
-            ds = eznx.makeDataset(nxcollection, key, value)
+            ds = eznx.makeDataset(group, key, value)
             self._attachEpicsAttributes(ds, pv)
-        
-        # save the MCA data
-        index = 0
-        for mca in self.mca:
-            index += 1		# 1-based indexing
-            label = 'mca' + str(index)
-            value = mca.get()
-            #print mca.pvname, type(value)
-            ds = eznx.makeDataset(nxdata, label, value, epics_nelm = mca.nelm)
-            self._attachEpicsAttributes(ds, mca)
-            if index == 1:
-                # NeXus requires that one (& only 1) dataset have this attribute
-                eznx.addAttributes(ds, signal=1)
-                # units='counts', signal=1, axes='two_theta'
-        
-        self.structure['/'].close()	# be CERTAIN to close the file
 
 
 def main():
-  if len(sys.argv) != 2:
-    msg = 'usage: saveFlyData.py /hdf5/file/to/save'
-    raise RuntimeError, msg
-
-  dataFile = sys.argv[1]
-  if not os.path.exists(os.path.split(dataFile)[0]):
-    msg = 'directory for that file does not exist: ' + dataFile
-    raise RuntimeError, msg
-
-  if os.path.exists(dataFile):
-    msg = 'file exists: ' + dataFile
-    raise RuntimeError, msg
-
-  sfs = SaveFlyScan(dataFile)
-  sfs.waitForData()
-  print 'wrote file: ' + dataFile
+    if len(sys.argv) != 2:
+        msg = 'usage: saveFlyData.py /hdf5/file/to/save'
+        raise RuntimeError, msg
+    
+    dataFile = sys.argv[1]
+    if not os.path.exists(os.path.split(dataFile)[0]):
+        msg = 'directory for that file does not exist: ' + dataFile
+        raise RuntimeError, msg
+    
+    if os.path.exists(dataFile):
+        msg = 'file exists: ' + dataFile
+        raise RuntimeError, msg
+    
+    sfs = SaveFlyScan(dataFile)
+    sfs.waitForData()
+    print 'wrote file: ' + dataFile
 
 
 if __name__ == '__main__':

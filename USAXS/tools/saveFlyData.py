@@ -180,11 +180,11 @@ def main():
 
 
 if __name__ == '__main__':
-    #main()
+    main()
     
     # code development
-    sfs = SaveFlyScan('/tmp/test.h5', XML_CONFIGURATION_FILE)
-    sfs.waitForData()
+#     sfs = SaveFlyScan('/tmp/test.h5', XML_CONFIGURATION_FILE)
+#     sfs.waitForData()
 
 
 ########### SVN repository information ###################

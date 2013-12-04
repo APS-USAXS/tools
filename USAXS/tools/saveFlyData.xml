@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+
+<saveFlyData version="1">
+  <NX_structure>
+    <dir name="/" class="file">							<!-- file -->
+      <dir name="entry" class="NXentry">				<!-- entry:NXentry -->
+
+        <dir name="flyScan" class="NXdata">				<!-- flyScan:NXdata -->
+          <PV label="mca1" pvname="15iddLAX:3820:mca1">
+            <attribute name="signal" value="1" />
+            <!-- <attribute name="axes" value="??? label here ???" /> -->
+            <!-- <attribute name="units" value="???" /> -->
+          </PV>
+          <PV label="mca2" pvname="15iddLAX:3820:mca2" />
+          <PV label="mca3" pvname="15iddLAX:3820:mca3" />
+          <PV label="mca4" pvname="15iddLAX:3820:mca4" />
+          <!-- positioners? -->
+
+          <dir name="metadata" class="NXcollection">	<!-- metadata:NXcollection -->
+            <PV label="SR_current" pvname="S:SRcurrentAI">
+            <PV label="ID_E"       pvname="ID15:Energy">
+            <!-- <PV label="DCM_energy" pvname="????"> -->
+            <!-- <PV label="" pvname=""> -->
+            <PV label="string1"    pvname="15iddLAX:string1">
+          </dir>										<!-- metadata:NXcollection -->
+        </dir>											<!-- flyScan:NXdata -->
+
+      </dir>											<!-- entry:NXentry -->
+    </dir>												<!-- file -->
+  </NX_structure>
+</saveFlyData>
+
+
+<!--
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
+-->

@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 
 <saveFlyData version="1">
-  <triggerPV pvname="15iddLAX:USAXSfly:Start" start_value="1" start_text="Busy" done_value="0" done_text="Done" />
+  <!-- <triggerPV pvname="15iddLAX:USAXSfly:Start" start_value="1" start_text="Busy" done_value="0" done_text="Done" /> -->
+  <triggerPV pvname="15iddLAX:bit2" start_value="1" start_text="ON" done_value="0" done_text="OFF" />
 
   <NX_structure>
     <dir name="/" class="file">							<!-- file -->
@@ -17,8 +18,8 @@
           <PV label="mca1" pvname="15iddLAX:3820:mca1" />		<!-- counts of 50 MHz clock -->
           <PV label="mca2" pvname="15iddLAX:3820:mca2">
             <attribute name="signal" value="1" />
-            <!-- <attribute name="axes" value="??? label here ???" /> -->
-            <!-- <attribute name="units" value="???" /> -->
+            <attribute name="axes" value="AR" />
+            <attribute name="units" value="counts" />
           </PV>
           <PV label="mca3" pvname="15iddLAX:3820:mca3" />
           <PV label="mca4" pvname="15iddLAX:3820:mca4" />
@@ -32,10 +33,10 @@
             <!-- <PV label="DCM_energy" pvname="????" /> -->
             <!-- <PV label="" pvname="" /> -->
             <PV label="SPEC_macro_file"    pvname="15iddLAX:string19" />
-            <PV label="mca1_name" pvname="15iddLAX:3820:scaler1.NM1">
-            <PV label="mca2_name" pvname="15iddLAX:3820:scaler1.NM2">
-            <PV label="mca3_name" pvname="15iddLAX:3820:scaler1.NM3">
-            <PV label="mca4_name" pvname="15iddLAX:3820:scaler1.NM4">
+            <PV label="mca1_name" pvname="15iddLAX:3820:scaler1.NM1" />
+            <PV label="mca2_name" pvname="15iddLAX:3820:scaler1.NM2" />
+            <PV label="mca3_name" pvname="15iddLAX:3820:scaler1.NM3" />
+            <PV label="mca4_name" pvname="15iddLAX:3820:scaler1.NM4" />
           </dir>										<!-- metadata:NXcollection -->
         </dir>											<!-- flyScan:NXdata -->
 

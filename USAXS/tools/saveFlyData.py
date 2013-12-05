@@ -130,9 +130,10 @@ class SaveFlyScan(object):
         '''write all desired data to the file and exit this code'''
         t = datetime.datetime.now()
         timestamp = ' '.join((t.strftime("%Y-%m-%d"), t.strftime("%H:%M:%S")))
-        eznx.addAttributes(self.structure['/'].hdf5_group, timestamp = timestamp)
+        f = dir_registry['/'].hdf5_group
+        eznx.addAttributes(f, timestamp = timestamp)
 
-        for pv_spec in self.pvdb.values():
+        for pv_spec in pv_registry.values():
             value = pv_spec.pv.get()
             if not isinstance(value, numpy.ndarray):
                 value = [value]
@@ -146,7 +147,7 @@ class SaveFlyScan(object):
             self._attachEpicsAttributes(ds, pv_spec.pv)
             eznx.addAttributes(ds, **pv_spec.attrib)
         
-        self.structure['/'].hdf5_group.close()    # be CERTAIN to close the file
+        f.close()    # be CERTAIN to close the file
     
     def _read_configuration(self):
         # first, validate configuration file against an XML Schema
@@ -269,6 +270,6 @@ if __name__ == '__main__':
 '''
 alias EPD '/APSshare/epd/rh6-x86_64/bin/python '
 cd /home/beams/S15USAXS/Documents/eclipse/USAXS/tools
-EPD ./saveFlyData.py /tmp/test.h5 ./saveFlyData.xml
+EPD ./saveFlyData.py ./test.h5 ./saveFlyData.xml
 EPD ~/bin/h5toText.py /tmp/test.h5
 '''

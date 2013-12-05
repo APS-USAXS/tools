@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 
 <saveFlyData version="1">
-  <!-- <triggerPV pvname="15iddLAX:USAXSfly:Start" start_value="1" start_text="Busy" done_value="0" done_text="Done" /> -->
-  <triggerPV pvname="15iddLAX:bit2" start_value="1" start_text="ON" done_value="0" done_text="OFF" />
+  <triggerPV pvname="15iddLAX:USAXSfly:Start" start_value="1" start_text="Busy" done_value="0" done_text="Done" />
+  <!-- <triggerPV pvname="15iddLAX:bit2" start_value="1" start_text="ON" done_value="0" done_text="OFF" /> -->
 
   <NX_structure>
     <dir name="/" class="file">							<!-- file -->

@@ -197,7 +197,8 @@ def main():
         raise RuntimeError, msg
     
     dataFile = sys.argv[1]
-    if not os.path.exists(os.path.split(dataFile)[0]):
+    path = os.path.split(dataFile)[0]
+    if len(path) > 0 and not os.path.exists(path):
         msg = 'directory for that file does not exist: ' + dataFile
         raise RuntimeError, msg
     
@@ -216,13 +217,11 @@ def main():
 
 
 if __name__ == '__main__':
-    if os.environ.get('HOST', '') == 'usaxscontrols2.cars.aps.anl.gov':
-        # production system
-        main()
-    else:
-        # code development
-        sfs = SaveFlyScan('/tmp/test.h5', XML_CONFIGURATION_FILE)
-        sfs.waitForData()
+    main()	# production system
+
+    # code development
+#    sfs = SaveFlyScan('/tmp/test.h5', XML_CONFIGURATION_FILE)
+#    sfs.waitForData()
 
 
 ########### SVN repository information ###################

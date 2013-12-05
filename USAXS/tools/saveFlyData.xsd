@@ -22,6 +22,7 @@
       <xs:attribute name="pvname" use="required" type="xs:NMTOKEN"/>
       <xs:attribute name="start_text" use="required" type="xs:NCName"/>
       <xs:attribute name="start_value" use="required" type="xs:integer"/>
+      <xs:attribute name="poll_time_s" use="optional" type="xs:decimal" default="0.1"/>
     </xs:complexType>
   </xs:element>
 
@@ -41,6 +42,7 @@
       </xs:choice>
       <xs:attribute name="class" use="required" type="xs:NCName"/>
       <xs:attribute name="name" use="required"/>
+      <xs:anyAttribute processContents="skip"/>
     </xs:complexType>
   </xs:element>
 
@@ -51,6 +53,7 @@
       </xs:sequence>
       <xs:attribute name="label" use="required" type="xs:NCName"/>
       <xs:attribute name="pvname" use="required" type="xs:NMTOKEN"/>
+      <xs:anyAttribute processContents="skip"/>
     </xs:complexType>
   </xs:element>
 

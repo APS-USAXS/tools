@@ -20,8 +20,11 @@ import eznx		# NeXus r/w support using h5py
 
 
 XML_CONFIGURATION_FILE = 'saveFlyData.xml'
+XSD_SCHEMA_FILE = 'saveFlyData.xsd'
 
 
+# TODO: refactor to identify parents and children
+dir_registry = {}
 class NX_structure(object):
     
     def __init__(self, parent_path, xml_element_node):
@@ -35,6 +38,8 @@ class NX_structure(object):
         self.hdf5_path = parent_path + self.name
 
 
+# TODO: refactor to identify parents
+pv_registry = {}
 class PV_specification(object):
     
     def __init__(self, xml_element_node):
@@ -46,6 +51,10 @@ class PV_specification(object):
         self.attrib = {}
         for node in xml_element_node.xpath('attribute'):
             self.attrib[node.attrib['name']] = node.attrib['value']
+    
+    def parentDir(self):
+        # TODO: implement
+        raise NotImplementedError
 
 
 class SaveFlyScan(object):
@@ -53,10 +62,12 @@ class SaveFlyScan(object):
     trigger_pv = '15iddLAX:USAXSfly:Start'
     trigger_accepted_values = (0, 'Done')
     trigger_poll_interval_s = 0.1
+    creator_version = 'unknown'
     
     def __init__(self, hdf5_file, config_file = None):
         self.hdf5_file_name = hdf5_file
-        self.config_file = config_file or XML_CONFIGURATION_FILE
+        path = self._get_support_code_dir()
+        self.config_file = config_file or os.path.join(path, XML_CONFIGURATION_FILE)
         self._read_configuration()
 
         self._createFile()
@@ -64,6 +75,7 @@ class SaveFlyScan(object):
     def waitForData(self):
         '''wait until the data is ready, then save it'''
         trigger = epics.PV(self.trigger_pv)
+        # TODO: convert this polling loop to a PV monitor callback
         while trigger.get() not in self.trigger_accepted_values:
             time.sleep(self.trigger_poll_interval_s)
         self.saveFile()
@@ -89,13 +101,33 @@ class SaveFlyScan(object):
         self.structure['/'].hdf5_group.close()    # be CERTAIN to close the file
     
     def _read_configuration(self):
+        # first, validate configuration file against an XML Schema
+        path = self._get_support_code_dir()
+        xml_schema_file = os.path.join(path, XSD_SCHEMA_FILE)
+        xmlschema_doc = lxml_etree.parse(xml_schema_file)
+        xmlschema = lxml_etree.XMLSchema(xmlschema_doc)
+
         config = lxml_etree.parse(self.config_file)
+        if not xmlschema.validate(config):
+            # XML file is not valid, let lxml report what is wrong as an exception
+            #log = xmlschema.error_log    # access more details
+            xmlschema.assertValid(config)   # basic exception report
+
+        # safe to proceed parsing the file
         root = config.getroot()
         if root.tag != "saveFlyData":
             raise RuntimeError, "XML file not valid for configuring saveFlyData"
+        
+        self.creator_version = root.attrib['version']
+        
         node = root.xpath('/saveFlyData/triggerPV')[0]
         self.trigger_pv = node.attrib['pvname']
-        self.trigger_accepted_values = (int(node.attrib['done_value']), node.attrib['done_text'])
+        acceptable_values = (int(node.attrib['done_value']), node.attrib['done_text'])
+        self.trigger_accepted_values = acceptable_values
+        
+        # TODO: figure how to pull default value from XML Schema
+        default_value = self.trigger_poll_interval_s
+        self.trigger_poll_interval_s = node.get('poll_time_s', default_value)
         
         nx_structure = root.xpath('/saveFlyData/NX_structure')[0]
         self.structure = {}
@@ -125,6 +157,9 @@ class SaveFlyScan(object):
     
     def _get_hdf5_parent_object(self, xml_node):
         return self.structure[self._get_parent_path(xml_node)].hdf5_group
+    
+    def _get_support_code_dir(self):
+        return os.path.split(os.path.abspath(__file__))[0]
   
     def _createFile(self):
         '''create the HDF5 file and structure'''
@@ -137,6 +172,7 @@ class SaveFlyScan(object):
                   instrument = "APS USAXS at 15ID-D",
                   scan_mode = 'USAXS fly scan',
                   creator = '$Id$',
+                  creator_version = self.creator_version,
                   HDF5_Version = h5py.version.hdf5_version,
                   h5py_version = h5py.version.version,
                 )
@@ -180,11 +216,13 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-    
-    # code development
-#     sfs = SaveFlyScan('/tmp/test.h5', XML_CONFIGURATION_FILE)
-#     sfs.waitForData()
+    if os.environ.get('HOST', '') == 'usaxscontrols2.cars.aps.anl.gov':
+        # production system
+        main()
+    else:
+        # code development
+        sfs = SaveFlyScan('/tmp/test.h5', XML_CONFIGURATION_FILE)
+        sfs.waitForData()
 
 
 ########### SVN repository information ###################

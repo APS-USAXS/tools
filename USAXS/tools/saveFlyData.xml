@@ -11,18 +11,19 @@
         <dir name="flyScan" class="NXdata">				<!-- flyScan:NXdata -->
 
           <!-- positioners -->
-          <PV label="AR" pvname="15iddLAX:traj1:M1Traj" length_limit="AR_count" />
+          <PV label="AR" pvname="15iddLAX:traj1:M1Traj" length_limit="mca_count" />
           <PV label="AR_count" pvname="15iddLAX:traj1:Nelements" />
+          <PV label="AR_pulses" pvname="15iddLAX:traj1:Npulses" />
 
           <!-- detectors -->
-          <PV label="mca1" pvname="15iddLAX:3820:mca1" length_limit="AR_count" />		<!-- counts of 50 MHz clock -->
-          <PV label="mca2" pvname="15iddLAX:3820:mca2" length_limit="AR_count">
+          <PV label="mca1" pvname="15iddLAX:3820:mca1" length_limit="mca_count" />		<!-- counts of 50 MHz clock -->
+          <PV label="mca2" pvname="15iddLAX:3820:mca2" length_limit="mca_count">
             <attribute name="signal" value="1" />
             <attribute name="axes" value="AR" />
             <attribute name="units" value="counts" />
           </PV>
-          <PV label="mca3" pvname="15iddLAX:3820:mca3" length_limit="AR_count" />
-          <PV label="mca4" pvname="15iddLAX:3820:mca4" length_limit="AR_count" />
+          <PV label="mca3" pvname="15iddLAX:3820:mca3" length_limit="mca_count" />
+          <PV label="mca4" pvname="15iddLAX:3820:mca4" length_limit="mca_count" />
           <PV label="mca_count" pvname="15iddLAX:3820:CurrentChannel" />
           <PV label="mca_count_max" pvname="15iddLAX:3820:MaxChannels" />
 

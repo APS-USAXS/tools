@@ -191,6 +191,10 @@ class SaveFlyScan(object):
   
     def _prepare_to_acquire(self):
         '''connect to EPICS and create the HDF5 file and structure'''
+        # connect to EPICS PVs
+        for pv_spec in pv_registry.values():
+            pv_spec.pv = epics.PV(pv_spec.pvname)
+
         # create the file
         for key, xture in sorted(dir_registry.items()):
             if key == '/':
@@ -210,10 +214,6 @@ class SaveFlyScan(object):
             else:
                 hdf5_parent = xture.dir_parent.hdf5_group
                 xture.hdf5_group = eznx.makeGroup(hdf5_parent, xture.name, xture.nx_class)
-
-        # connect to EPICS PVs
-        for pv_spec in pv_registry.values():
-            pv_spec.pv = epics.PV(pv_spec.pvname)
 
     def _attachEpicsAttributes(self, node, pv):
         '''attach common attributes from EPICS to the HDF5 tree node'''
@@ -251,11 +251,11 @@ def main():
 
 
 if __name__ == '__main__':
-#     main()	# production system
+    main()	# production system
 
     # code development
-    sfs = SaveFlyScan('test.h5', XML_CONFIGURATION_FILE)
-    sfs.waitForData()
+#     sfs = SaveFlyScan('test.h5', XML_CONFIGURATION_FILE)
+#     sfs.waitForData()
 
 
 ########### SVN repository information ###################

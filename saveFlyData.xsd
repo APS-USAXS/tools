@@ -53,6 +53,7 @@
       </xs:sequence>
       <xs:attribute name="label" use="required" type="xs:NCName"/>
       <xs:attribute name="pvname" use="required" type="xs:NMTOKEN"/>
+      <xs:attribute name="length_limit" use="optional" type="xs:NCName"/>
       <xs:anyAttribute processContents="skip"/>
     </xs:complexType>
   </xs:element>

@@ -11,19 +11,29 @@
         <dir name="flyScan" class="NXdata">				<!-- flyScan:NXdata -->
 
           <!-- positioners -->
-          <PV label="AR" pvname="15iddLAX:traj1:M1Traj" length_limit="AR_count" />
+          <PV label="AR_waypoints" pvname="15iddLAX:traj1:M1Traj" length_limit="AR_count" />
           <PV label="AR_count" pvname="15iddLAX:traj1:Nelements" />
           <PV label="AR_pulses" pvname="15iddLAX:traj1:Npulses" />
 
           <!-- detectors -->
-          <PV label="mca1" pvname="15iddLAX:3820:mca1" length_limit="AR_count" />		<!-- counts of 50 MHz clock -->
-          <PV label="mca2" pvname="15iddLAX:3820:mca2" length_limit="AR_count" />
-          <PV label="mca3" pvname="15iddLAX:3820:mca3" length_limit="AR_count">
+          <PV label="mca1" pvname="15iddLAX:3820:mca1" length_limit="AR_pulses" />		<!-- counts of 50 MHz clock -->
+          <PV label="mca2" pvname="15iddLAX:3820:mca2" length_limit="AR_pulses" />
+          <PV label="mca3" pvname="15iddLAX:3820:mca3" length_limit="AR_pulses">
             <attribute name="signal" value="1" />
-            <attribute name="axes" value="AR" />
+            <!-- <attribute name="axes" value="AR" /> -->
+	    <!--
+	    The proper ordinate is obtained via the MAC channel index:
+	    AR[i] = AR_start + AR_increment * i
+	    
+	    TODO: What PVs contain AR_start and AR_increment?
+	    AR_start ?= AR_waypoints[0]
+	    AR_increment ?= 0.0002 (as the Aerotech is configured)
+	    
+	    Can the AR array be made available in EPICS?
+	    -->
             <attribute name="units" value="counts" />
           </PV>
-          <PV label="mca4" pvname="15iddLAX:3820:mca4" length_limit="AR_count" />
+          <PV label="mca4" pvname="15iddLAX:3820:mca4" length_limit="AR_pulses" />
           <PV label="mca_channels" pvname="15iddLAX:3820:CurrentChannel" />
           <PV label="mca_channel_max" pvname="15iddLAX:3820:MaxChannels" />
 

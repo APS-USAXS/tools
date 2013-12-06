@@ -1,23 +1,61 @@
 <?xml version="1.0"?>
 
+
+<!-- 
+
+You MUST set EPICS_CA_MAX_ARRAY_BYTES to >= 1280000 to read the maximum
+number of data points the MCS can be told to acquire (15iddLAX:3820:MaxChannels).
+
+This is programmed into the Python code that reads this file.
+ -->
+ 
+ 
 <saveFlyData version="1">
   <triggerPV pvname="15iddLAX:USAXSfly:Start" start_value="1" start_text="Busy" done_value="0" done_text="Done" />
-  <!-- <triggerPV pvname="15iddLAX:bit2" start_value="1" start_text="ON" done_value="0" done_text="OFF" /> -->
 
   <NX_structure>
-    <dir name="/" class="file">							<!-- file -->
-      <dir name="entry" class="NXentry">				<!-- entry:NXentry -->
+    <dir name="/" class="file">			       <!-- file -->
+      <dir name="entry" class="NXentry">	       <!-- entry:NXentry -->
+        <PV label="title"     pvname="15iddLAX:USAXS:sampleTitle" />
+        <PV label="experiment_identifier"     pvname="15iddLAX:GUPNumber" />
+        <PV label="run_cycle"     pvname="15iddLAX:RunCycle" />
 
-        <dir name="flyScan" class="NXdata">				<!-- flyScan:NXdata -->
+        <dir name="instrument"      class="NXinstrument">
+	  <field name="name"        value="USAXS" />		<!-- not in the XML Schema YET -->
+ 	  <dir name="monochromator" class="NXmonochromator">
+ 	    <PV label="DCM_energy"	   pvname="15IDA:BraggERdbkAO" />
+ 	    <PV label="DCM_wavelength"     pvname="15IDA:BraggLambdaRdbkAO" />
+	  </dir>
+	</dir>
+
+        <dir name="user"       class="NXuser">
+          <PV label="name"     pvname="15iddLAX:UserName" />	<!-- re-uses label="name", MUST ALLOW -->
+	</dir>
+
+        <dir name="sample"     class="NXsample">
+          <PV label="name"     pvname="15iddLAX:USAXS:sampleTitle" />
+	</dir>
+
+
+
+        <dir name="flyScan" class="NXdata">
 
           <!-- positioners -->
-          <PV label="AR_waypoints" pvname="15iddLAX:traj1:M1Traj" length_limit="AR_count" />
-          <PV label="AR_count" pvname="15iddLAX:traj1:Nelements" />
-          <PV label="AR_pulses" pvname="15iddLAX:traj1:Npulses" />
+          <PV label="AR_waypoints" pvname="15iddLAX:traj1:M1Traj"    length_limit="AR_count" />
+          <PV label="AR_count"     pvname="15iddLAX:traj1:Nelements" />
+          <PV label="AR_pulses"    pvname="15iddLAX:traj1:Npulses" />
+          <PV label="AR_start"     pvname="15iddLAX:float11" />  <!-- pushed here by SPEC usaxs_flyscan.txt macro -->
+          <PV label="AR_increment" pvname="15iddLAX:USAXS:MinStep" />
 
           <!-- detectors -->
-          <PV label="mca1" pvname="15iddLAX:3820:mca1" length_limit="AR_pulses" />		<!-- counts of 50 MHz clock -->
-          <PV label="mca2" pvname="15iddLAX:3820:mca2" length_limit="AR_pulses" />
+          <PV label="mca1" pvname="15iddLAX:3820:mca1" length_limit="AR_pulses">		<!-- counts of 50 MHz clock -->
+            <attribute name="units"      value="pulses" />
+            <attribute name="USAXS_name" value="clock_pulses" />
+          </PV>
+          <PV label="mca2" pvname="15iddLAX:3820:mca2" length_limit="AR_pulses">
+            <attribute name="units"      value="counts" />
+            <attribute name="USAXS_name" value="I0" />
+          </PV>
           <PV label="mca3" pvname="15iddLAX:3820:mca3" length_limit="AR_pulses">
             <attribute name="signal" value="1" />
             <!-- <attribute name="axes" value="AR" /> -->
@@ -25,71 +63,55 @@
 	    The proper ordinate is obtained via the MAC channel index:
 	    AR[i] = AR_start + AR_increment * i
 	    
-	    TODO: What PVs contain AR_start and AR_increment?
-	    AR_start ?= AR_waypoints[0]
-	    AR_increment ?= 0.0002 (as the Aerotech is configured)
-	    
 	    Can the AR array be made available in EPICS?
+
 	    -->
-            <attribute name="units" value="counts" />
+            <attribute name="units"      value="counts" />
+            <attribute name="USAXS_name" value="upd" />
           </PV>
-          <PV label="mca4" pvname="15iddLAX:3820:mca4" length_limit="AR_pulses" />
-          <PV label="mca_channels" pvname="15iddLAX:3820:CurrentChannel" />
+          <PV label="mca4" pvname="15iddLAX:3820:mca4" length_limit="AR_pulses">
+            <attribute name="units"      value="counts" />
+            <attribute name="USAXS_name" value="I00" />
+          </PV>
+          <PV label="mca_channels"    pvname="15iddLAX:3820:CurrentChannel" />
           <PV label="mca_channel_max" pvname="15iddLAX:3820:MaxChannels" />
+ 	  <PV label="mca1_name"       pvname="15iddLAX:3820:scaler1.NM1" />
+ 	  <PV label="mca2_name"       pvname="15iddLAX:3820:scaler1.NM2" />
+ 	  <PV label="mca3_name"       pvname="15iddLAX:3820:scaler1.NM3" />
+ 	  <PV label="mca4_name"       pvname="15iddLAX:3820:scaler1.NM4" />
 
-          <!-- metadata -->
-          <dir name="metadata" class="NXcollection">	<!-- metadata:NXcollection -->
-            <PV label="SR_current" pvname="S:SRcurrentAI" />
-            <PV label="ID_E"       pvname="ID15:Energy" />
-            <!-- <PV label="DCM_energy" pvname="????" /> -->
-            <!-- <PV label="" pvname="" /> -->
-            <PV label="SPEC_macro_file"    pvname="15iddLAX:string19" />
-            <PV label="mca1_name" pvname="15iddLAX:3820:scaler1.NM1" />
-            <PV label="mca2_name" pvname="15iddLAX:3820:scaler1.NM2" />
-            <PV label="mca3_name" pvname="15iddLAX:3820:scaler1.NM3" />
-            <PV label="mca4_name" pvname="15iddLAX:3820:scaler1.NM4" />
-          </dir>										<!-- metadata:NXcollection -->
-        </dir>											<!-- flyScan:NXdata -->
+          <PV label="time_total" pvname="15iddLAX:traj1:ElapsedTime" />
+          <PV label="time_elapsed" pvname="15iddLAX:traj1:Time" />
 
-      </dir>											<!-- entry:NXentry -->
-    </dir>												<!-- file -->
+
+        </dir>		
+
+
+ 	<!-- metadata -->
+ 	<dir name="metadata" class="NXcollection">    <!-- metadata:NXcollection -->
+ 	  <PV label="SR_current"	 pvname="S:SRcurrentAI" />
+ 	  <PV label="ID_E"		 pvname="ID15:Energy" />
+ 	  <PV label="DCM_energy"	 pvname="15IDA:BraggERdbkAO" />
+ 	  <PV label="DCM_wavelength"	 pvname="15IDA:BraggLambdaRdbkAO" />
+ 	  <PV label="SPEC_macro_file"	 pvname="15iddLAX:string19" />
+ 	  <PV label="SPEC_data_file"	 pvname="15iddLAX:USAXS:specFile" />
+ 	  <PV label="SPEC_data_dir"	 pvname="15iddLAX:USAXS:userDir" />
+ 	  <PV label="analyzer_distance"  pvname="15iddLAX:USAXS:SAD" />
+ 	  <PV label="detector_distance"  pvname="15iddLAX:USAXS:SDD" />
+ 	  <PV label="UATerm"		 pvname="15iddLAX:USAXS:UATerm" />
+ 	  <PV label="MR_center" 	 pvname="15iddLAX:USAXS:MRcenter" />
+ 	  <PV label="MSR_center"	 pvname="15iddLAX:USAXS:MSRcenter" />
+ 	  <PV label="AR_center" 	 pvname="15iddLAX:USAXS:ARcenter" />
+ 	  <PV label="ASR_center"	 pvname="15iddLAX:USAXS:ASRcenter" />
+	  <!-- need to document the slit positions -->
+ 	</dir>
+
+      </dir>	     <!-- entry:NXentry -->
+    </dir>	     <!-- file -->
   </NX_structure>
 </saveFlyData>
 
 
-<!-- 
-
- Here are the PVs you need to write to:
-
-15iddLAX:traj1:M1Traj
-    the array of AR positions
-15iddLAX:traj1:Nelements
-    the number of AR positions written
-15iddLAX:USAXSfly:Start
-    write the number 1, or the string "Busy", to start the fly scan
-    when the scan is over, this PV will be reset to the number 0  (the string "Done")
-
-
-Here are the PVs you need to read after the scan is over:
-
-15iddLAX:3820:CurrentChannel
-    number of MCS data points actually acquired
-15iddLAX:3820:mca1.VAL
-    array of counts of 50 MHz clock
-15iddLAX:3820:mca2.VAL
-15iddLAX:3820:mca3.VAL
-15iddLAX:3820:mca4.VAL
-    arrays of other MCS data.  Currently, you have to guess which channel contains which data.
-    Eventually, you should be able to read the data descriptions from the following PVs:
-15iddLAX:3820:scaler1.NM1
-15iddLAX:3820:scaler1.NM2
-15iddLAX:3820:scaler1.NM3
-15iddLAX:3820:scaler1.NM4
-
-You will need to set EPICS_CA_MAX_ARRAY_BYTES to >= 1280000 to read the maximum
-number of data points the MCS can be told to acquire (15iddLAX:3820:MaxChannels).
-
- -->
 
 <!--
 ########### SVN repository information ###################

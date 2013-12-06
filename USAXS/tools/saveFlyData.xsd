@@ -37,6 +37,7 @@
   <xs:element name="dir">
     <xs:complexType>
       <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="attribute" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element ref="dir"/>
         <xs:element ref="PV"/>
       </xs:choice>
@@ -49,7 +50,7 @@
   <xs:element name="PV">
     <xs:complexType>
       <xs:sequence>
-        <xs:element minOccurs="0" maxOccurs="unbounded" ref="attribute"/>
+        <xs:element ref="attribute" minOccurs="0" maxOccurs="unbounded"/>
       </xs:sequence>
       <xs:attribute name="label" use="required" type="xs:NCName"/>
       <xs:attribute name="pvname" use="required" type="xs:NMTOKEN"/>

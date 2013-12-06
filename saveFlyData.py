@@ -44,6 +44,10 @@ class Dir_Specification(object):
         self.name = xml_element_node.attrib['name']
         self.nx_class = xml_element_node.attrib['class']
 
+        self.attrib = {}
+        for node in xml_element_node.xpath('attribute'):
+            self.attrib[node.attrib['name']] = node.attrib['value']
+        
         xml_parent_node = xml_element_node.getparent()
         self.dir_children = {}
         if xml_parent_node.tag == 'dir':
@@ -78,8 +82,9 @@ class PV_Specification(object):
             raise RuntimeError, msg
         self.pvname = xml_element_node.attrib['pvname']
         self.pv = None
-        self.attrib = {}
         self.length_limit = xml_element_node.get('length_limit', None)
+
+        self.attrib = {}
         for node in xml_element_node.xpath('attribute'):
             self.attrib[node.attrib['name']] = node.attrib['value']
         
@@ -115,16 +120,10 @@ class SaveFlyScan(object):
 
     def waitForData(self):
         '''wait until the data is ready, then save it'''
-        self.completion_signal = False
-        self.trigger = epics.PV(self.trigger_pv, callback=self.triggerHandler)
-        while not self.completion_signal:
+        self.trigger = epics.PV(self.trigger_pv)
+        while not self.trigger.get() in self.trigger_accepted_values:
             time.sleep(self.trigger_poll_interval_s)
         self.saveFile()
-    
-    def triggerHandler(self, **keys):
-        '''receive the EPICS CA monitor on the trigger PV and save the data at the right time'''
-        if self.trigger.get() in self.trigger_accepted_values:
-            self.completion_signal = True
 
     def saveFile(self):
         '''write all desired data to the file and exit this code'''
@@ -215,6 +214,7 @@ class SaveFlyScan(object):
             else:
                 hdf5_parent = xture.dir_parent.hdf5_group
                 xture.hdf5_group = eznx.makeGroup(hdf5_parent, xture.name, xture.nx_class)
+        # TODO: save any dir attributes
 
     def _attachEpicsAttributes(self, node, pv):
         '''attach common attributes from EPICS to the HDF5 tree node'''

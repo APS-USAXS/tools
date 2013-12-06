@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-'''save USAXS fly scan data to a NeXus file'''
+'''save EPICS data to a NeXus file'''
 
 
 import datetime
@@ -23,19 +23,51 @@ SVN_ID = '$Id$'
 XML_CONFIGURATION_FILE = 'saveFlyData.xml'
 XSD_SCHEMA_FILE = 'saveFlyData.xsd'
 
-dir_registry = {}       # key: HDF5 absolute path, value: Dir_Specification object
-pv_registry = {}       # key: node/@label, value: PV_Specification object
+group_registry = {}    # key: HDF5 absolute path, value: Group_Specification object
+field_registry = {}    # key: node/@label,        value: Field_Specification object
+pv_registry = {}       # key: node/@label,        value: PV_Specification object
 
 
-def getDirObjectByXmlNode(xml_node):
-    '''locate a Dir_Specification object by matching its xml_node'''
-    for dir_spec_obj in dir_registry.values():
-        if dir_spec_obj.xml_node == xml_node:
-            return dir_spec_obj
+def getGroupObjectByXmlNode(xml_node):
+    '''locate a Group_Specification object by matching its xml_node'''
+    for group_spec_obj in group_registry.values():
+        if group_spec_obj.xml_node == xml_node:
+            return group_spec_obj
     return None
 
 
-class Dir_Specification(object):
+class Field_Specification(object):
+    '''specification of the "field" element in the XML configuration file'''
+    
+    def __init__(self, xml_element_node):
+        self.xml_node = xml_element_node
+        xml_parent_node = xml_element_node.getparent()
+        self.group_parent = getGroupObjectByXmlNode(xml_parent_node)
+        self.name = xml_element_node.attrib['name']
+        self.hdf5_path = self.group_parent.hdf5_path + '/' + self.name
+
+        nodes = xml_element_node.xpath('text')
+        if len(nodes) > 0:
+            self.text = nodes[0].text.strip()
+        else:
+            self.text = ''
+
+        self.attrib = {}
+        for node in xml_element_node.xpath('attribute'):
+            self.attrib[node.attrib['name']] = node.attrib['value']
+
+        field_registry[self.hdf5_path] = self
+    
+    def __str__(self):
+        try:
+            nm = self.hdf5_path
+        except:
+            nm = 'Field_Specification object'
+        return nm
+
+
+class Group_Specification(object):
+    '''specification of the "group" element in the XML configuration file'''
     
     def __init__(self, xml_element_node):
         self.hdf5_path = None
@@ -49,30 +81,31 @@ class Dir_Specification(object):
             self.attrib[node.attrib['name']] = node.attrib['value']
         
         xml_parent_node = xml_element_node.getparent()
-        self.dir_children = {}
-        if xml_parent_node.tag == 'dir':
+        self.group_children = {}
+        if xml_parent_node.tag == 'group':
             # identify our parent
-            self.dir_parent = getDirObjectByXmlNode(xml_parent_node)
+            self.group_parent = getGroupObjectByXmlNode(xml_parent_node)
             # next, find our HDF5 path from our parent
-            path = self.dir_parent.hdf5_path
+            path = self.group_parent.hdf5_path
             if not path.endswith('/'):
                 path += '/'
             self.hdf5_path = path + self.name
             # finally, declare ourself to be a child of that parent
-            self.dir_parent.dir_children[self.hdf5_path] = self
+            self.group_parent.group_children[self.hdf5_path] = self
         elif xml_parent_node.tag == 'NX_structure':
-            self.dir_parent = None
+            self.group_parent = None
             self.hdf5_path = '/'
-        if self.hdf5_path in dir_registry:
+        if self.hdf5_path in group_registry:
             msg = "Cannot create duplicate HDF5 path names: " + self.hdf5_path
             raise RuntimeError, msg
-        dir_registry[self.hdf5_path] = self
+        group_registry[self.hdf5_path] = self
     
     def __str__(self):
-        return self.hdf5_path or 'Dir_Specification object'
+        return self.hdf5_path or 'Group_Specification object'
 
 
 class PV_Specification(object):
+    '''specification of the "PV" element in the XML configuration file'''
     
     def __init__(self, xml_element_node):
         self.xml_node = xml_element_node
@@ -82,7 +115,6 @@ class PV_Specification(object):
             raise RuntimeError, msg
         self.pvname = xml_element_node.attrib['pvname']
         self.pv = None
-        self.length_limit = xml_element_node.get('length_limit', None)
 
         self.attrib = {}
         for node in xml_element_node.xpath('attribute'):
@@ -90,11 +122,18 @@ class PV_Specification(object):
         
         # identify our parent
         xml_parent_node = xml_element_node.getparent()
-        self.dir_parent = getDirObjectByXmlNode(xml_parent_node)
+        self.group_parent = getGroupObjectByXmlNode(xml_parent_node)
+
+        self.length_limit = xml_element_node.get('length_limit', None)
+        if self.length_limit is not None:
+            if not self.length_limit.startswith('/'):
+                # convert local to absolute reference
+                self.length_limit = self.group_parent.hdf5_path + '/' + self.length_limit
+
         # finally, declare ourself to be a child of that parent
-        self.hdf5_path = self.dir_parent.hdf5_path + '/' + self.label
-        self.dir_parent.dir_children[self.hdf5_path] = self
-        pv_registry[self.label] = self
+        self.hdf5_path = self.group_parent.hdf5_path + '/' + self.label
+        self.group_parent.group_children[self.hdf5_path] = self
+        pv_registry[self.hdf5_path] = self
     
     def __str__(self):
         try:
@@ -105,7 +144,8 @@ class PV_Specification(object):
 
 
 class SaveFlyScan(object):
-    '''watch USAXS fly scan, save data to NeXus file after scan is done'''
+    '''watch trigger PV, save data to NeXus file after scan is done'''
+
     trigger_pv = '15iddLAX:USAXSfly:Start'
     trigger_accepted_values = (0, 'Done')
     trigger_poll_interval_s = 0.1
@@ -129,7 +169,7 @@ class SaveFlyScan(object):
         '''write all desired data to the file and exit this code'''
         t = datetime.datetime.now()
         timestamp = ' '.join((t.strftime("%Y-%m-%d"), t.strftime("%H:%M:%S")))
-        f = dir_registry['/'].hdf5_group
+        f = group_registry['/'].hdf5_group
         eznx.addAttributes(f, timestamp = timestamp)
 
         for pv_spec in pv_registry.values():
@@ -141,7 +181,7 @@ class SaveFlyScan(object):
                     length_limit = pv_registry[pv_spec.length_limit].pv.get()
                     if len(value) > length_limit:
                         value = value[:length_limit]
-            hdf5_parent = pv_spec.dir_parent.hdf5_group
+            hdf5_parent = pv_spec.group_parent.hdf5_group
             ds = eznx.makeDataset(hdf5_parent, pv_spec.label, value)
             self._attachEpicsAttributes(ds, pv_spec.pv)
             eznx.addAttributes(ds, **pv_spec.attrib)
@@ -173,15 +213,21 @@ class SaveFlyScan(object):
         acceptable_values = (int(node.attrib['done_value']), node.attrib['done_text'])
         self.trigger_accepted_values = acceptable_values
         
-        # TODO: figure how to pull default value from XML Schema
-        #       <xs:attribute name="poll_time_s" use="optional" type="xs:decimal" default="0.1"/>
-        # use an XPath search to get the node from xmlschema_doc
-        default_value = self.trigger_poll_interval_s
+        # initial default value set in this code
+        # pull default poll_interval_s from XML Schema (XSD) file
+        xsd_root = xmlschema_doc.getroot()
+        xsd_node = xsd_root.xpath("//xs:attribute[@name='poll_time_s']", # name="poll_time_s"
+                              namespaces={'xs': 'http://www.w3.org/2001/XMLSchema'})
+        default_value = float(xsd_node[0].get('default', self.trigger_poll_interval_s))
+        # allow XML configuration to override
         self.trigger_poll_interval_s = node.get('poll_time_s', default_value)
         
         nx_structure = root.xpath('/saveFlyData/NX_structure')[0]
-        for node in nx_structure.xpath('//dir'):
-            Dir_Specification(node)
+        for node in nx_structure.xpath('//group'):
+            Group_Specification(node)
+        
+        for node in nx_structure.xpath('//field'):
+            Field_Specification(node)
         
         for node in nx_structure.xpath('//PV'):
             PV_Specification(node)
@@ -196,14 +242,12 @@ class SaveFlyScan(object):
             pv_spec.pv = epics.PV(pv_spec.pvname)
 
         # create the file
-        for key, xture in sorted(dir_registry.items()):
+        for key, xture in sorted(group_registry.items()):
             if key == '/':
                 # create the file and internal structure
                 f = eznx.makeFile(self.hdf5_file_name,
                   # the following are attributes to the root element of the HDF5 file
                   file_name = self.hdf5_file_name,
-                  instrument = "APS USAXS at 15ID-D",
-                  scan_mode = 'USAXS fly scan',
                   creator = __file__,
                   creator_version = self.creator_version,
                   svn_id = SVN_ID,
@@ -212,9 +256,13 @@ class SaveFlyScan(object):
                 )
                 xture.hdf5_group = f
             else:
-                hdf5_parent = xture.dir_parent.hdf5_group
+                hdf5_parent = xture.group_parent.hdf5_group
                 xture.hdf5_group = eznx.makeGroup(hdf5_parent, xture.name, xture.nx_class)
-        # TODO: save any dir attributes
+            eznx.addAttributes(xture.hdf5_group, **xture.attrib)
+
+        for field in field_registry.values():
+            ds = eznx.makeDataset(field.group_parent.hdf5_group, field.name, [field.text])
+            eznx.addAttributes(ds, **field.attrib)
 
     def _attachEpicsAttributes(self, node, pv):
         '''attach common attributes from EPICS to the HDF5 tree node'''

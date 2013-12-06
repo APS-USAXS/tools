@@ -13,32 +13,39 @@ This is programmed into the Python code that reads this file.
 <saveFlyData version="1">
   <triggerPV pvname="15iddLAX:USAXSfly:Start" start_value="1" start_text="Busy" done_value="0" done_text="Done" />
 
-  <NX_structure>
-    <dir name="/" class="file">			       <!-- file -->
-      <dir name="entry" class="NXentry">	       <!-- entry:NXentry -->
+  <NX_structure>  <!-- http://download.nexusformat.org/doc/html/classes/base_classes/ -->
+    <group name="/" class="file">
+      <attribute name="instrument"      value="APS USAXS at 15ID-D" />
+      <attribute name="scan_mode"       value="USAXS fly scan" />
+
+      <group name="entry" class="NXentry">
         <PV label="title"     pvname="15iddLAX:USAXS:sampleTitle" />
         <PV label="experiment_identifier"     pvname="15iddLAX:GUPNumber" />
         <PV label="run_cycle"     pvname="15iddLAX:RunCycle" />
 
-        <dir name="instrument"      class="NXinstrument">
-	  <field name="name"        value="USAXS" />		<!-- not in the XML Schema YET -->
- 	  <dir name="monochromator" class="NXmonochromator">
- 	    <PV label="DCM_energy"	   pvname="15IDA:BraggERdbkAO" />
- 	    <PV label="DCM_wavelength"     pvname="15IDA:BraggLambdaRdbkAO" />
-	  </dir>
-	</dir>
+		<group name="instrument"      class="NXinstrument">
+		
+		  <field name="name">
+            <attribute name="short_name"      value="USAXS" />
+            <text>APS USAXS at 15ID-D</text>
+		  </field>
+		  <group name="monochromator" class="NXmonochromator">
+		    <PV label="DCM_energy"	   pvname="15IDA:BraggERdbkAO" />
+		    <PV label="DCM_wavelength"     pvname="15IDA:BraggLambdaRdbkAO" />
+		  </group>
+		</group>
 
-        <dir name="user"       class="NXuser">
-          <PV label="name"     pvname="15iddLAX:UserName" />	<!-- re-uses label="name", MUST ALLOW -->
-	</dir>
+        <group name="user"       class="NXuser">
+          <PV label="name"     pvname="15iddLAX:UserName" />
+		</group>
 
-        <dir name="sample"     class="NXsample">
+        <group name="sample"     class="NXsample">
           <PV label="name"     pvname="15iddLAX:USAXS:sampleTitle" />
-	</dir>
+		</group>
 
 
 
-        <dir name="flyScan" class="NXdata">
+        <group name="flyScan" class="NXdata">
 
           <!-- positioners -->
           <PV label="AR_waypoints" pvname="15iddLAX:traj1:M1Traj"    length_limit="AR_count" />
@@ -75,20 +82,20 @@ This is programmed into the Python code that reads this file.
           </PV>
           <PV label="mca_channels"    pvname="15iddLAX:3820:CurrentChannel" />
           <PV label="mca_channel_max" pvname="15iddLAX:3820:MaxChannels" />
- 	  <PV label="mca1_name"       pvname="15iddLAX:3820:scaler1.NM1" />
- 	  <PV label="mca2_name"       pvname="15iddLAX:3820:scaler1.NM2" />
- 	  <PV label="mca3_name"       pvname="15iddLAX:3820:scaler1.NM3" />
- 	  <PV label="mca4_name"       pvname="15iddLAX:3820:scaler1.NM4" />
+		  <PV label="mca1_name"       pvname="15iddLAX:3820:scaler1.NM1" />
+		  <PV label="mca2_name"       pvname="15iddLAX:3820:scaler1.NM2" />
+		  <PV label="mca3_name"       pvname="15iddLAX:3820:scaler1.NM3" />
+		  <PV label="mca4_name"       pvname="15iddLAX:3820:scaler1.NM4" />
 
           <PV label="time_total" pvname="15iddLAX:traj1:ElapsedTime" />
           <PV label="time_elapsed" pvname="15iddLAX:traj1:Time" />
 
 
-        </dir>		
+        </group>		
 
 
  	<!-- metadata -->
- 	<dir name="metadata" class="NXcollection">    <!-- metadata:NXcollection -->
+ 	<group name="metadata" class="NXcollection">    <!-- metadata:NXcollection -->
  	  <PV label="SR_current"	 pvname="S:SRcurrentAI" />
  	  <PV label="ID_E"		 pvname="ID15:Energy" />
  	  <PV label="DCM_energy"	 pvname="15IDA:BraggERdbkAO" />
@@ -103,11 +110,22 @@ This is programmed into the Python code that reads this file.
  	  <PV label="MSR_center"	 pvname="15iddLAX:USAXS:MSRcenter" />
  	  <PV label="AR_center" 	 pvname="15iddLAX:USAXS:ARcenter" />
  	  <PV label="ASR_center"	 pvname="15iddLAX:USAXS:ASRcenter" />
+ 	  <PV label="Mirror_T"	 pvname="15IDA:m8.RBV" />
+ 	  <PV label="Mirror_B"	 pvname="15IDA:m6.RBV" />
+ 	  <PV label="CryoLoad"	 pvname="15IDCryo:CC01:Power" />
+ 	  <PV label="gas_pressure_Ni"	 pvname="15IDA:NITROGEN_PRESSURE" />
+ 	  <PV label="gas_pressure_He"	 pvname="15IDA:HELIUM_PRESSURE" />
+ 	  <PV label="gas_pressure_Ar"	 pvname="15IDA:ARGON_PRESSURE" />
+ 	  <PV label="gas_pressure_user"	 pvname="15IDA:USERGAS_PRESSURE" />
 	  <!-- need to document the slit positions -->
- 	</dir>
+ 	  <PV label="slit_v_center"	 pvname="15iddLAX:m58:c2:m5" />
+ 	  <PV label="slit_h_center"	 pvname="15iddLAX:m58:c2:m6" />
+ 	  <PV label="slit_v_gap"	 pvname="15iddLAX:m58:c2:m7" />
+ 	  <PV label="slit_h_gap"	 pvname="15iddLAX:m58:c2:m8" />
+ 	</group>
 
-      </dir>	     <!-- entry:NXentry -->
-    </dir>	     <!-- file -->
+      </group>	     <!-- entry:NXentry -->
+    </group>	     <!-- file -->
   </NX_structure>
 </saveFlyData>
 

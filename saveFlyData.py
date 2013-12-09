@@ -174,6 +174,8 @@ class SaveFlyScan(object):
 
         for pv_spec in pv_registry.values():
             value = pv_spec.pv.get()
+            if value is [None]:
+              value = 'no data'
             if not isinstance(value, numpy.ndarray):
                 value = [value]
             else:
@@ -182,9 +184,16 @@ class SaveFlyScan(object):
                     if len(value) > length_limit:
                         value = value[:length_limit]
             hdf5_parent = pv_spec.group_parent.hdf5_group
-            ds = eznx.makeDataset(hdf5_parent, pv_spec.label, value)
-            self._attachEpicsAttributes(ds, pv_spec.pv)
-            eznx.addAttributes(ds, **pv_spec.attrib)
+            try:
+ 		ds = eznx.makeDataset(hdf5_parent, pv_spec.label, value)
+ 		self._attachEpicsAttributes(ds, pv_spec.pv)
+ 		eznx.addAttributes(ds, **pv_spec.attrib)
+            except Exception as e:
+ 		print "ERROR: ", pv_spec.label, value
+		print "MESSAGE: ", e
+ 		print "RESOLUTION: writing as error message string"
+		ds = eznx.makeDataset(hdf5_parent, pv_spec.label, [str(e)])
+ 		#raise
         
         f.close()    # be CERTAIN to close the file
     
@@ -266,11 +275,13 @@ class SaveFlyScan(object):
 
     def _attachEpicsAttributes(self, node, pv):
         '''attach common attributes from EPICS to the HDF5 tree node'''
+        pvname = os.path.splitext(pv.pvname)[0]
+        desc = epics.caget(pvname+'.DESC') or ''
         eznx.addAttributes(node, 
           epics_pv = pv.pvname,
           units = pv.units or '',
           epics_type = pv.type,
-          epics_description = epics.caget(pv.pvname+'.DESC'),
+          epics_description = desc,
         )
 
 
@@ -318,6 +329,6 @@ if __name__ == '__main__':
 '''
 alias EPD '/APSshare/epd/rh6-x86_64/bin/python '
 cd /home/beams/S15USAXS/Documents/eclipse/USAXS/tools
-EPD ./saveFlyData.py ./test.h5 ./saveFlyData.xml
-EPD ~/bin/h5toText.py /tmp/test.h5
+/bin/rm test.h5 ; EPD ./saveFlyData.py ./test.h5 ./saveFlyData.xml
+EPD ~/bin/h5toText.py ./test.h5
 '''

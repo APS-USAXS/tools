@@ -41,6 +41,7 @@ This is programmed into the Python code that reads this file.
 
         <group name="sample"     class="NXsample">
           <PV label="name"     pvname="15iddLAX:USAXS:sampleTitle" />
+          <PV label="thickness"     pvname="15iddLAX:USAXS:SampleThickness" />
 		</group>
 
 
@@ -51,7 +52,7 @@ This is programmed into the Python code that reads this file.
           <PV label="AR_waypoints" pvname="15iddLAX:traj1:M1Traj"	length_limit="AR_count" />
           <PV label="AR_count"     pvname="15iddLAX:traj1:Nelements" />
           <PV label="AR_pulses"    pvname="15iddLAX:traj1:Npulses" />
-          <PV label="AR_start"     pvname="15iddLAX:float11" />  <!-- pushed here by SPEC usaxs_flyscan.txt macro -->
+          <PV label="AR_start"     pvname="15iddLAX:USAXS:ARstart" />  <!-- pushed here by SPEC usaxs_flyscan.txt macro -->
           <PV label="AR_increment" pvname="15iddLAX:USAXS:MinStep" />
 
           <PV label="time_total"   pvname="15iddLAX:traj1:ElapsedTime" />
@@ -116,27 +117,20 @@ This is programmed into the Python code that reads this file.
  	  <PV label="DCM_energy"	 pvname="15IDA:BraggERdbkAO" />
  	  <PV label="DCM_wavelength"	 pvname="15IDA:BraggLambdaRdbkAO" />
  	  <PV label="DCM_theta"	 	 pvname="15IDA:m10.RBV" />
- 	  <PV label="DCM_theta_dmov" 	 pvname="15IDA:m10.DMOV" />
  	  <PV label="CryoLoad"		 pvname="15IDCryo:CC01:Power" />
 
 	  <!-- beam line mirrors -->
  	  <PV label="VDM_Stripe"	 pvname="15IDA:m5.RBV" />
- 	  <PV label="VDM_Stripe_dmov"	 pvname="15IDA:m5.DMOV" />
  	  <PV label="VDM_Pitch"		 pvname="15IDA:m6.RBV" />
- 	  <PV label="VDM_Pitch_dmov"	 pvname="15IDA:m6.DMOV" />
  	  <PV label="VDM_Vertical"	 pvname="15IDA:m7.RBV" />
- 	  <PV label="VDM_Vertical_dmov"	 pvname="15IDA:m7.DMOV" />
  	  <PV label="VDM_T"		 pvname="15IDA:m8.RBV" />
- 	  <PV label="VDM_T_dmov"	 pvname="15IDA:m8.DMOV" />
 
  	  <PV label="mir_slitb"		 pvname="15IDA:m28.RBV" />
  	  <PV label="mir_slitl"		 pvname="15IDA:m27.RBV" />
  	  <PV label="mir_slitr"		 pvname="15IDA:m25.RBV" />
  	  <PV label="mir_slitt"		 pvname="15IDA:m26.RBV" />
 
-
 	  <!-- SPEC -->
- 	  <PV label="timestamp"		 pvname="15iddLAX:string18" />
  	  <PV label="SPEC_macro_file"	 pvname="15iddLAX:string19" />
  	  <PV label="SPEC_data_file"	 pvname="15iddLAX:USAXS:specFile" />
  	  <PV label="SPEC_data_dir"	 pvname="15iddLAX:USAXS:userDir" />
@@ -153,6 +147,7 @@ This is programmed into the Python code that reads this file.
  	  <PV label="AR_center" 	 pvname="15iddLAX:USAXS:ARcenter" />
  	  <PV label="ASR_center"	 pvname="15iddLAX:USAXS:ASRcenter" />
  	  <PV label="ARenc_0"            pvname="15iddLAX:USAXS:Q.B" />
+ 	  <PV label="feedback_ON"        pvname="15iddLAX:fbe:omega:on" />
 
 	  <!-- USAXS sample slit positions -->
  	  <PV label="uslit_v_center"	 pvname="15iddLAX:m58:c2:m5" />

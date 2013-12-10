@@ -181,7 +181,7 @@ def main():
         except:
             print 'error converting: ' + filename
     if len(db) > 0:
-        out = eznx.makeFile('output.h5')
+        out = eznx.makeFile('2013-12-09-reduced.h5')
         entry = eznx.makeGroup(out, 'fly_2013_12_09', 'NXentry')
         for key, hdf in sorted(db.items()):
             data = eznx.makeGroup(entry, key, 'NXdata')
@@ -193,7 +193,7 @@ def main():
 if __name__ == '__main__':
     # different development directories
     dir_list = [
-                r'/data/USAXS/struckData',
+                r'/data/USAXS_data/struckData',
                 r'C:\Users\Pete\Desktop\2013-12-09 USAXS fly scan data',
                 r'/home/oxygen/JEMIAN/Documents/2013-12-09 USAXS fly scan data',
                 ]

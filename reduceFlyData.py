@@ -97,6 +97,19 @@ class FlyScanData(object):
         
     def basic_reduction(self):
         '''straight USAXS data reduction to R(ar), no rebinning now'''
+        # FIXME: here are some tools
+        #   list_of_zero_indices = numpy.where(self.raw_clock_pulses == 0)
+        #   set_nonpositive_to_nan = np.select([X > 0], [X], default=np.nan)
+        #   http://stackoverflow.com/questions/5927180/removing-data-from-a-numpy-array
+        
+        # TODO: suggest creating a mask array
+        #  mask any channels with zero clock pulses
+        #  mask any channels within specified time of a range change (0.2 s before to 0.1 after, perhaps)
+        #  the masking time could be range-change dependent (or learned from reqrange v. lurange or ...)
+        #  remove all masked points
+        
+        # TODO: work out a rebinning strategy
+        
         if self.raw_clock_pulses.min() == 0:    # trap and avoid divide-by-zero errors in Numpy
             # TODO: learn how to continue processing past step this in numpy
             raise ArithmeticError, "zero pulse values found"

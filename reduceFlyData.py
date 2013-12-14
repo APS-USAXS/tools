@@ -59,7 +59,7 @@ def get_data(dataset, astype=None):
         return dataset[0].astype(dtype)     # as scalar
 
 
-class FlyScanData(object):
+class UsaxsFlyScanData(object):
     '''contains data from one HDF5 file of fly scan raw data'''
 
     range_adjustment_constant = 500     # why this number?
@@ -110,11 +110,13 @@ class FlyScanData(object):
         
         # TODO: work out a rebinning strategy
         
-        if self.raw_clock_pulses.min() == 0:    # trap and avoid divide-by-zero errors in Numpy
-            # TODO: learn how to continue processing past step this in numpy
-            raise ArithmeticError, "zero pulse values found"
+#         if self.raw_clock_pulses.min() == 0:    # trap and avoid divide-by-zero errors in Numpy
+#             # TODO: learn how to continue processing past step this in numpy
+#             raise ArithmeticError, "zero pulse values found"
 
-        ranges = self.range_adjustment_constant * self.raw_ranges / self.raw_clock_pulses
+        numpy_error_reporting = numpy.geterr()
+        numpy.seterr(divide='ignore', invalid='ignore')     # suppress messages
+        ranges = numpy.divide(self.range_adjustment_constant * self.raw_ranges, self.raw_clock_pulses)
         self.ranges = ranges.astype(int)
         self.time = self.raw_clock_pulses / self.pulse_frequency
 
@@ -129,7 +131,8 @@ class FlyScanData(object):
             self.gain[i] = gains_db[ self.ranges[i] ]
             self.bkg[i] *= bkg_db[ self.ranges[i] ]
 
-        self.ratio = (self.raw_upd - self.bkg) / self.raw_I0 / self.gain
+        self.ratio = numpy.ma.masked_less_equal( (self.raw_upd - self.bkg) / self.raw_I0 / self.gain, 0)
+        numpy.seterr(**numpy_error_reporting)
 
     def close_hdf_file(self):
         '''close the HDF5 data file'''
@@ -187,12 +190,12 @@ def main():
     '''
     db = {}
     for filename in data_files:
-        try:
-            hdf = FlyScanData(filename)
+#         try:
+            hdf = UsaxsFlyScanData(filename)
             key = os.path.splitext(filename)[0]
             db[key] = hdf
-        except:
-            print 'error converting: ' + filename
+#         except:
+#             print 'error converting: ' + filename
     if len(db) > 0:
         out = eznx.makeFile('2013-12-09-reduced.h5')
         entry = eznx.makeGroup(out, 'fly_2013_12_09', 'NXentry')

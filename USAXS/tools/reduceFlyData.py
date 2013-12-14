@@ -100,11 +100,16 @@ class UsaxsFlyScanData(object):
         # let Numpy create the ar array
         self.ar = numpy.linspace(ar_start, last, self.num_points)
         
-    def compute_Q_and_R(self):
+    def compute_Q_and_R(self, centroid = None):
         Qmin = 1e-6
         numpy_error_reporting = numpy.geterr()
         numpy.seterr(invalid='ignore')     # suppress messages
-        self.ar_centroid = numpy.sum(self.ratio*self.ar) / numpy.sum(self.ratio)    # equi-spaced in AR
+        if centroid is not None:
+            self.ar_centroid = centroid
+        else:
+            numerator = numpy.ma.masked_invalid(self.ratio*self.ar)
+            denominator = numpy.ma.masked_array(data=self.ratio, mask=numerator.mask)
+            self.ar_centroid = numpy.sum(numerator) / numpy.sum(denominator)    # equi-spaced in AR
         wavelength = get_data(self.hdf['/entry/instrument/monochromator/DCM_wavelength'])
         d2r = math.pi/180
         q = (4 * math.pi / wavelength) * numpy.sin(d2r*(self.ar_centroid - self.ar))
@@ -114,15 +119,15 @@ class UsaxsFlyScanData(object):
 
     def compute_range_change_mask(self):
         '''
-        mask any channels associated with a range channel
+        mask any channels associated with a range change
         
         (0.2 s before to 0.1 after, perhaps)
-        the masking time could be range-channel dependent (or learned from reqrange v. lurange or ...)
+        the masking time could be range-change dependent (or learned from reqrange v. lurange or ...)
         '''
-        # 1. determine channels with range channel
+        # 1. determine channels with range change
         # 2. compute mask
         # 3. return the mask
-        time_before = 0.2       # for starters, independent of range or range-channel
+        time_before = 0.2       # for starters, independent of range or range-change
         time_after = 0.3        # these values chosen by looking at 2013-12-09 data
         abs_time = numpy.cumsum(self.time)
 
@@ -130,11 +135,11 @@ class UsaxsFlyScanData(object):
         # Changes occur when self.ranges[i] != shifted[i]
         old_range = numpy.insert(self.ranges, 0, -1)
         new_range = numpy.append(self.ranges, -2)
-        lu_range_channels = numpy.nonzero(new_range - old_range)[0][1:-1]
+        lu_range_change_channels = numpy.nonzero(new_range - old_range)[0][1:-1]
 
         data_ok = numpy.ma.make_mask(self.ranges + 1) # initial mask all true
         size = abs_time.size
-        for channel in lu_range_channels:
+        for channel in lu_range_change_channels:
             data_ok[channel] = False
             t0 = abs_time[channel]
             t1 = t0 - time_before

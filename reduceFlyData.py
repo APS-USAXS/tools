@@ -41,6 +41,7 @@ data_files = '''
 
 import os
 import sys
+import math
 import numpy
 import h5py
 import eznx
@@ -74,7 +75,11 @@ class UsaxsFlyScanData(object):
         self.read_raw_data()
         self.compute_ar()
         self.basic_reduction()
+        self.compute_Q_and_R()
         #self.hdf.close()        # let the caller close the file
+        
+    def __str__(self):
+        return self.hdf_filename
         
     def read_raw_data(self):
         nxdata = self.hdf['/entry/flyScan']
@@ -95,6 +100,68 @@ class UsaxsFlyScanData(object):
         # let Numpy create the ar array
         self.ar = numpy.linspace(ar_start, last, self.num_points)
         
+    def compute_Q_and_R(self):
+        Qmin = 1e-6
+        numpy_error_reporting = numpy.geterr()
+        numpy.seterr(invalid='ignore')     # suppress messages
+        self.ar_centroid = numpy.sum(self.ratio*self.ar) / numpy.sum(self.ratio)    # equi-spaced in AR
+        wavelength = get_data(self.hdf['/entry/instrument/monochromator/DCM_wavelength'])
+        d2r = math.pi/180
+        q = (4 * math.pi / wavelength) * numpy.sin(d2r*(self.ar_centroid - self.ar))
+        self.Q = numpy.ma.masked_less_equal( q, Qmin)
+        self.R = numpy.ma.masked_array(data=self.ratio, mask=self.Q.mask, copy=True)
+        numpy.seterr(**numpy_error_reporting)
+
+    def compute_range_change_mask(self):
+        '''
+        mask any channels associated with a range channel
+        
+        (0.2 s before to 0.1 after, perhaps)
+        the masking time could be range-channel dependent (or learned from reqrange v. lurange or ...)
+        '''
+        # 1. determine channels with range channel
+        # 2. compute mask
+        # 3. return the mask
+        time_before = 0.2       # for starters, independent of range or range-channel
+        time_after = 0.3        # these values chosen by looking at 2013-12-09 data
+        abs_time = numpy.cumsum(self.time)
+
+        # Determine range changes by difference method
+        # Changes occur when self.ranges[i] != shifted[i]
+        old_range = numpy.insert(self.ranges, 0, -1)
+        new_range = numpy.append(self.ranges, -2)
+        lu_range_channels = numpy.nonzero(new_range - old_range)[0][1:-1]
+
+        data_ok = numpy.ma.make_mask(self.ranges + 1) # initial mask all true
+        size = abs_time.size
+        for channel in lu_range_channels:
+            data_ok[channel] = False
+            t0 = abs_time[channel]
+            t1 = t0 - time_before
+            t2 = t0 + time_after
+            
+            # mask some channels just before the range change
+            ch_1 = channel - 1
+            while ch_1 > 0:
+                if not data_ok[ch_1]:
+                    break       # previously masked, no need to continue
+                data_ok[ch_1] = False
+                if abs_time[ch_1] < t1:
+                    break       # end of masking range
+                ch_1 -= 1
+            
+            # mask some channels just after the range change
+            ch_n = channel + 1
+            while ch_n < size:
+                if not data_ok[ch_n]:
+                    break       # previously masked, no need to continue
+                data_ok[ch_n] = False
+                if abs_time[ch_n] > t2:
+                    break       # end of masking range
+                ch_n += 1
+        
+        return data_ok
+        
     def basic_reduction(self):
         '''straight USAXS data reduction to R(ar), no rebinning now'''
         # FIXME: here are some tools
@@ -102,23 +169,15 @@ class UsaxsFlyScanData(object):
         #   set_nonpositive_to_nan = np.select([X > 0], [X], default=np.nan)
         #   http://stackoverflow.com/questions/5927180/removing-data-from-a-numpy-array
         
-        # TODO: suggest creating a mask array
-        #  mask any channels with zero clock pulses
-        #  mask any channels within specified time of a range change (0.2 s before to 0.1 after, perhaps)
-        #  the masking time could be range-change dependent (or learned from reqrange v. lurange or ...)
-        #  remove all masked points
-        
         # TODO: work out a rebinning strategy
         
-#         if self.raw_clock_pulses.min() == 0:    # trap and avoid divide-by-zero errors in Numpy
-#             # TODO: learn how to continue processing past step this in numpy
-#             raise ArithmeticError, "zero pulse values found"
-
         numpy_error_reporting = numpy.geterr()
         numpy.seterr(divide='ignore', invalid='ignore')     # suppress messages
         ranges = numpy.divide(self.range_adjustment_constant * self.raw_ranges, self.raw_clock_pulses)
         self.ranges = ranges.astype(int)
         self.time = self.raw_clock_pulses / self.pulse_frequency
+        
+        self.range_change_mask = self.compute_range_change_mask()
 
         # get the table of amplifier gains and measured backgrounds
         meta = self.hdf['/entry/metadata']
@@ -131,7 +190,9 @@ class UsaxsFlyScanData(object):
             self.gain[i] = gains_db[ self.ranges[i] ]
             self.bkg[i] *= bkg_db[ self.ranges[i] ]
 
-        self.ratio = numpy.ma.masked_less_equal( (self.raw_upd - self.bkg) / self.raw_I0 / self.gain, 0)
+        ratio = (self.raw_upd - self.bkg) / self.raw_I0 / self.gain
+        self.ratio_unmasked = numpy.ma.masked_less_equal(ratio, 0)
+        self.ratio = self.ratio_unmasked * self.range_change_mask
         numpy.seterr(**numpy_error_reporting)
 
     def close_hdf_file(self):
@@ -142,15 +203,19 @@ class UsaxsFlyScanData(object):
 
     def save_results(self, nxdata):
         '''save computed results to an HDF5 file (nxdata) group'''
-        eznx.makeDataset(nxdata, 'ar', self.ar)
+        eznx.makeDataset(nxdata, 'Q', self.Q, units='1/A')
+        eznx.makeDataset(nxdata, 'R', self.R, units='a.u.',      signal=1, axes='Q')
+        eznx.makeDataset(nxdata, 'ar', self.ar, units='degrees')
         eznx.makeDataset(nxdata, 'ranges', self.ranges)
-        eznx.makeDataset(nxdata, 'bkg', self.bkg)
-        eznx.makeDataset(nxdata, 'ratio', self.ratio, signal=1, axes='ar')
-        eznx.makeDataset(nxdata, 'time', self.time)
-        eznx.makeDataset(nxdata, 'gain', self.gain)
-        eznx.makeDataset(nxdata, 'raw_upd', self.raw_upd)
-        eznx.makeDataset(nxdata, 'raw_I0', self.raw_I0)
-        eznx.makeDataset(nxdata, 'raw_clock_pulses', self.raw_clock_pulses)
+        eznx.makeDataset(nxdata, 'bkg', self.bkg, units='counts/s')
+        eznx.makeDataset(nxdata, 'ratio', self.ratio, units='a.u.')
+        eznx.makeDataset(nxdata, 'ratio_unmasked', self.ratio_unmasked, units='a.u.')
+        eznx.makeDataset(nxdata, 'time', self.time, units='s')
+        eznx.makeDataset(nxdata, 'gain', self.gain, units='V/A')
+        eznx.makeDataset(nxdata, 'raw_upd', self.raw_upd, units='counts')
+        eznx.makeDataset(nxdata, 'raw_I0', self.raw_I0, units='counts')
+        eznx.makeDataset(nxdata, 'raw_clock_pulses', self.raw_clock_pulses, units='counts')
+        eznx.makeDataset(nxdata, 'range_change_mask', self.range_change_mask, units='counts')
 
         wavelength = get_data(self.hdf['/entry/instrument/monochromator/DCM_wavelength'])
         eznx.makeDataset(nxdata, 'wavelength', [wavelength], units='A')
@@ -160,6 +225,7 @@ class UsaxsFlyScanData(object):
 
         sdd = get_data(self.hdf['/entry/metadata/detector_distance'])
         eznx.makeDataset(nxdata, 'SDD', [sdd], units='mm')
+        eznx.makeDataset(nxdata, 'ar_centroid', [self.ar_centroid], units='degrees')
 
 
 def main():

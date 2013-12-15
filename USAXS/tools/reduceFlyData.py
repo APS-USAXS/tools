@@ -76,6 +76,7 @@ class UsaxsFlyScanData(object):
         self.compute_ar()
         self.basic_reduction()
         self.compute_Q_and_R()
+        self.rebin()
         #self.hdf.close()        # let the caller close the file
         
     def __str__(self):
@@ -114,7 +115,10 @@ class UsaxsFlyScanData(object):
         d2r = math.pi/180
         q = (4 * math.pi / wavelength) * numpy.sin(d2r*(self.ar_centroid - self.ar))
         self.Q = numpy.ma.masked_less_equal( q, Qmin)
-        self.R = numpy.ma.masked_array(data=self.ratio, mask=self.Q.mask, copy=True)
+        # FIXME: blend self.R.mask and self.Q.mask
+        QR_mask = self.Q.mask + self.ratio.mask
+        self.R = numpy.ma.masked_array(data=self.ratio, mask=QR_mask, copy=True)
+        # FIXME: what about dR?
         numpy.seterr(**numpy_error_reporting)
 
     def compute_range_change_mask(self):
@@ -169,13 +173,6 @@ class UsaxsFlyScanData(object):
         
     def basic_reduction(self):
         '''straight USAXS data reduction to R(ar), no rebinning now'''
-        # FIXME: here are some tools
-        #   list_of_zero_indices = numpy.where(self.raw_clock_pulses == 0)
-        #   set_nonpositive_to_nan = np.select([X > 0], [X], default=np.nan)
-        #   http://stackoverflow.com/questions/5927180/removing-data-from-a-numpy-array
-        
-        # TODO: work out a rebinning strategy
-        
         numpy_error_reporting = numpy.geterr()
         numpy.seterr(divide='ignore', invalid='ignore')     # suppress messages
         ranges = numpy.divide(self.range_adjustment_constant * self.raw_ranges, self.raw_clock_pulses)
@@ -196,8 +193,42 @@ class UsaxsFlyScanData(object):
             self.bkg[i] *= bkg_db[ self.ranges[i] ]
 
         ratio = (self.raw_upd - self.bkg) / self.raw_I0 / self.gain
+        # TODO: need error propagation
         self.ratio_unmasked = numpy.ma.masked_less_equal(ratio, 0)
+        # FIXME: range change mask not propagating through to self.R
         self.ratio = self.ratio_unmasked * self.range_change_mask
+        numpy.seterr(**numpy_error_reporting)
+
+    def rebin(self, Qmin=1e-5, Qmax=1, number_bins = 2000):
+        # basic rebinning strategy
+        numpy_error_reporting = numpy.geterr()
+        numpy.seterr(invalid='ignore')
+
+        Qmin = max(Qmin, numpy.min(self.Q))
+        Qmax = min(Qmax, numpy.max(self.Q))
+        Q = numpy.exp(numpy.linspace(math.log(Qmin), math.log(Qmax), number_bins))
+        R = numpy.zeros((number_bins), dtype='float')
+        count = numpy.zeros((number_bins), dtype='int')
+
+        indices = numpy.digitize(self.Q, Q)
+        for i, ch in enumerate(indices):
+            if not self.R.mask[i] and self.R[i] != numpy.nan and 0 < ch < number_bins:
+                R[ch] += self.R[i]
+                count[ch] += 1
+        R = numpy.ma.masked_invalid(R / count)
+        # TODO: error propagation
+        
+        Q_bin = []
+        R_bin = []
+        masked = R.mask
+        for i, value in enumerate(R):
+            # test if value is valid
+            if not masked[i] and value != numpy.nan and value > 0:
+                Q_bin.append(Q[i])
+                R_bin.append(value)
+        self.Q_binned = numpy.array(Q_bin)
+        self.R_binned = numpy.array(R_bin)
+        
         numpy.seterr(**numpy_error_reporting)
 
     def close_hdf_file(self):
@@ -210,6 +241,10 @@ class UsaxsFlyScanData(object):
         '''save computed results to an HDF5 file (nxdata) group'''
         eznx.makeDataset(nxdata, 'Q', self.Q, units='1/A')
         eznx.makeDataset(nxdata, 'R', self.R, units='a.u.',      signal=1, axes='Q')
+
+        eznx.makeDataset(nxdata, 'Q_binned', self.Q_binned, units='1/A')
+        eznx.makeDataset(nxdata, 'R_binned', self.R_binned, units='a.u.',      signal=1, axes='Q')
+        
         eznx.makeDataset(nxdata, 'ar', self.ar, units='degrees')
         eznx.makeDataset(nxdata, 'ranges', self.ranges)
         eznx.makeDataset(nxdata, 'bkg', self.bkg, units='counts/s')
@@ -231,7 +266,6 @@ class UsaxsFlyScanData(object):
         sdd = get_data(self.hdf['/entry/metadata/detector_distance'])
         eznx.makeDataset(nxdata, 'SDD', [sdd], units='mm')
         eznx.makeDataset(nxdata, 'ar_centroid', [self.ar_centroid], units='degrees')
-
 
 def main():
     '''

@@ -63,8 +63,8 @@ def get_data(dataset, astype=None):
 class UsaxsFlyScanData(object):
     '''contains data from one HDF5 file of fly scan raw data'''
 
-    range_adjustment_constant = 500     # why this number?
-    pulse_frequency = 50e6              # 50 MHz
+    range_adjustment_constant = 500.0     # why this number?
+    pulse_frequency = 50.0e6              # 50 MHz
     
     def __init__(self, hdf_filename):
         self.hdf_filename = hdf_filename
@@ -72,58 +72,37 @@ class UsaxsFlyScanData(object):
             raise RuntimeError, 'file not found: ' + hdf_filename
         
         self.hdf = h5py.File(hdf_filename, "r")
-        self.read_raw_data()
-        self.compute_ar()
+        self.read_raw_data(self.hdf['/entry/flyScan'])
+        self.compute_ar(self.hdf['/entry/flyScan'])
         self.basic_reduction()
         self.compute_Q_and_R()
-        self.rebin()
+        self.rebin(Qmax=0.25)
         #self.hdf.close()        # let the caller close the file
         
     def __str__(self):
         return self.hdf_filename
         
-    def read_raw_data(self):
-        nxdata = self.hdf['/entry/flyScan']
+    def read_raw_data(self, nxdata):
+        '''pull the raw data from the HDF5 file'''
         self.raw_clock_pulses = get_data(nxdata['mca1'])
         self.raw_I0 = get_data(nxdata['mca2'])
         self.raw_upd = get_data(nxdata['mca3'])
         self.raw_ranges = get_data(nxdata['mca4'])
-
         self.num_points = get_data(nxdata['AR_pulses'])
         
-    def compute_ar(self):
-        '''compute the AR array from available information'''
-        nxdata = self.hdf['/entry/flyScan']
+    def compute_ar(self, nxdata):
+        '''compute the AR array from available information, constant AR step size'''
         ar_start = get_data(nxdata['AR_start'])
         ar_step = get_data(nxdata['AR_increment'])
         last = ar_start - (self.num_points - 1) * ar_step
-        
-        # let Numpy create the ar array
         self.ar = numpy.linspace(ar_start, last, self.num_points)
-        
-    def compute_Q_and_R(self, centroid = None):
-        Qmin = 1e-6
-        numpy_error_reporting = numpy.geterr()
-        numpy.seterr(invalid='ignore')     # suppress messages
-        if centroid is not None:
-            self.ar_centroid = centroid
-        else:
-            numerator = numpy.ma.masked_invalid(self.ratio*self.ar)
-            denominator = numpy.ma.masked_array(data=self.ratio, mask=numerator.mask)
-            self.ar_centroid = numpy.sum(numerator) / numpy.sum(denominator)    # equi-spaced in AR
-        wavelength = get_data(self.hdf['/entry/instrument/monochromator/DCM_wavelength'])
-        d2r = math.pi/180
-        q = (4 * math.pi / wavelength) * numpy.sin(d2r*(self.ar_centroid - self.ar))
-        self.Q = numpy.ma.masked_less_equal( q, Qmin)
-        # FIXME: blend self.R.mask and self.Q.mask
-        QR_mask = self.Q.mask + self.ratio.mask
-        self.R = numpy.ma.masked_array(data=self.ratio, mask=QR_mask, copy=True)
-        # FIXME: what about dR?
-        numpy.seterr(**numpy_error_reporting)
 
     def compute_range_change_mask(self):
         '''
         mask any channels associated with a range change
+        
+        note: In NumPy, masks are True to ignore the datum, False if the datum is good.
+              Here, we computer the data_ok and then return the opposite.
         
         (0.2 s before to 0.1 after, perhaps)
         the masking time could be range-change dependent (or learned from reqrange v. lurange or ...)
@@ -169,15 +148,19 @@ class UsaxsFlyScanData(object):
                     break       # end of masking range
                 ch_n += 1
         
-        return data_ok
+        return ~data_ok
         
     def basic_reduction(self):
         '''straight USAXS data reduction to R(ar), no rebinning now'''
         numpy_error_reporting = numpy.geterr()
         numpy.seterr(divide='ignore', invalid='ignore')     # suppress messages
-        ranges = numpy.divide(self.range_adjustment_constant * self.raw_ranges, self.raw_clock_pulses)
+
+        range_pulses = numpy.ma.masked_equal(self.raw_ranges, 0)  # 0 means no data, 0.1 means range 0
+        ranges = numpy.ma.masked_invalid(self.range_adjustment_constant * range_pulses / self.raw_clock_pulses)
+        #ranges = numpy.divide(self.range_adjustment_constant * self.raw_ranges, self.raw_clock_pulses)
         self.ranges = ranges.astype(int)
-        self.time = self.raw_clock_pulses / self.pulse_frequency
+        self.time = numpy.ma.masked_array(data=self.raw_clock_pulses / self.pulse_frequency, 
+                                          mask=ranges.mask)
         
         self.range_change_mask = self.compute_range_change_mask()
 
@@ -186,17 +169,41 @@ class UsaxsFlyScanData(object):
         gains_db = [get_data(meta['upd_gain' + str(_)]) for _ in range(5)]
         bkg_db = [get_data(meta['upd_bkg' + str(_)]) for _ in range(5)]
 
-        self.gain = numpy.zeros((self.num_points,), numpy.float32)
+        self.gain = numpy.ma.masked_array(data=numpy.ndarray((self.num_points,), dtype='float'),
+                                          mask=ranges.mask)
         self.bkg = self.raw_clock_pulses / self.pulse_frequency      # divide by 50 MHz frequency
         for i in range(self.num_points):
-            self.gain[i] = gains_db[ self.ranges[i] ]
-            self.bkg[i] *= bkg_db[ self.ranges[i] ]
+            if not self.gain.mask[i]:
+                self.gain[i] = gains_db[ self.ranges[i] ]
+                self.bkg[i] *= bkg_db[ self.ranges[i] ]
 
-        ratio = (self.raw_upd - self.bkg) / self.raw_I0 / self.gain
-        # TODO: need error propagation
-        self.ratio_unmasked = numpy.ma.masked_less_equal(ratio, 0)
-        # FIXME: range change mask not propagating through to self.R
-        self.ratio = self.ratio_unmasked * self.range_change_mask
+        ratio = numpy.ma.masked_invalid((self.raw_upd - self.bkg) / self.raw_I0 / self.gain)
+        ratio_unmasked = numpy.ma.masked_less_equal(ratio, 0)
+        self.ratio = numpy.ma.masked_array(data=ratio_unmasked,
+                                           mask=ratio_unmasked.mask+self.range_change_mask)
+        # TODO: error propagation
+
+        numpy.seterr(**numpy_error_reporting)
+        
+    def compute_Q_and_R(self, centroid = None):
+        Qmin = 1e-6
+        numpy_error_reporting = numpy.geterr()
+        numpy.seterr(invalid='ignore')     # suppress messages
+
+        if centroid is not None:
+            self.ar_centroid = centroid
+        else:
+            numerator = numpy.ma.masked_invalid(self.ratio*self.ar)
+            denominator = numpy.ma.masked_array(data=self.ratio, mask=numerator.mask)
+            self.ar_centroid = numpy.sum(numerator) / numpy.sum(denominator)    # equi-spaced in AR
+
+        wavelength = get_data(self.hdf['/entry/instrument/monochromator/DCM_wavelength'])
+        d2r = math.pi/180
+        q = (4 * math.pi / wavelength) * numpy.sin(d2r*(self.ar_centroid - self.ar))
+        self.Q = numpy.ma.masked_less_equal( q, Qmin)
+        self.R = numpy.ma.masked_array(data=self.ratio, mask=self.Q.mask + self.ratio.mask)
+        # TODO: error propagation
+
         numpy.seterr(**numpy_error_reporting)
 
     def rebin(self, Qmin=1e-5, Qmax=1, number_bins = 2000):
@@ -211,19 +218,19 @@ class UsaxsFlyScanData(object):
         count = numpy.zeros((number_bins), dtype='int')
 
         indices = numpy.digitize(self.Q, Q)
+        data_mask = self.R.mask
         for i, ch in enumerate(indices):
-            if not self.R.mask[i] and self.R[i] != numpy.nan and 0 < ch < number_bins:
+            if not data_mask[i] and self.R[i] != numpy.nan and 0 < ch < number_bins:
                 R[ch] += self.R[i]
                 count[ch] += 1
-        R = numpy.ma.masked_invalid(R / count)
+        R = numpy.ma.masked_less_equal(numpy.ma.masked_invalid(R / count), 0)
         # TODO: error propagation
         
         Q_bin = []
         R_bin = []
-        masked = R.mask
         for i, value in enumerate(R):
             # test if value is valid
-            if not masked[i] and value != numpy.nan and value > 0:
+            if not R.mask[i] and value != numpy.nan and value > 0:
                 Q_bin.append(Q[i])
                 R_bin.append(value)
         self.Q_binned = numpy.array(Q_bin)
@@ -249,13 +256,13 @@ class UsaxsFlyScanData(object):
         eznx.makeDataset(nxdata, 'ranges', self.ranges)
         eznx.makeDataset(nxdata, 'bkg', self.bkg, units='counts/s')
         eznx.makeDataset(nxdata, 'ratio', self.ratio, units='a.u.')
-        eznx.makeDataset(nxdata, 'ratio_unmasked', self.ratio_unmasked, units='a.u.')
         eznx.makeDataset(nxdata, 'time', self.time, units='s')
         eznx.makeDataset(nxdata, 'gain', self.gain, units='V/A')
         eznx.makeDataset(nxdata, 'raw_upd', self.raw_upd, units='counts')
         eznx.makeDataset(nxdata, 'raw_I0', self.raw_I0, units='counts')
         eznx.makeDataset(nxdata, 'raw_clock_pulses', self.raw_clock_pulses, units='counts')
-        eznx.makeDataset(nxdata, 'range_change_mask', self.range_change_mask, units='counts')
+        eznx.makeDataset(nxdata, 'range_change_mask', self.range_change_mask)
+        eznx.makeDataset(nxdata, 'data_mask', self.R.mask)
 
         wavelength = get_data(self.hdf['/entry/instrument/monochromator/DCM_wavelength'])
         eznx.makeDataset(nxdata, 'wavelength', [wavelength], units='A')

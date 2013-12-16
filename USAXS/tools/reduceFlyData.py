@@ -6,41 +6,25 @@
 # alias EPD '/APSshare-ro/epd/rh6-x86_64/bin/python '
 
 data_files = '''
-   Adam_120_1386638883.h5
-   Adam_20_1386638251.h5
-   Adam_30_1386638085.h5
-   Adam_45_1386637699.h5
-   Adam_60_1386638485.h5
-   Blank_120_1386638732.h5
    Blank_20_1386638201.h5
    Blank_30_1386638026.h5
    Blank_45_1386637624.h5
    Blank_60_1386638396.h5
-   PS_120_1386639035.h5
+   Blank_120_1386638732.h5
+   Adam_20_1386638251.h5
+   Adam_30_1386638085.h5
+   Adam_45_1386637699.h5
+   Adam_60_1386638485.h5
+   Adam_120_1386638883.h5
    PS_20_1386638301.h5
    PS_30_1386638146.h5
    PS_45_1386637773.h5
    PS_60_1386638575.h5
+   PS_120_1386639035.h5
 '''.split()
-#  StruckSaveData_1386637624.dat
-#  StruckSaveData_1386637699.dat
-#  StruckSaveData_1386637773.dat
-#  StruckSaveData_1386638025.dat
-#  StruckSaveData_1386638085.dat
-#  StruckSaveData_1386638145.dat
-#  StruckSaveData_1386638201.dat
-#  StruckSaveData_1386638250.dat
-#  StruckSaveData_1386638300.dat
-#  StruckSaveData_1386638396.dat
-#  StruckSaveData_1386638484.dat
-#  StruckSaveData_1386638575.dat
-#  StruckSaveData_1386638732.dat
-#  StruckSaveData_1386638883.dat
-#  StruckSaveData_1386639035.dat
 
 
 import os
-import sys
 import math
 import numpy
 import h5py
@@ -66,17 +50,18 @@ class UsaxsFlyScanData(object):
     range_adjustment_constant = 500.0     # why this number?
     pulse_frequency = 50.0e6              # 50 MHz
     
-    def __init__(self, hdf_filename):
+    def __init__(self, hdf_filename, bin_count=250):
         self.hdf_filename = hdf_filename
         if not os.path.exists(hdf_filename):
             raise RuntimeError, 'file not found: ' + hdf_filename
         
+        self.bin_count = bin_count
         self.hdf = h5py.File(hdf_filename, "r")
         self.read_raw_data(self.hdf['/entry/flyScan'])
         self.compute_ar(self.hdf['/entry/flyScan'])
         self.basic_reduction()
         self.compute_Q_and_R()
-        self.rebin(Qmax=0.25)
+        self.rebin(Qmax=0.25, number_bins=self.bin_count)
         #self.hdf.close()        # let the caller close the file
         
     def __str__(self):
@@ -101,11 +86,13 @@ class UsaxsFlyScanData(object):
         '''
         mask any channels associated with a range change
         
-        note: In NumPy, masks are True to ignore the datum, False if the datum is good.
-              Here, we computer the data_ok and then return the opposite.
+        note: In NumPy, masks are True to ignore the datum, 
+              False if the datum is good.
+              Here, we compute the data_ok and then return the opposite.
         
         (0.2 s before to 0.1 after, perhaps)
-        the masking time could be range-change dependent (or learned from reqrange v. lurange or ...)
+        the masking time could be range-change dependent 
+        (or learned from reqrange v. lurange or ...)
         '''
         # 1. determine channels with range change
         # 2. compute mask
@@ -155,32 +142,35 @@ class UsaxsFlyScanData(object):
         numpy_error_reporting = numpy.geterr()
         numpy.seterr(divide='ignore', invalid='ignore')     # suppress messages
 
-        range_pulses = numpy.ma.masked_equal(self.raw_ranges, 0)  # 0 means no data, 0.1 means range 0
-        ranges = numpy.ma.masked_invalid(self.range_adjustment_constant * range_pulses / self.raw_clock_pulses)
-        #ranges = numpy.divide(self.range_adjustment_constant * self.raw_ranges, self.raw_clock_pulses)
+        # 0 means no data, >0 means valid range
+        range_pulses = numpy.ma.masked_equal(self.raw_ranges, 0)  
+        arr = self.range_adjustment_constant * range_pulses / self.raw_clock_pulses
+        ranges = numpy.ma.masked_invalid(arr)
         self.ranges = ranges.astype(int)
-        self.time = numpy.ma.masked_array(data=self.raw_clock_pulses / self.pulse_frequency, 
-                                          mask=ranges.mask)
         
-        self.range_change_mask = self.compute_range_change_mask()
-
+        arr = self.raw_clock_pulses / self.pulse_frequency
+        self.time = numpy.ma.masked_array(data=arr, mask=ranges.mask)
+        
         # get the table of amplifier gains and measured backgrounds
         meta = self.hdf['/entry/metadata']
         gains_db = [get_data(meta['upd_gain' + str(_)]) for _ in range(5)]
         bkg_db = [get_data(meta['upd_bkg' + str(_)]) for _ in range(5)]
 
-        self.gain = numpy.ma.masked_array(data=numpy.ndarray((self.num_points,), dtype='float'),
+        _gain = numpy.ndarray((self.num_points,), dtype='float')
+        self.gain = numpy.ma.masked_array(data=_gain,
                                           mask=ranges.mask)
-        self.bkg = self.raw_clock_pulses / self.pulse_frequency      # divide by 50 MHz frequency
+        self.bkg = self.raw_clock_pulses / self.pulse_frequency
         for i in range(self.num_points):
             if not self.gain.mask[i]:
                 self.gain[i] = gains_db[ self.ranges[i] ]
                 self.bkg[i] *= bkg_db[ self.ranges[i] ]
 
-        ratio = numpy.ma.masked_invalid((self.raw_upd - self.bkg) / self.raw_I0 / self.gain)
-        ratio_unmasked = numpy.ma.masked_less_equal(ratio, 0)
-        self.ratio = numpy.ma.masked_array(data=ratio_unmasked,
-                                           mask=ratio_unmasked.mask+self.range_change_mask)
+        ratio = (self.raw_upd - self.bkg) / self.raw_I0 / self.gain
+        ratio = numpy.ma.masked_invalid(ratio)
+        ratio = numpy.ma.masked_less_equal(ratio, 0)
+        self.range_change_mask = self.compute_range_change_mask()
+        the_mask = ratio.mask + self.range_change_mask
+        self.ratio = numpy.ma.masked_array(data=ratio, mask=the_mask)
         # TODO: error propagation
 
         numpy.seterr(**numpy_error_reporting)
@@ -193,15 +183,20 @@ class UsaxsFlyScanData(object):
         if centroid is not None:
             self.ar_centroid = centroid
         else:
+            # simple sum since AR are equi-spaced
             numerator = numpy.ma.masked_invalid(self.ratio*self.ar)
-            denominator = numpy.ma.masked_array(data=self.ratio, mask=numerator.mask)
-            self.ar_centroid = numpy.sum(numerator) / numpy.sum(denominator)    # equi-spaced in AR
+            denominator = numpy.ma.masked_array(data=self.ratio, 
+                                                mask=numerator.mask)
+            self.ar_centroid = numpy.sum(numerator) / numpy.sum(denominator)
+            # TODO: compute FWHM (as 2sigma)
+            # TODO: save self.Rmax=R(Q=0) and normalize data to it
 
         wavelength = get_data(self.hdf['/entry/instrument/monochromator/DCM_wavelength'])
         d2r = math.pi/180
         q = (4 * math.pi / wavelength) * numpy.sin(d2r*(self.ar_centroid - self.ar))
         self.Q = numpy.ma.masked_less_equal( q, Qmin)
-        self.R = numpy.ma.masked_array(data=self.ratio, mask=self.Q.mask + self.ratio.mask)
+        self.R = numpy.ma.masked_array(data=self.ratio, 
+                                       mask=self.Q.mask + self.ratio.mask)
         # TODO: error propagation
 
         numpy.seterr(**numpy_error_reporting)
@@ -221,18 +216,14 @@ class UsaxsFlyScanData(object):
         data_mask = self.R.mask
         for i, ch in enumerate(indices):
             if not data_mask[i] and self.R[i] != numpy.nan and 0 < ch < number_bins:
+                # TODO: consider weighted averages
                 R[ch] += self.R[i]
                 count[ch] += 1
         R = numpy.ma.masked_less_equal(numpy.ma.masked_invalid(R / count), 0)
         # TODO: error propagation
         
-        Q_bin = []
-        R_bin = []
-        for i, value in enumerate(R):
-            # test if value is valid
-            if not R.mask[i] and value != numpy.nan and value > 0:
-                Q_bin.append(Q[i])
-                R_bin.append(value)
+        Q_bin = [Q[i]  for i, value in enumerate(R) if not R.mask[i]]
+        R_bin = [value for i, value in enumerate(R) if not R.mask[i]]
         self.Q_binned = numpy.array(Q_bin)
         self.R_binned = numpy.array(R_bin)
         
@@ -246,33 +237,35 @@ class UsaxsFlyScanData(object):
 
     def save_results(self, nxdata):
         '''save computed results to an HDF5 file (nxdata) group'''
-        eznx.makeDataset(nxdata, 'Q', self.Q, units='1/A')
-        eznx.makeDataset(nxdata, 'R', self.R, units='a.u.',      signal=1, axes='Q')
-
         eznx.makeDataset(nxdata, 'Q_binned', self.Q_binned, units='1/A')
         eznx.makeDataset(nxdata, 'R_binned', self.R_binned, units='a.u.',      signal=1, axes='Q')
         
-        eznx.makeDataset(nxdata, 'ar', self.ar, units='degrees')
-        eznx.makeDataset(nxdata, 'ranges', self.ranges)
-        eznx.makeDataset(nxdata, 'bkg', self.bkg, units='counts/s')
-        eznx.makeDataset(nxdata, 'ratio', self.ratio, units='a.u.')
-        eznx.makeDataset(nxdata, 'time', self.time, units='s')
-        eznx.makeDataset(nxdata, 'gain', self.gain, units='V/A')
-        eznx.makeDataset(nxdata, 'raw_upd', self.raw_upd, units='counts')
-        eznx.makeDataset(nxdata, 'raw_I0', self.raw_I0, units='counts')
-        eznx.makeDataset(nxdata, 'raw_clock_pulses', self.raw_clock_pulses, units='counts')
-        eznx.makeDataset(nxdata, 'range_change_mask', self.range_change_mask)
-        eznx.makeDataset(nxdata, 'data_mask', self.R.mask)
+        other_data = eznx.makeGroup(nxdata, 'other_data', 'NXdata')
 
         wavelength = get_data(self.hdf['/entry/instrument/monochromator/DCM_wavelength'])
-        eznx.makeDataset(nxdata, 'wavelength', [wavelength], units='A')
-
         energy = get_data(self.hdf['/entry/instrument/monochromator/DCM_energy'])
-        eznx.makeDataset(nxdata, 'energy', [energy], units='keV')
-
         sdd = get_data(self.hdf['/entry/metadata/detector_distance'])
-        eznx.makeDataset(nxdata, 'SDD', [sdd], units='mm')
-        eznx.makeDataset(nxdata, 'ar_centroid', [self.ar_centroid], units='degrees')
+        
+        eznx.makeDataset(other_data, 'Q', self.Q, units='1/A')
+        eznx.makeDataset(other_data, 'R', self.R, units='a.u.',      signal=1, axes='Q')
+        
+        eznx.makeDataset(other_data, 'ar', self.ar, units='degrees')
+        eznx.makeDataset(other_data, 'ranges', self.ranges)
+        eznx.makeDataset(other_data, 'bkg', self.bkg, units='counts/s')
+        eznx.makeDataset(other_data, 'ratio', self.ratio, units='a.u.')
+        eznx.makeDataset(other_data, 'time', self.time, units='s')
+        eznx.makeDataset(other_data, 'gain', self.gain, units='V/A')
+        eznx.makeDataset(other_data, 'raw_upd', self.raw_upd, units='counts')
+        eznx.makeDataset(other_data, 'raw_I0', self.raw_I0, units='counts')
+        eznx.makeDataset(other_data, 'raw_clock_pulses', self.raw_clock_pulses, units='counts')
+        eznx.makeDataset(other_data, 'range_change_mask', self.range_change_mask)
+        eznx.makeDataset(other_data, 'data_mask', self.R.mask)
+
+        eznx.makeDataset(other_data, 'wavelength', [wavelength], units='A')
+        eznx.makeDataset(other_data, 'energy', [energy], units='keV')
+        eznx.makeDataset(other_data, 'SDD', [sdd], units='mm')
+        eznx.makeDataset(other_data, 'ar_centroid', [self.ar_centroid], units='degrees')
+
 
 def main():
     '''
@@ -302,16 +295,18 @@ def main():
     '''
     db = {}
     for filename in data_files:
-#         try:
-            hdf = UsaxsFlyScanData(filename)
-            key = os.path.splitext(filename)[0]
-            db[key] = hdf
-#         except:
-#             print 'error converting: ' + filename
+        print 'Reading: ' + filename
+        if filename.startswith('PS'):
+            hdf = UsaxsFlyScanData(filename, bin_count=2500)
+        else:
+            hdf = UsaxsFlyScanData(filename, bin_count=300)
+        key = os.path.splitext(filename)[0]
+        db[key] = hdf
     if len(db) > 0:
         out = eznx.makeFile('2013-12-09-reduced.h5')
         entry = eznx.makeGroup(out, 'fly_2013_12_09', 'NXentry')
         for key, hdf in sorted(db.items()):
+            print 'Saving: ' + key
             data = eznx.makeGroup(entry, key, 'NXdata')
             hdf.save_results(data)
             hdf.close_hdf_file()

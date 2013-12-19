@@ -238,7 +238,7 @@ class UsaxsFlyScanData(object):
     def save_results(self, nxdata):
         '''save computed results to an HDF5 file (nxdata) group'''
         eznx.makeDataset(nxdata, 'Q_binned', self.Q_binned, units='1/A')
-        eznx.makeDataset(nxdata, 'R_binned', self.R_binned, units='a.u.',      signal=1, axes='Q')
+        eznx.makeDataset(nxdata, 'R_binned', self.R_binned, units='a.u.',      signal=1, axes='Q_binned')
         
         other_data = eznx.makeGroup(nxdata, 'other_data', 'NXdata')
 

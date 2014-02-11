@@ -151,15 +151,17 @@ OR, check this file for validity and that all PVs exist::
 	  <PV label="dyMaxSpeed"  	    pvname="15iddLAX:USAXSfly:dyMaxSpeed" />
 	  <PV label="ayMaxSpeed"  	    pvname="15iddLAX:USAXSfly:ayMaxSpeed" />
 	  <PV label="arMaxSpeed"  	    pvname="15iddLAX:USAXSfly:arMaxSpeed" />
+	  <!-- do not save these three PVs, they are not quite the same as the three above
+	  <PV label="FS_AyMaxSpeed"	    pvname="15iddLAX:USAXS:FS_AyMaxSpeed" />
+	  <PV label="FS_DyMaxSpeed"	    pvname="15iddLAX:USAXS:FS_DyMaxSpeed" />
+	  <PV label="FS_ArMaxSpeed"	    pvname="15iddLAX:USAXS:FS_ArMaxSpeed" />
+	  -->
 
 	  <PV label="FS_NumberOfPoints"     pvname="15iddLAX:USAXS:FS_NumberOfPoints">
             <attribute name="meaning"       value="number of waypoints in trajectory scan" />
 	  </PV>
 	  <PV label="FS_ScanTime"           pvname="15iddLAX:USAXS:FS_ScanTime" />
 	  <PV label="FS_ArStartAyDyMove"    pvname="15iddLAX:USAXS:FS_ArStartAyDyMove" />
-	  <PV label="FS_AyMaxSpeed"	    pvname="15iddLAX:USAXS:FS_AyMaxSpeed" />
-	  <PV label="FS_DyMaxSpeed"	    pvname="15iddLAX:USAXS:FS_DyMaxSpeed" />
-	  <PV label="FS_ArMaxSpeed"	    pvname="15iddLAX:USAXS:FS_ArMaxSpeed" />
 
         </group>		
 

@@ -12,7 +12,7 @@ schema = etree.XMLSchema(schema_tree)
 parser = etree.XMLParser(schema = schema)
 
 try:
-  valid = etree.parse(XML_FILE, parser)
+  config = etree.parse(XML_FILE, parser)
   print XML_FILE, 'is valid against rules defined in', XSD_FILE
 except Exception, exc:
   print XML_FILE, 'is not valid against rules defined in', XSD_FILE
@@ -21,7 +21,6 @@ except Exception, exc:
 print '\n'*2
 print 'check that all the defined PVs are actually available'
 print '\n'*2
-doc = etree.parse(XML_FILE)
-for i, pv_node in enumerate(doc.xpath('//PV')):
+for i, pv_node in enumerate(config.xpath('//PV')):
   pvname = pv_node.attrib['pvname'].strip()
   print i, pvname, epics.caget(pvname)

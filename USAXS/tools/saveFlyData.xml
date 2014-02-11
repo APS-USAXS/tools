@@ -20,318 +20,313 @@ OR, check this file for validity and that all PVs exist::
  
  
 <saveFlyData version="1">
-  <triggerPV pvname="15iddLAX:USAXSfly:Start" start_value="1" start_text="Busy" done_value="0" done_text="Done" />
+	<triggerPV pvname="15iddLAX:USAXSfly:Start" start_value="1"
+		start_text="Busy" done_value="0" done_text="Done" />
 
-  <NX_structure>  <!-- http://download.nexusformat.org/doc/html/classes/base_classes/ -->
-    <group name="/" class="file">
-      <attribute name="instrument"      value="APS USAXS at 15ID-D" />
-      <attribute name="scan_mode"       value="USAXS fly scan" />
+	<NX_structure>  <!-- http://download.nexusformat.org/doc/html/classes/base_classes/ -->
+		<group name="/" class="file">
+			<attribute name="instrument" value="APS USAXS at 15ID-D" />
+			<attribute name="scan_mode" value="USAXS fly scan" />
 
-      <group name="entry" class="NXentry">
-        <PV label="title"    			pvname="15iddLAX:USAXS:sampleTitle" />
-        <PV label="experiment_identifier"    	pvname="15iddLAX:GUPNumber" />
-        <PV label="run_cycle"     		pvname="15iddLAX:RunCycle" />
+			<group name="entry" class="NXentry">
+				<PV label="title" pvname="15iddLAX:USAXS:sampleTitle" />
+				<PV label="experiment_identifier" pvname="15iddLAX:GUPNumber" />
+				<PV label="run_cycle" pvname="15iddLAX:RunCycle" />
 
-		<group name="instrument"      class="NXinstrument">
-		
-		  <field name="name">
-            <attribute name="short_name"      value="USAXS" />
-            <text>APS USAXS at 15ID-D</text>
-		  </field>
-		  <group name="monochromator" class="NXmonochromator">
-		    <PV label="DCM_energy"	   pvname="15IDA:BraggERdbkAO" />
-		    <PV label="DCM_wavelength"     pvname="15IDA:BraggLambdaRdbkAO" />
-		  </group>
-		</group>
+				<group name="instrument" class="NXinstrument">
 
-        <group name="user"       class="NXuser">
-          <PV label="name"     pvname="15iddLAX:UserName" />
-		</group>
+					<field name="name">
+						<attribute name="short_name" value="USAXS" />
+						<text>APS USAXS at 15ID-D</text>
+					</field>
+					<group name="monochromator" class="NXmonochromator">
+						<PV label="DCM_energy" pvname="15IDA:BraggERdbkAO" />
+						<PV label="DCM_wavelength" pvname="15IDA:BraggLambdaRdbkAO" />
+					</group>
+				</group>
 
-        <group name="sample"     class="NXsample">
-          <PV label="name"     pvname="15iddLAX:USAXS:sampleTitle" />
-          <PV label="thickness"     pvname="15iddLAX:USAXS:SampleThickness" />
-		</group>
+				<group name="user" class="NXuser">
+					<PV label="name" pvname="15iddLAX:UserName" />
+				</group>
 
+				<group name="sample" class="NXsample">
+					<PV label="name" pvname="15iddLAX:USAXS:sampleTitle" />
+					<PV label="thickness" pvname="15iddLAX:USAXS:SampleThickness" />
+				</group>
 
+				<group name="flyScan" class="NXdata">
 
-        <group name="flyScan" class="NXdata">
+					<!-- positioners -->
+					<PV label="AR_waypoints" pvname="15iddLAX:traj1:M1Traj"
+						length_limit="AR_count" />
+					<PV label="AR_count" pvname="15iddLAX:traj1:Nelements" />
+					<PV label="AR_pulses" pvname="15iddLAX:traj1:Npulses" />
+					<PV label="AR_start" pvname="15iddLAX:USAXS:ARstart" />  <!-- pushed here by SPEC usaxs_flyscan.txt macro -->
+					<PV label="AR_increment" pvname="15iddLAX:USAXS:MinStep" />
+					<PV label="AR_Finish" pvname="15iddLAX:USAXS:Finish" />
+					<PV label="StartOffset" pvname="15iddLAX:USAXS:StartOffset" />
 
-          <!-- positioners -->
-          <PV label="AR_waypoints" pvname="15iddLAX:traj1:M1Traj"	length_limit="AR_count" />
-          <PV label="AR_count"     pvname="15iddLAX:traj1:Nelements" />
-          <PV label="AR_pulses"    pvname="15iddLAX:traj1:Npulses" />
-          <PV label="AR_start"     pvname="15iddLAX:USAXS:ARstart" />  <!-- pushed here by SPEC usaxs_flyscan.txt macro -->
-          <PV label="AR_increment" pvname="15iddLAX:USAXS:MinStep" />
-          <PV label="AR_Finish"    pvname="15iddLAX:USAXS:Finish" />
-          <PV label="StartOffset"  pvname="15iddLAX:USAXS:StartOffset" />
+					<PV label="time_total" pvname="15iddLAX:traj1:ElapsedTime" />
+					<PV label="time_elapsed" pvname="15iddLAX:traj1:Time" />
 
-          <PV label="time_total"   pvname="15iddLAX:traj1:ElapsedTime" />
-          <PV label="time_elapsed" pvname="15iddLAX:traj1:Time" />
+					<!-- detectors -->
+					<PV label="mca_channels" pvname="15iddLAX:3820:CurrentChannel" />
+					<PV label="mca_channel_max" pvname="15iddLAX:3820:MaxChannels" />
+					<PV label="mca_channels_used" pvname="15iddLAX:3820:NuseAll">
+						<attribute name="meaning" value="number of Struck channels to use" />
+					</PV>
 
-          <!-- detectors -->
-          <PV label="mca_channels"	    pvname="15iddLAX:3820:CurrentChannel" />
-          <PV label="mca_channel_max"	    pvname="15iddLAX:3820:MaxChannels" />
-          <PV label="mca_channels_used"     pvname="15iddLAX:3820:NuseAll">
-            <attribute name="meaning"       value="..number of Struck channels to use" />
-	  </PV>
-	  
-	  <PV label="mca1_name" pvname="15iddLAX:3820:scaler1.NM1" />
-          <PV label="mca1" 	pvname="15iddLAX:3820:mca1" 		length_limit="AR_pulses">		<!-- counts of 50 MHz clock -->
-            <attribute name="units"      value="pulses" />
-            <attribute name="USAXS_name" value="clock_pulses" />
-          </PV>
+					<PV label="mca1_name" pvname="15iddLAX:3820:scaler1.NM1" />
+					<PV label="mca1" pvname="15iddLAX:3820:mca1" length_limit="AR_pulses">		<!-- counts of 50 MHz clock -->
+						<attribute name="units" value="pulses" />
+						<attribute name="USAXS_name" value="clock_pulses" />
+					</PV>
 
-	  <PV label="mca2_name" pvname="15iddLAX:3820:scaler1.NM2" />
-          <PV label="mca2" 	pvname="15iddLAX:3820:mca2" 		length_limit="AR_pulses">
-            <attribute name="units"      value="counts" />
-            <attribute name="USAXS_name" value="I0" />
-          </PV>
+					<PV label="mca2_name" pvname="15iddLAX:3820:scaler1.NM2" />
+					<PV label="mca2" pvname="15iddLAX:3820:mca2" length_limit="AR_pulses">
+						<attribute name="units" value="counts" />
+						<attribute name="USAXS_name" value="I0" />
+					</PV>
 
-	  <PV label="mca3_name" pvname="15iddLAX:3820:scaler1.NM3" />
-          <PV label="mca3" 	pvname="15iddLAX:3820:mca3"		length_limit="AR_pulses">
-            <attribute name="signal" value="1" />
-            <!-- <attribute name="axes" value="AR" /> -->
-	    <!--
-	    The proper ordinate is obtained via the MAC channel index:
-	    AR[i] = AR_start + AR_increment * i
-	    
-	    Can the AR array be made available in EPICS?
+					<PV label="mca3_name" pvname="15iddLAX:3820:scaler1.NM3" />
+					<PV label="mca3" pvname="15iddLAX:3820:mca3" length_limit="AR_pulses">
+						<attribute name="signal" value="1" />
+						<!-- <attribute name="axes" value="AR" /> -->
+						<!-- The proper ordinate is obtained via the MAC channel index: 
+							AR[i] = AR_start + AR_increment * i 
+							
+							Can the AR array be made available in EPICS? 
+						-->
+						<attribute name="units" value="counts" />
+						<attribute name="USAXS_name" value="upd" />
+					</PV>
 
-	    -->
-            <attribute name="units"      value="counts" />
-            <attribute name="USAXS_name" value="upd" />
-          </PV>
+					<PV label="mca4_name" pvname="15iddLAX:3820:scaler1.NM4" />
+					<PV label="mca4" pvname="15iddLAX:3820:mca4" length_limit="AR_pulses">
+						<attribute name="units" value="counts" />
+						<attribute name="USAXS_name" value="UPD_range" />
+					</PV>
 
-	  <PV label="mca4_name" pvname="15iddLAX:3820:scaler1.NM4" />
-          <PV label="mca4" 	pvname="15iddLAX:3820:mca4"		length_limit="AR_pulses">
-            <attribute name="units"      value="counts" />
-            <attribute name="USAXS_name" value="UPD_range" />
-          </PV>
+					<PV label="mca5_name" pvname="15iddLAX:3820:scaler1.NM5" />
+					<PV label="mca5" pvname="15iddLAX:3820:mca5" length_limit="AR_pulses">
+						<attribute name="units" value="counts" />
+						<attribute name="USAXS_name" value="I0_range" />
+					</PV>
 
-	  <PV label="mca5_name" pvname="15iddLAX:3820:scaler1.NM5" />
-          <PV label="mca5" 	pvname="15iddLAX:3820:mca5" 		length_limit="AR_pulses">
-            <attribute name="units"      value="counts" />
-            <attribute name="USAXS_name" value="I0_range" />
-          </PV>
+					<PV label="mca6_name" pvname="15iddLAX:3820:scaler1.NM6" />
+					<PV label="mca6" pvname="15iddLAX:3820:mca6" length_limit="AR_pulses">
+						<attribute name="units" value="counts" />
+						<attribute name="USAXS_name" value="ay_fly_signal" />
+					</PV>
 
-	  <PV label="mca6_name" pvname="15iddLAX:3820:scaler1.NM6" />
-          <PV label="mca6" 	pvname="15iddLAX:3820:mca6" 		length_limit="AR_pulses">
-            <attribute name="units"      value="counts" />
-            <attribute name="USAXS_name" value="ay_fly_signal" />
-          </PV>
+					<PV label="mca7_name" pvname="15iddLAX:3820:scaler1.NM7" />
+					<PV label="mca7" pvname="15iddLAX:3820:mca7" length_limit="AR_pulses">
+						<attribute name="units" value="counts" />
+						<attribute name="USAXS_name" value="dy_fly_signal" />
+					</PV>
 
-	  <PV label="mca7_name" pvname="15iddLAX:3820:scaler1.NM7" />
-          <PV label="mca7" 	pvname="15iddLAX:3820:mca7" 		length_limit="AR_pulses">
-            <attribute name="units"      value="counts" />
-            <attribute name="USAXS_name" value="mca7" />
-          </PV>
+					<PV label="mca8_name" pvname="15iddLAX:3820:scaler1.NM8" />
+					<PV label="mca8" pvname="15iddLAX:3820:mca8" length_limit="AR_pulses">
+						<attribute name="units" value="counts" />
+						<attribute name="USAXS_name" value="mca8" />
+					</PV>
 
-	  <PV label="mca8_name" pvname="15iddLAX:3820:scaler1.NM8" />
-          <PV label="mca8" 	pvname="15iddLAX:3820:mca8" 		length_limit="AR_pulses">
-            <attribute name="units"      value="counts" />
-            <attribute name="USAXS_name" value="mca8" />
-          </PV>
+					<!-- 2013-12-09, PRJ The following PVs record amplifier gain changes 
+						and the corresponding MCS channel number at which the change occurred from: 
+						15iddLAX/Db/trajScan_recGain.db 2014-02-06,PRJ: instead, use 15iddLAX/Db/USAXSfly.db -->
+					<PV label="changes_ampGain" pvname="15iddLAX:USAXSfly:ampGain" />
+					<PV label="changes_ampReqGain" pvname="15iddLAX:USAXSfly:ampReqGain" />
+					<PV label="changes_mcsChan" pvname="15iddLAX:USAXSfly:mcsChan" />
 
-	  <!-- 2013-12-09, PRJ
-	  
-	    The following PVs record amplifier gain changes
-	    and the corresponding MCS channel number at which the change occured
-	    
-	    from: 15iddLAX/Db/trajScan_recGain.db
-	    2014-02-06,PRJ: instead, use 15iddLAX/Db/USAXSfly.db
-	  -->
-	  <PV label="changes_ampGain"	    pvname="15iddLAX:USAXSfly:ampGain" />
-	  <PV label="changes_ampReqGain"    pvname="15iddLAX:USAXSfly:ampReqGain" />
-	  <PV label="changes_mcsChan"	    pvname="15iddLAX:USAXSfly:mcsChan" />
+					<PV label="AYDYstart" pvname="15iddLAX:USAXSfly:AYDYstart">
+						<attribute name="meaning"
+							value="point number when to start moving ay and dy stages" />
+					</PV>
+					<PV label="dyMaxSpeed" pvname="15iddLAX:USAXSfly:dyMaxSpeed" />
+					<PV label="ayMaxSpeed" pvname="15iddLAX:USAXSfly:ayMaxSpeed" />
+					<PV label="arMaxSpeed" pvname="15iddLAX:USAXSfly:arMaxSpeed" />
+					<!-- do not save these three PVs, they are not quite the same as the three above 
+						<PV label="FS_AyMaxSpeed" pvname="15iddLAX:USAXS:FS_AyMaxSpeed" /> 
+						<PV label="FS_DyMaxSpeed" pvname="15iddLAX:USAXS:FS_DyMaxSpeed" /> 
+						<PV label="FS_ArMaxSpeed" pvname="15iddLAX:USAXS:FS_ArMaxSpeed" /> 
+					-->
+					<PV label="FS_ElapsedTime" pvname="15iddLAX:USAXS:FS_ElapsedTime" />
 
-	  <PV label="AYDYstart"	    	    pvname="15iddLAX:USAXSfly:AYDYstart">
-            <attribute name="meaning"       value="point number when to start moving ay and dy stages" />
-	  </PV>
-	  <PV label="dyMaxSpeed"  	    pvname="15iddLAX:USAXSfly:dyMaxSpeed" />
-	  <PV label="ayMaxSpeed"  	    pvname="15iddLAX:USAXSfly:ayMaxSpeed" />
-	  <PV label="arMaxSpeed"  	    pvname="15iddLAX:USAXSfly:arMaxSpeed" />
-	  <!-- do not save these three PVs, they are not quite the same as the three above
-	  <PV label="FS_AyMaxSpeed"	    pvname="15iddLAX:USAXS:FS_AyMaxSpeed" />
-	  <PV label="FS_DyMaxSpeed"	    pvname="15iddLAX:USAXS:FS_DyMaxSpeed" />
-	  <PV label="FS_ArMaxSpeed"	    pvname="15iddLAX:USAXS:FS_ArMaxSpeed" />
-	  -->
+					<PV label="FS_NumberOfPoints" pvname="15iddLAX:USAXS:FS_NumberOfPoints">
+						<attribute name="meaning" value="number of waypoints in trajectory scan" />
+					</PV>
+					<PV label="FS_ScanTime" pvname="15iddLAX:USAXS:FS_ScanTime" />
+					<PV label="FS_ArStartAyDyMove" pvname="15iddLAX:USAXS:FS_ArStartAyDyMove" />
 
-	  <PV label="FS_NumberOfPoints"     pvname="15iddLAX:USAXS:FS_NumberOfPoints">
-            <attribute name="meaning"       value="number of waypoints in trajectory scan" />
-	  </PV>
-	  <PV label="FS_ScanTime"           pvname="15iddLAX:USAXS:FS_ScanTime" />
-	  <PV label="FS_ArStartAyDyMove"    pvname="15iddLAX:USAXS:FS_ArStartAyDyMove" />
-
-        </group>		
+				</group> 	<!-- entry:NXentry/flyScan:NXdata -->
 
 
- 	<!-- metadata -->
- 	<group name="metadata" class="NXcollection">    <!-- metadata:NXcollection -->
+				<!-- metadata -->
+				<group name="metadata" class="NXcollection">    <!-- metadata:NXcollection -->
 
-	  <!-- beam line conditions -->
- 	  <PV label="SR_current"	 pvname="S:SRcurrentAI" />
- 	  <PV label="ID_E"		 pvname="ID15:Energy" />
- 	  <PV label="DCM_energy"	 pvname="15IDA:BraggERdbkAO" />
- 	  <PV label="DCM_wavelength"	 pvname="15IDA:BraggLambdaRdbkAO" />
- 	  <PV label="DCM_theta"	 	 pvname="15IDA:m10.RBV" />
- 	  <PV label="CryoLoad"		 pvname="15IDCryo:CC01:Power" />
+					<!-- beam line conditions -->
+					<PV label="SR_current" pvname="S:SRcurrentAI" />
+					<PV label="ID_E" pvname="ID15:Energy" />
+					<PV label="DCM_energy" pvname="15IDA:BraggERdbkAO" />
+					<PV label="DCM_wavelength" pvname="15IDA:BraggLambdaRdbkAO" />
+					<PV label="DCM_theta" pvname="15IDA:m10.RBV" />
+					<PV label="CryoLoad" pvname="15IDCryo:CC01:Power" />
 
-	  <!-- beam line mirrors -->
- 	  <PV label="VDM_Stripe"	 pvname="15IDA:m5.RBV" />
- 	  <PV label="VDM_Pitch"		 pvname="15IDA:m6.RBV" />
- 	  <PV label="VDM_Vertical"	 pvname="15IDA:m7.RBV" />
- 	  <PV label="VDM_T"		 pvname="15IDA:m8.RBV" />
+					<!-- beam line mirrors -->
+					<PV label="VDM_Stripe" pvname="15IDA:m5.RBV" />
+					<PV label="VDM_Pitch" pvname="15IDA:m6.RBV" />
+					<PV label="VDM_Vertical" pvname="15IDA:m7.RBV" />
+					<PV label="VDM_T" pvname="15IDA:m8.RBV" />
 
- 	  <PV label="mir_slitb"		 pvname="15IDA:m28.RBV" />
- 	  <PV label="mir_slitl"		 pvname="15IDA:m27.RBV" />
- 	  <PV label="mir_slitr"		 pvname="15IDA:m25.RBV" />
- 	  <PV label="mir_slitt"		 pvname="15IDA:m26.RBV" />
+					<PV label="mir_slitb" pvname="15IDA:m28.RBV" />
+					<PV label="mir_slitl" pvname="15IDA:m27.RBV" />
+					<PV label="mir_slitr" pvname="15IDA:m25.RBV" />
+					<PV label="mir_slitt" pvname="15IDA:m26.RBV" />
 
-	  <!-- SPEC -->
- 	  <PV label="SPEC_macro_file"	 pvname="15iddLAX:string19" />
- 	  <PV label="SPEC_data_file"	 pvname="15iddLAX:USAXS:specFile" />
- 	  <PV label="SPEC_data_dir"	 pvname="15iddLAX:USAXS:userDir" />
- 	  <PV label="spec_scan"		 pvname="15iddLAX:USAXS:specScan" />
- 	  <PV label="state"		 pvname="15iddLAX:USAXS:state" />
- 	  <PV label="timeStamp"		 pvname="15iddLAX:USAXS:timeStamp" />
+					<!-- SPEC -->
+					<PV label="SPEC_macro_file" pvname="15iddLAX:string19" />
+					<PV label="SPEC_data_file" pvname="15iddLAX:USAXS:specFile" />
+					<PV label="SPEC_data_dir" pvname="15iddLAX:USAXS:userDir" />
+					<PV label="spec_scan" pvname="15iddLAX:USAXS:specScan" />
+					<PV label="state" pvname="15iddLAX:USAXS:state" />
+					<PV label="timeStamp" pvname="15iddLAX:USAXS:timeStamp" />
 
-	  <!-- USAXS terms -->
- 	  <PV label="analyzer_distance"  pvname="15iddLAX:USAXS:SAD" />
- 	  <PV label="detector_distance"  pvname="15iddLAX:USAXS:SDD" />
- 	  <PV label="UATerm"		 pvname="15iddLAX:USAXS:UATerm" />
- 	  <PV label="MR_center" 	 pvname="15iddLAX:USAXS:MRcenter" />
- 	  <PV label="MSR_center"	 pvname="15iddLAX:USAXS:MSRcenter" />
- 	  <PV label="AR_center" 	 pvname="15iddLAX:USAXS:ARcenter" />
- 	  <PV label="ASR_center"	 pvname="15iddLAX:USAXS:ASRcenter" />
- 	  <PV label="ARenc_0"            pvname="15iddLAX:USAXS:Q.B" />
- 	  <PV label="feedback_ON"        pvname="15iddLAX:fbe:omega:on" />
+					<!-- USAXS terms -->
+					<PV label="analyzer_distance" pvname="15iddLAX:USAXS:SAD" />
+					<PV label="detector_distance" pvname="15iddLAX:USAXS:SDD" />
+					<PV label="UATerm" pvname="15iddLAX:USAXS:UATerm" />
+					<PV label="MR_center" pvname="15iddLAX:USAXS:MRcenter" />
+					<PV label="MSR_center" pvname="15iddLAX:USAXS:MSRcenter" />
+					<PV label="AR_center" pvname="15iddLAX:USAXS:ARcenter" />
+					<PV label="ASR_center" pvname="15iddLAX:USAXS:ASRcenter" />
+					<PV label="ARenc_0" pvname="15iddLAX:USAXS:Q.B" />
+					<PV label="feedback_ON" pvname="15iddLAX:fbe:omega:on" />
 
-	  <!-- USAXS sample slit positions -->
- 	  <PV label="uslit_v_center"	 pvname="15iddLAX:m58:c2:m5" />
- 	  <PV label="uslit_h_center"	 pvname="15iddLAX:m58:c2:m6" />
- 	  <PV label="uslit_v_gap"	 pvname="15iddLAX:m58:c2:m7" />
- 	  <PV label="uslit_h_gap"	 pvname="15iddLAX:m58:c2:m8" />
+					<!-- USAXS sample slit positions -->
+					<PV label="uslit_v_center" pvname="15iddLAX:m58:c2:m5" />
+					<PV label="uslit_h_center" pvname="15iddLAX:m58:c2:m6" />
+					<PV label="uslit_v_gap" pvname="15iddLAX:m58:c2:m7" />
+					<PV label="uslit_h_gap" pvname="15iddLAX:m58:c2:m8" />
 
- 	  <PV label="hhl_slitb"		 pvname="15IDA:m20.RBV" />
- 	  <PV label="hhl_slitl"		 pvname="15IDA:m19.RBV" />
- 	  <PV label="hhl_slitr"		 pvname="15IDA:m17.RBV" />
- 	  <PV label="hhl_slitt"		 pvname="15IDA:m18.RBV" />
+					<PV label="hhl_slitb" pvname="15IDA:m20.RBV" />
+					<PV label="hhl_slitl" pvname="15IDA:m19.RBV" />
+					<PV label="hhl_slitr" pvname="15IDA:m17.RBV" />
+					<PV label="hhl_slitt" pvname="15IDA:m18.RBV" />
 
- 	  <!-- amplifier gains -->
-	  <PV label="I0AmpGain" 	 pvname="15iddUSX:fem02:seq01:gain" />
-	  <PV label="I00AmpGain" 	 pvname="15iddUSX:fem03:seq01:gain" />
+					<!-- amplifier gains -->
+					<PV label="I0AmpGain" pvname="15iddUSX:fem02:seq01:gain" />
+					<PV label="I00AmpGain" pvname="15iddUSX:fem03:seq01:gain" />
 
- 	  <!-- photodiode amplifier gains and measured backgrounds -->
-	  <PV label="upd_gain0" 	 pvname="15iddUSX:pd01:seq02:gain0" />
- 	  <PV label="upd_bkg0"		 pvname="15iddUSX:pd01:seq02:bkg0" />
- 	  <PV label="upd_bkg_err0"	 pvname="15iddUSX:pd01:seq02:bkgErr0" />
+					<!-- photodiode amplifier gains and measured backgrounds -->
+					<PV label="upd_gain0" pvname="15iddUSX:pd01:seq02:gain0" />
+					<PV label="upd_bkg0" pvname="15iddUSX:pd01:seq02:bkg0" />
+					<PV label="upd_bkg_err0" pvname="15iddUSX:pd01:seq02:bkgErr0" />
 
- 	  <PV label="upd_gain1"  	pvname="15iddUSX:pd01:seq02:gain1" />
- 	  <PV label="upd_bkg1"		pvname="15iddUSX:pd01:seq02:bkg1" />
- 	  <PV label="upd_bkgErr1"       pvname="15iddUSX:pd01:seq02:bkgErr1" />
+					<PV label="upd_gain1" pvname="15iddUSX:pd01:seq02:gain1" />
+					<PV label="upd_bkg1" pvname="15iddUSX:pd01:seq02:bkg1" />
+					<PV label="upd_bkgErr1" pvname="15iddUSX:pd01:seq02:bkgErr1" />
 
- 	  <PV label="upd_gain2"  	pvname="15iddUSX:pd01:seq02:gain2" />
- 	  <PV label="upd_bkg2"		pvname="15iddUSX:pd01:seq02:bkg2" />
- 	  <PV label="upd_bkgErr2"       pvname="15iddUSX:pd01:seq02:bkgErr2" />
+					<PV label="upd_gain2" pvname="15iddUSX:pd01:seq02:gain2" />
+					<PV label="upd_bkg2" pvname="15iddUSX:pd01:seq02:bkg2" />
+					<PV label="upd_bkgErr2" pvname="15iddUSX:pd01:seq02:bkgErr2" />
 
- 	  <PV label="upd_gain3"  	pvname="15iddUSX:pd01:seq02:gain3" />
- 	  <PV label="upd_bkg3"		pvname="15iddUSX:pd01:seq02:bkg3" />
- 	  <PV label="upd_bkgErr3"       pvname="15iddUSX:pd01:seq02:bkgErr3" />
+					<PV label="upd_gain3" pvname="15iddUSX:pd01:seq02:gain3" />
+					<PV label="upd_bkg3" pvname="15iddUSX:pd01:seq02:bkg3" />
+					<PV label="upd_bkgErr3" pvname="15iddUSX:pd01:seq02:bkgErr3" />
 
- 	  <PV label="upd_gain4"  	pvname="15iddUSX:pd01:seq02:gain4" />
- 	  <PV label="upd_bkg4"		pvname="15iddUSX:pd01:seq02:bkg4" />
- 	  <PV label="upd_bkgErr4"       pvname="15iddUSX:pd01:seq02:bkgErr4" />
+					<PV label="upd_gain4" pvname="15iddUSX:pd01:seq02:gain4" />
+					<PV label="upd_bkg4" pvname="15iddUSX:pd01:seq02:bkg4" />
+					<PV label="upd_bkgErr4" pvname="15iddUSX:pd01:seq02:bkgErr4" />
 
- 	  <!-- photodiode amplifier range-changing setpoints -->
- 	  <PV label="upd_gainU"         pvname="15iddUSX:pd01:seq02:gainU" />
- 	  <PV label="upd_gainD"         pvname="15iddUSX:pd01:seq02:gainD" />
+					<!-- photodiode amplifier range-changing setpoints -->
+					<PV label="upd_gainU" pvname="15iddUSX:pd01:seq02:gainU" />
+					<PV label="upd_gainD" pvname="15iddUSX:pd01:seq02:gainD" />
 
-	  <!-- gas pressures -->
- 	  <PV label="gas_pressure_Ni"	 pvname="15IDA:NITROGEN_PRESSURE" />
- 	  <PV label="gas_pressure_He"	 pvname="15IDA:HELIUM_PRESSURE" />
- 	  <PV label="gas_pressure_Ar"	 pvname="15IDA:ARGON_PRESSURE" />
- 	  <PV label="gas_pressure_user"	 pvname="15IDA:USERGAS_PRESSURE" />
+					<!-- gas pressures -->
+					<PV label="gas_pressure_Ni" pvname="15IDA:NITROGEN_PRESSURE" />
+					<PV label="gas_pressure_He" pvname="15IDA:HELIUM_PRESSURE" />
+					<PV label="gas_pressure_Ar" pvname="15IDA:ARGON_PRESSURE" />
+					<PV label="gas_pressure_user" pvname="15IDA:USERGAS_PRESSURE" />
 
-	  <!-- shutters -->
- 	  <PV label="CCD_shutter"	 pvname="15iddUSX:pmm01:reg01:bo01" />
- 	  <PV label="Ti_pf42_b3"	 pvname="15iddUSX:ath01:reg01:bo03" />
- 	  <PV label="Ti_pf42_b4"	 pvname="15iddUSX:ath01:reg01:bo04" />
+					<!-- shutters -->
+					<PV label="CCD_shutter" pvname="15iddUSX:pmm01:reg01:bo01" />
+					<PV label="Ti_pf42_b3" pvname="15iddUSX:ath01:reg01:bo03" />
+					<PV label="Ti_pf42_b4" pvname="15iddUSX:ath01:reg01:bo04" />
 
- 	  <PV label="d_beam_available"	 pvname="15iddLAX:blCalc:userCalc1" />
- 	  <PV label="d_doors_closed"	 pvname="PA:15ID:STA_D_NO_ACCESS.VAL" />
- 	  <PV label="white_shtr_opened"	 pvname="PA:15ID:STA_A_FES_OPEN_PL.VAL" />
+					<PV label="d_beam_available" pvname="15iddLAX:blCalc:userCalc1" />
+					<PV label="d_doors_closed" pvname="PA:15ID:STA_D_NO_ACCESS.VAL" />
+					<PV label="white_shtr_opened" pvname="PA:15ID:STA_A_FES_OPEN_PL.VAL" />
 
- 	  <PV label="pf4_trans"		 pvname="15iddUSX:pf4:trans" />
- 	  <PV label="pf4_thickness_Al"	 pvname="15iddUSX:pf4:filterAl" />
- 	  <PV label="pf4_thickness_Gl"	 pvname="15iddUSX:pf4:filterGlass" />
- 	  <PV label="pf4_thickness_Ti"	 pvname="15iddUSX:pf4:filterTi" />
+					<PV label="pf4_trans" pvname="15iddUSX:pf4:trans" />
+					<PV label="pf4_thickness_Al" pvname="15iddUSX:pf4:filterAl" />
+					<PV label="pf4_thickness_Gl" pvname="15iddUSX:pf4:filterGlass" />
+					<PV label="pf4_thickness_Ti" pvname="15iddUSX:pf4:filterTi" />
 
-	  <!-- piezos -->
- 	  <PV label="M2Rp_VDC"		 pvname="15iddUSX:rmm01:ana01:ao02" />
- 	  <PV label="M2Rp_rbv"		 pvname="15iddUSX:ath01:ana01:ai02" />
+					<!-- piezos -->
+					<PV label="M2Rp_VDC" pvname="15iddUSX:rmm01:ana01:ao02" />
+					<PV label="M2Rp_rbv" pvname="15iddUSX:ath01:ana01:ai02" />
 
- 	  <PV label="MSRp_VDC"  	 pvname="15iddUSX:rmm01:ana01:ao04" />
- 	  <PV label="MSRp_rbv"  	 pvname="15iddUSX:ath01:ana01:ai04" />
+					<PV label="MSRp_VDC" pvname="15iddUSX:rmm01:ana01:ao04" />
+					<PV label="MSRp_rbv" pvname="15iddUSX:ath01:ana01:ai04" />
 
- 	  <PV label="A2Rp_VDC"		 pvname="15iddUSX:rmm01:ana01:ao01" />
- 	  <PV label="A2Rp_rbv"		 pvname="15iddUSX:ath01:ana01:ai01" />
+					<PV label="A2Rp_VDC" pvname="15iddUSX:rmm01:ana01:ao01" />
+					<PV label="A2Rp_rbv" pvname="15iddUSX:ath01:ana01:ai01" />
 
- 	  <PV label="ASRp_VDC"  	 pvname="15iddUSX:rmm01:ana01:ao03" />
- 	  <PV label="ASRp_rbv"  	 pvname="15iddUSX:ath01:ana01:ai03" />
+					<PV label="ASRp_VDC" pvname="15iddUSX:rmm01:ana01:ao03" />
+					<PV label="ASRp_rbv" pvname="15iddUSX:ath01:ana01:ai03" />
 
-	  <!-- other positioners -->
- 	  <PV label="GuardBot"	 	 pvname="15iddLAX:mxv:c0:m6.RBV" />
- 	  <PV label="GuardInB"	 	 pvname="15iddLAX:mxv:c0:m4.RBV" />
- 	  <PV label="GuardOutB"	 	 pvname="15iddLAX:mxv:c0:m3.RBV" />
- 	  <PV label="GuardTop"	 	 pvname="15iddLAX:mxv:c0:m5.RBV" />
- 	  <PV label="I0_stage"	 	 pvname="15iddLAX:m58:c1:m5.RBV" />
- 	  <PV label="M1TPico"	 	 pvname="15iddUSX:pic:m5.RBV" />
- 	  <PV label="M2TPico"		 pvname="15iddUSX:pic:m6.RBV" />
+					<!-- other positioners -->
+					<PV label="GuardBot" pvname="15iddLAX:mxv:c0:m6.RBV" />
+					<PV label="GuardInB" pvname="15iddLAX:mxv:c0:m4.RBV" />
+					<PV label="GuardOutB" pvname="15iddLAX:mxv:c0:m3.RBV" />
+					<PV label="GuardTop" pvname="15iddLAX:mxv:c0:m5.RBV" />
+					<PV label="I0_stage" pvname="15iddLAX:m58:c1:m5.RBV" />
+					<PV label="M1TPico" pvname="15iddUSX:pic:m5.RBV" />
+					<PV label="M2TPico" pvname="15iddUSX:pic:m6.RBV" />
 
-	  <!-- USAXS positioners -->
- 	  <PV label="asr"		 pvname="15iddLAX:xps:c0:m6.RBV" />
- 	  <PV label="ast"		 pvname="15iddLAX:xps:c0:m4.RBV" />
- 	  <PV label="asx"		 pvname="15iddLAX:m58:c1:m3.RBV" />
- 	  <PV label="asy"		 pvname="15iddLAX:m58:c1:m4.RBV" />
- 	  <PV label="ax"		 pvname="15iddLAX:m58:c0:m5.RBV" />
- 	  <PV label="ay"		 pvname="15iddLAX:m58:c0:m6.RBV" />
- 	  <PV label="az"		 pvname="15iddLAX:m58:c0:m7.RBV" />
- 	  <PV label="sx"		 pvname="15iddLAX:m58:c2:m1.RBV" />
- 	  <PV label="sy"		 pvname="15iddLAX:m58:c2:m2.RBV" />
- 	  <PV label="dx"		 pvname="15iddLAX:m58:c2:m3.RBV" />
- 	  <PV label="dy"		 pvname="15iddLAX:m58:c2:m4.RBV" />
- 	  <PV label="m1y"		 pvname="15iddLAX:m58:c0:m4.RBV" />
- 	  <PV label="mr"		 pvname="15iddLAX:xps:c0:m1.RBV" />
- 	  <PV label="mr_enc"		 pvname="15iddLAX:mr:encoder" />
- 	  <PV label="msr"		 pvname="15iddLAX:xps:c0:m5.RBV" />
- 	  <PV label="mst"		 pvname="15iddLAX:xps:c0:m3.RBV" />
- 	  <PV label="msx"		 pvname="15iddLAX:m58:c1:m1.RBV" />
- 	  <PV label="msy"		 pvname="15iddLAX:m58:c1:m2.RBV" />
- 	  <PV label="mx"		 pvname="15iddLAX:m58:c0:m2.RBV" />
- 	  <PV label="my"		 pvname="15iddLAX:m58:c0:m3.RBV" />
- 	  <PV label="pin_x"		 pvname="15iddLAX:mxv:c0:m1.RBV" />
- 	  <PV label="pin_y"		 pvname="15iddLAX:mxv:c0:m2.RBV" />
- 	  <PV label="pin_z"		 pvname="15iddLAX:mxv:c0:m8.RBV" />
- 	  <PV label="tcam"		 pvname="15iddLAX:m58:c1:m6.RBV" />
- 	  <PV label="ccd_dx"		 pvname="15iddLAX:USAXS:CCD_dx" />
- 	  <PV label="ccd_dy"		 pvname="15iddLAX:USAXS:CCD_dy" />
- 	  <PV label="diode_dx"		 pvname="15iddLAX:USAXS:Diode_dx" />
- 	  <PV label="diode_dy"		 pvname="15iddLAX:USAXS:Diode_dy" />
+					<!-- USAXS positioners -->
+					<PV label="asr" pvname="15iddLAX:xps:c0:m6.RBV" />
+					<PV label="ast" pvname="15iddLAX:xps:c0:m4.RBV" />
+					<PV label="asx" pvname="15iddLAX:m58:c1:m3.RBV" />
+					<PV label="asy" pvname="15iddLAX:m58:c1:m4.RBV" />
+					<PV label="ax" pvname="15iddLAX:m58:c0:m5.RBV" />
+					<PV label="ay" pvname="15iddLAX:m58:c0:m6.RBV" />
+					<PV label="az" pvname="15iddLAX:m58:c0:m7.RBV" />
+					<PV label="sx" pvname="15iddLAX:m58:c2:m1.RBV" />
+					<PV label="sy" pvname="15iddLAX:m58:c2:m2.RBV" />
+					<PV label="dx" pvname="15iddLAX:m58:c2:m3.RBV" />
+					<PV label="dy" pvname="15iddLAX:m58:c2:m4.RBV" />
+					<PV label="m1y" pvname="15iddLAX:m58:c0:m4.RBV" />
+					<PV label="mr" pvname="15iddLAX:xps:c0:m1.RBV" />
+					<PV label="mr_enc" pvname="15iddLAX:mr:encoder" />
+					<PV label="msr" pvname="15iddLAX:xps:c0:m5.RBV" />
+					<PV label="mst" pvname="15iddLAX:xps:c0:m3.RBV" />
+					<PV label="msx" pvname="15iddLAX:m58:c1:m1.RBV" />
+					<PV label="msy" pvname="15iddLAX:m58:c1:m2.RBV" />
+					<PV label="mx" pvname="15iddLAX:m58:c0:m2.RBV" />
+					<PV label="my" pvname="15iddLAX:m58:c0:m3.RBV" />
+					<PV label="pin_x" pvname="15iddLAX:mxv:c0:m1.RBV" />
+					<PV label="pin_y" pvname="15iddLAX:mxv:c0:m2.RBV" />
+					<PV label="pin_z" pvname="15iddLAX:mxv:c0:m8.RBV" />
+					<PV label="tcam" pvname="15iddLAX:m58:c1:m6.RBV" />
+					<PV label="ccd_dx" pvname="15iddLAX:USAXS:CCD_dx" />
+					<PV label="ccd_dy" pvname="15iddLAX:USAXS:CCD_dy" />
+					<PV label="diode_dx" pvname="15iddLAX:USAXS:Diode_dx" />
+					<PV label="diode_dy" pvname="15iddLAX:USAXS:Diode_dy" />
 
-	  <!-- Linkam -->
- 	  <PV label="linkam_errors"		 pvname="15iddLAX:ci94:errorByte" />
- 	  <PV label="linkam_limit"		 pvname="15iddLAX:ci94:setLimit" />
- 	  <PV label="linkam_rate"		 pvname="15iddLAX:ci94:setRate" />
- 	  <PV label="linkam_status"		 pvname="15iddLAX:ci94:status" />
- 	  <PV label="linkam_temp1"		 pvname="15iddLAX:ci94:temp" />
- 	  <PV label="linkam_temp2"		 pvname="15iddLAX:ci94:temp2" />
+					<!-- Linkam -->
+					<PV label="linkam_errors" pvname="15iddLAX:ci94:errorByte" />
+					<PV label="linkam_limit" pvname="15iddLAX:ci94:setLimit" />
+					<PV label="linkam_rate" pvname="15iddLAX:ci94:setRate" />
+					<PV label="linkam_status" pvname="15iddLAX:ci94:status" />
+					<PV label="linkam_temp1" pvname="15iddLAX:ci94:temp" />
+					<PV label="linkam_temp2" pvname="15iddLAX:ci94:temp2" />
 
- 	</group>
+				</group> 	<!-- entry:NXentry/metadata:NXcollection -->
 
-      </group>	     <!-- entry:NXentry -->
-    </group>	     <!-- file -->
-  </NX_structure>
+			</group>	     <!-- entry:NXentry -->
+		</group>	     <!-- file -->
+	</NX_structure>
 </saveFlyData>
 
 

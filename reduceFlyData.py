@@ -5,30 +5,16 @@
 # export EPD=/APSshare-ro/epd/rh6-x86_64/bin/python
 # alias EPD '/APSshare-ro/epd/rh6-x86_64/bin/python '
 
-data_files = '''
-   Blank_20_1386638201.h5
-   Blank_30_1386638026.h5
-   Blank_45_1386637624.h5
-   Blank_60_1386638396.h5
-   Blank_120_1386638732.h5
-   Adam_20_1386638251.h5
-   Adam_30_1386638085.h5
-   Adam_45_1386637699.h5
-   Adam_60_1386638485.h5
-   Adam_120_1386638883.h5
-   PS_20_1386638301.h5
-   PS_30_1386638146.h5
-   PS_45_1386637773.h5
-   PS_60_1386638575.h5
-   PS_120_1386639035.h5
-'''.split()
-
 
 import os
+import sys
 import math
 import numpy
 import h5py
 import eznx
+
+
+DEFAULT_NUM_BINS = 300
 
 
 def get_data(dataset, astype=None):
@@ -71,8 +57,11 @@ class UsaxsFlyScanData(object):
         '''pull the raw data from the HDF5 file'''
         self.raw_clock_pulses = get_data(nxdata['mca1'])
         self.raw_I0 = get_data(nxdata['mca2'])
+        self.raw_I0_ranges = get_data(nxdata['mca5'])
         self.raw_upd = get_data(nxdata['mca3'])
-        self.raw_ranges = get_data(nxdata['mca4'])
+        self.raw_upd_ranges = get_data(nxdata['mca4'])
+        self.raw_ay_fly_pulses = get_data(nxdata['mca6'])
+        self.raw_dy_fly_pulses = get_data(nxdata['mca7'])
         self.num_points = get_data(nxdata['AR_pulses'])
         
     def compute_ar(self, nxdata):
@@ -143,7 +132,7 @@ class UsaxsFlyScanData(object):
         numpy.seterr(divide='ignore', invalid='ignore')     # suppress messages
 
         # 0 means no data, >0 means valid range
-        range_pulses = numpy.ma.masked_equal(self.raw_ranges, 0)  
+        range_pulses = numpy.ma.masked_equal(self.raw_upd_ranges, 0)  
         arr = self.range_adjustment_constant * range_pulses / self.raw_clock_pulses
         ranges = numpy.ma.masked_invalid(arr)
         self.ranges = ranges.astype(int)
@@ -268,6 +257,44 @@ class UsaxsFlyScanData(object):
 
 
 def main():
+    '''standard command-line interface'''
+    import argparse
+    parser = argparse.ArgumentParser(prog='reduceFlyData', 
+                                     description='reduce USAXS fly scan data to R(Q)')
+    parser.add_argument('infile', 
+                        action='store', 
+                        help="input HDF5 file name")
+    parser.add_argument('outfile', 
+                        action='store', 
+                        help="output HDF5 file name")
+    msg =  'how many bins in output R(Q)?'
+    msg += '  default = %d' % DEFAULT_NUM_BINS
+    parser.add_argument('-n', 
+                        '--num_bins',
+                        dest='num_bins',
+                        type=int,
+                        default=DEFAULT_NUM_BINS,
+                        help=msg)
+    parser.add_argument('-V', 
+                        '--version', 
+                        action='version', 
+                        version='$Id$')
+
+    print sys.argv
+    cmd_args = parser.parse_args()
+
+    hdf = UsaxsFlyScanData(cmd_args.infile, bin_count=cmd_args.num_bins)
+    out = eznx.makeFile(cmd_args.outfile)
+    entry = eznx.makeGroup(out, 'flyScan_reduced', 'NXentry')
+    key = os.path.splitext(os.path.basename(cmd_args.infile))[0]
+    print 'Saving NXdata group: ' + key
+    data = eznx.makeGroup(entry, key, 'NXdata')
+    hdf.save_results(data)
+    hdf.close_hdf_file()
+    out.close()
+
+
+def developer_main():
     '''
     First, find the directory that exists on our computer.
     Since we develop and process on several computers, the data might
@@ -293,6 +320,23 @@ def main():
     
     Close the output HDF5 file.
     '''
+    data_files = '''
+       Blank_20_1386638201.h5
+       Blank_30_1386638026.h5
+       Blank_45_1386637624.h5
+       Blank_60_1386638396.h5
+       Blank_120_1386638732.h5
+       Adam_20_1386638251.h5
+       Adam_30_1386638085.h5
+       Adam_45_1386637699.h5
+       Adam_60_1386638485.h5
+       Adam_120_1386638883.h5
+       PS_20_1386638301.h5
+       PS_30_1386638146.h5
+       PS_45_1386637773.h5
+       PS_60_1386638575.h5
+       PS_120_1386639035.h5
+    '''.split()
     db = {}
     for filename in data_files:
         print 'Reading: ' + filename
@@ -313,7 +357,7 @@ def main():
         out.close()
 
 
-if __name__ == '__main__':
+def developer():
     # different development directories
     dir_list = [
                 r'/data/USAXS_data/struckData',
@@ -323,8 +367,17 @@ if __name__ == '__main__':
     for path in dir_list:
         if os.path.exists(path):
             os.chdir(path)
-            main()
+            developer_main()
             break
+
+
+if __name__ == '__main__':
+    # developer parameters
+#     sys.argv.append('/share1/USAXS_data/2014-02/02_11_test2_fly/S3_WholeScan.h5')
+#     sys.argv.append('test_fly.h5')
+#     sys.argv.append('-n')
+#     sys.argv.append('250')
+    main()
 
 
 ########### SVN repository information ###################

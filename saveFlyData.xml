@@ -7,6 +7,15 @@ You MUST set EPICS_CA_MAX_ARRAY_BYTES to >= 1280000 to read the maximum
 number of data points the MCS can be told to acquire (15iddLAX:3820:MaxChannels).
 
 This is programmed into the Python code that reads this file.
+
+After editing, confirm this file is valid with this command::
+
+  xmllint -/-schema saveFlyData.xsd saveFlyData.xml
+
+OR, check this file for validity and that all PVs exist::
+
+  EPD check_saveFlyData.py
+
  -->
  
  
@@ -54,13 +63,18 @@ This is programmed into the Python code that reads this file.
           <PV label="AR_pulses"    pvname="15iddLAX:traj1:Npulses" />
           <PV label="AR_start"     pvname="15iddLAX:USAXS:ARstart" />  <!-- pushed here by SPEC usaxs_flyscan.txt macro -->
           <PV label="AR_increment" pvname="15iddLAX:USAXS:MinStep" />
+          <PV label="AR_Finish"    pvname="15iddLAX:USAXS:Finish" />
+          <PV label="StartOffset"  pvname="15iddLAX:USAXS:StartOffset" />
 
           <PV label="time_total"   pvname="15iddLAX:traj1:ElapsedTime" />
           <PV label="time_elapsed" pvname="15iddLAX:traj1:Time" />
 
           <!-- detectors -->
-          <PV label="mca_channels"    pvname="15iddLAX:3820:CurrentChannel" />
-          <PV label="mca_channel_max" pvname="15iddLAX:3820:MaxChannels" />
+          <PV label="mca_channels"	    pvname="15iddLAX:3820:CurrentChannel" />
+          <PV label="mca_channel_max"	    pvname="15iddLAX:3820:MaxChannels" />
+          <PV label="mca_channels_used"     pvname="15iddLAX:3820:NuseAll">
+            <attribute name="meaning"       value="..number of Struck channels to use" />
+	  </PV>
 	  
 	  <PV label="mca1_name" pvname="15iddLAX:3820:scaler1.NM1" />
           <PV label="mca1" 	pvname="15iddLAX:3820:mca1" 		length_limit="AR_pulses">		<!-- counts of 50 MHz clock -->
@@ -98,13 +112,13 @@ This is programmed into the Python code that reads this file.
 	  <PV label="mca5_name" pvname="15iddLAX:3820:scaler1.NM5" />
           <PV label="mca5" 	pvname="15iddLAX:3820:mca5" 		length_limit="AR_pulses">
             <attribute name="units"      value="counts" />
-            <attribute name="USAXS_name" value="mca5" />
+            <attribute name="USAXS_name" value="I0_range" />
           </PV>
 
 	  <PV label="mca6_name" pvname="15iddLAX:3820:scaler1.NM6" />
           <PV label="mca6" 	pvname="15iddLAX:3820:mca6" 		length_limit="AR_pulses">
             <attribute name="units"      value="counts" />
-            <attribute name="USAXS_name" value="mca6" />
+            <attribute name="USAXS_name" value="ay_fly_signal" />
           </PV>
 
 	  <PV label="mca7_name" pvname="15iddLAX:3820:scaler1.NM7" />
@@ -125,9 +139,27 @@ This is programmed into the Python code that reads this file.
 	    and the corresponding MCS channel number at which the change occured
 	    
 	    from: 15iddLAX/Db/trajScan_recGain.db
+	    2014-02-06,PRJ: instead, use 15iddLAX/Db/USAXSfly.db
 	  -->
 	  <PV label="changes_ampGain"	    pvname="15iddLAX:USAXSfly:ampGain" />
+	  <PV label="changes_ampReqGain"    pvname="15iddLAX:USAXSfly:ampReqGain" />
 	  <PV label="changes_mcsChan"	    pvname="15iddLAX:USAXSfly:mcsChan" />
+
+	  <PV label="AYDYstart"	    	    pvname="15iddLAX:USAXSfly:AYDYstart">
+            <attribute name="meaning"       value="point number when to start moving ay and dy stages" />
+	  </PV>
+	  <PV label="dyMaxSpeed"  	    pvname="15iddLAX:USAXSfly:dyMaxSpeed" />
+	  <PV label="ayMaxSpeed"  	    pvname="15iddLAX:USAXSfly:ayMaxSpeed" />
+	  <PV label="arMaxSpeed"  	    pvname="15iddLAX:USAXSfly:arMaxSpeed" />
+
+	  <PV label="FS_NumberOfPoints"     pvname="15iddLAX:USAXS:FS_NumberOfPoints">
+            <attribute name="meaning"       value="number of waypoints in trajectory scan" />
+	  </PV>
+	  <PV label="FS_ScanTime"           pvname="15iddLAX:USAXS:FS_ScanTime" />
+	  <PV label="FS_ArStartAyDyMove"    pvname="15iddLAX:USAXS:FS_ArStartAyDyMove" />
+	  <PV label="FS_AyMaxSpeed"	    pvname="15iddLAX:USAXS:FS_AyMaxSpeed" />
+	  <PV label="FS_DyMaxSpeed"	    pvname="15iddLAX:USAXS:FS_DyMaxSpeed" />
+	  <PV label="FS_ArMaxSpeed"	    pvname="15iddLAX:USAXS:FS_ArMaxSpeed" />
 
         </group>		
 

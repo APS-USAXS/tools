@@ -208,6 +208,16 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="uslit_v_gap" pvname="15iddLAX:m58:c2:m7" />
 					<PV label="uslit_h_gap" pvname="15iddLAX:m58:c2:m8" />
 
+
+					<!-- USAXS sample pin transmission -->
+					<PV label="measure_trans_pin" pvname="15iddLAX:USAXS:TR_MeasurePinTrans" />
+					<PV label="trans_pin_aypos" pvname="15iddLAX:USAXS:TR_AyPosition" />
+					<PV label="trans_pin_time" pvname="15iddLAX:USAXS:TR_MeasurementTime" />
+					<PV label="trans_pin_counts" pvname="15iddLAX:USAXS:TR_pinCounts" />
+					<PV label="trans_pin_gain" pvname="15iddLAX:USAXS:TR_pinGain" />
+					<PV label="trans_I0_counts" pvname="15iddLAX:USAXS:TR_I0Counts" />
+					<PV label="trans_I0_gain" pvname="15iddLAX:USAXS:TR_I0Gain" />
+
 					<PV label="hhl_slitb" pvname="15IDA:m20.RBV" />
 					<PV label="hhl_slitl" pvname="15IDA:m19.RBV" />
 					<PV label="hhl_slitr" pvname="15IDA:m17.RBV" />

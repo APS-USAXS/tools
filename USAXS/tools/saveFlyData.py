@@ -15,8 +15,8 @@ from lxml import etree as lxml_etree
 # matches IOC for big arrays
 os.environ['EPICS_CA_MAX_ARRAY_BYTES'] = '1280000'    # was 200000000 
 
-import epics		# PyEpics support
-import eznx		# NeXus r/w support using h5py
+import epics		            # PyEpics support
+from spec2nexus import eznx     # NeXus r/w support using h5py
 
 
 SVN_ID = '$Id$'

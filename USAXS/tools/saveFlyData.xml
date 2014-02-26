@@ -101,28 +101,29 @@ OR, check this file for validity and that all PVs exist::
 						<attribute name="USAXS_name" value="upd" />
 					</PV>
 
+					<!-- 2014-02-26,PRJ:
 					<PV label="mca4_name" pvname="15iddLAX:3820:scaler1.NM4" />
 					<PV label="mca4" pvname="15iddLAX:3820:mca4" length_limit="AR_pulses">
 						<attribute name="units" value="counts" />
-						<attribute name="USAXS_name" value="UPD_range" />
+						<attribute name="USAXS_name" value="mca4" />
 					</PV>
 
 					<PV label="mca5_name" pvname="15iddLAX:3820:scaler1.NM5" />
 					<PV label="mca5" pvname="15iddLAX:3820:mca5" length_limit="AR_pulses">
 						<attribute name="units" value="counts" />
-						<attribute name="USAXS_name" value="I0_range" />
+						<attribute name="USAXS_name" value="mca5" />
 					</PV>
 
 					<PV label="mca6_name" pvname="15iddLAX:3820:scaler1.NM6" />
 					<PV label="mca6" pvname="15iddLAX:3820:mca6" length_limit="AR_pulses">
 						<attribute name="units" value="counts" />
-						<attribute name="USAXS_name" value="ay_fly_signal" />
+						<attribute name="USAXS_name" value="mca6" />
 					</PV>
 
 					<PV label="mca7_name" pvname="15iddLAX:3820:scaler1.NM7" />
 					<PV label="mca7" pvname="15iddLAX:3820:mca7" length_limit="AR_pulses">
 						<attribute name="units" value="counts" />
-						<attribute name="USAXS_name" value="dy_fly_signal" />
+						<attribute name="USAXS_name" value="mca7" />
 					</PV>
 
 					<PV label="mca8_name" pvname="15iddLAX:3820:scaler1.NM8" />
@@ -130,6 +131,7 @@ OR, check this file for validity and that all PVs exist::
 						<attribute name="units" value="counts" />
 						<attribute name="USAXS_name" value="mca8" />
 					</PV>
+					-->
 
 					<!-- 2013-12-09, PRJ The following PVs record amplifier gain changes 
 						and the corresponding MCS channel number at which the change occurred from: 
@@ -184,7 +186,8 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="mir_slitt" pvname="15IDA:m26.RBV" />
 
 					<!-- SPEC -->
-					<PV label="SPEC_macro_file" pvname="15iddLAX:string19" />
+					<PV label="SPEC_macro_file_string19" pvname="15iddLAX:string19" />
+					<PV label="SPEC_macro_file" pvname="15iddLAX:USAXS:macroFile" />
 					<PV label="SPEC_data_file" pvname="15iddLAX:USAXS:specFile" />
 					<PV label="SPEC_data_dir" pvname="15iddLAX:USAXS:userDir" />
 					<PV label="spec_scan" pvname="15iddLAX:USAXS:specScan" />

@@ -255,6 +255,13 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="upd_gainU" pvname="15iddUSX:pd01:seq02:gainU" />
 					<PV label="upd_gainD" pvname="15iddUSX:pd01:seq02:gainD" />
 
+					<!-- amplifier range-change mask times -->
+					<PV label="upd_amp_change_mask_time0" pvname="15iddLAX:USAXS:AmpR1BlockTime" />
+					<PV label="upd_amp_change_mask_time1" pvname="15iddLAX:USAXS:AmpR2BlockTime" />
+					<PV label="upd_amp_change_mask_time2" pvname="15iddLAX:USAXS:AmpR3BlockTime" />
+					<PV label="upd_amp_change_mask_time3" pvname="15iddLAX:USAXS:AmpR4BlockTime" />
+					<PV label="upd_amp_change_mask_time4" pvname="15iddLAX:USAXS:AmpR5BlockTime" />
+
 					<!-- gas pressures -->
 					<PV label="gas_pressure_Ni" pvname="15IDA:NITROGEN_PRESSURE" />
 					<PV label="gas_pressure_He" pvname="15IDA:HELIUM_PRESSURE" />

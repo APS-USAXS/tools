@@ -259,6 +259,7 @@ class SaveFlyScan(object):
                   file_name = self.hdf5_file_name,
                   creator = __file__,
                   creator_version = self.creator_version,
+                  creator_config_file=self.config_file,
                   svn_id = SVN_ID,
                   HDF5_Version = h5py.version.hdf5_version,
                   h5py_version = h5py.version.version,

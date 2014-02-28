@@ -29,6 +29,11 @@ OR, check this file for validity and that all PVs exist::
 			<attribute name="scan_mode" value="USAXS fly scan" />
 
 			<group name="entry" class="NXentry">
+				<field name="program_name">
+					<!-- version of this configuration file -->
+					<attribute name="config_version" value="1" />
+					<text>saveFlyData.py</text>
+				</field>
 				<PV label="title" pvname="15iddLAX:USAXS:sampleTitle" />
 				<PV label="experiment_identifier" pvname="15iddLAX:GUPNumber" />
 				<PV label="run_cycle" pvname="15iddLAX:RunCycle" />
@@ -70,6 +75,7 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="time_elapsed" pvname="15iddLAX:traj1:Time" />
 
 					<!-- detectors -->
+					<PV label="mca_clock_frequency" pvname="15iddLAX:3820:clock_frequency" />
 					<PV label="mca_channels" pvname="15iddLAX:3820:CurrentChannel" />
 					<PV label="mca_channel_max" pvname="15iddLAX:3820:MaxChannels" />
 					<PV label="mca_channels_used" pvname="15iddLAX:3820:NuseAll">

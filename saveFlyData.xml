@@ -107,44 +107,33 @@ OR, check this file for validity and that all PVs exist::
 						<attribute name="USAXS_name" value="upd" />
 					</PV>
 
-					<!-- 2014-02-26,PRJ:
-					<PV label="mca4_name" pvname="15iddLAX:3820:scaler1.NM4" />
-					<PV label="mca4" pvname="15iddLAX:3820:mca4" length_limit="AR_pulses">
-						<attribute name="units" value="counts" />
-						<attribute name="USAXS_name" value="mca4" />
-					</PV>
+					<!-- 2014-02-28, PRJ
+					    The following PVs record amplifier gain changes 
+						and the corresponding MCS channel number at which the change occurred
+						for each of four detector amplifiers.  (Two monitors and two UPD amplifiers)
+						Choice of the UPD amplifier in use is found in: 15iddUSX:femto:model
+						which takes either of these two values:
+						* 0: "DLPCA200"
+						* 1: "DDPCA300"
+						-->
 
-					<PV label="mca5_name" pvname="15iddLAX:3820:scaler1.NM5" />
-					<PV label="mca5" pvname="15iddLAX:3820:mca5" length_limit="AR_pulses">
-						<attribute name="units" value="counts" />
-						<attribute name="USAXS_name" value="mca5" />
-					</PV>
+					<PV label="upd_flyScan_amplifier"    pvname="15iddUSX:femto:model" />
 
-					<PV label="mca6_name" pvname="15iddLAX:3820:scaler1.NM6" />
-					<PV label="mca6" pvname="15iddLAX:3820:mca6" length_limit="AR_pulses">
-						<attribute name="units" value="counts" />
-						<attribute name="USAXS_name" value="mca6" />
-					</PV>
+					<PV label="changes_I0_mcsChan"       pvname="15iddLAX:USAXSfly:I0:mcsChan" />
+					<PV label="changes_I0_ampGain"       pvname="15iddLAX:USAXSfly:I0:ampGain" />
+					<PV label="changes_I0_ampReqGain"    pvname="15iddLAX:USAXSfly:I0:ampReqGain" />
 
-					<PV label="mca7_name" pvname="15iddLAX:3820:scaler1.NM7" />
-					<PV label="mca7" pvname="15iddLAX:3820:mca7" length_limit="AR_pulses">
-						<attribute name="units" value="counts" />
-						<attribute name="USAXS_name" value="mca7" />
-					</PV>
+					<PV label="changes_I00_mcsChan"      pvname="15iddLAX:USAXSfly:I00:mcsChan" />
+					<PV label="changes_I00_ampGain"      pvname="15iddLAX:USAXSfly:I00:ampGain" />
+					<PV label="changes_I00_ampReqGain"   pvname="15iddLAX:USAXSfly:I00:ampReqGain" />
 
-					<PV label="mca8_name" pvname="15iddLAX:3820:scaler1.NM8" />
-					<PV label="mca8" pvname="15iddLAX:3820:mca8" length_limit="AR_pulses">
-						<attribute name="units" value="counts" />
-						<attribute name="USAXS_name" value="mca8" />
-					</PV>
-					-->
+					<PV label="changes_DLPCA200_mcsChan"    pvname="15iddLAX:USAXSfly:DLPCA200:mcsChan" />
+					<PV label="changes_DLPCA200_ampGain"    pvname="15iddLAX:USAXSfly:DLPCA200:ampGain" />
+					<PV label="changes_DLPCA200_ampReqGain" pvname="15iddLAX:USAXSfly:DLPCA200:ampReqGain" />
 
-					<!-- 2013-12-09, PRJ The following PVs record amplifier gain changes 
-						and the corresponding MCS channel number at which the change occurred from: 
-						15iddLAX/Db/trajScan_recGain.db 2014-02-06,PRJ: instead, use 15iddLAX/Db/USAXSfly.db -->
-					<PV label="changes_ampGain" pvname="15iddLAX:USAXSfly:ampGain" />
-					<PV label="changes_ampReqGain" pvname="15iddLAX:USAXSfly:ampReqGain" />
-					<PV label="changes_mcsChan" pvname="15iddLAX:USAXSfly:mcsChan" />
+					<PV label="changes_DDPCA300_mcsChan"    pvname="15iddLAX:USAXSfly:DDPCA300:mcsChan" />
+					<PV label="changes_DDPCA300_ampGain"    pvname="15iddLAX:USAXSfly:DDPCA300:ampGain" />
+					<PV label="changes_DDPCA300_ampReqGain" pvname="15iddLAX:USAXSfly:DDPCA300:ampReqGain" />
 
 					<PV label="AYDYstart" pvname="15iddLAX:USAXSfly:AYDYstart">
 						<attribute name="meaning"
@@ -262,11 +251,11 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="upd_gainD" pvname="15iddUSX:pd01:seq02:gainD" />
 
 					<!-- amplifier range-change mask times -->
-					<PV label="upd_amp_change_mask_time0" pvname="15iddLAX:USAXS:AmpR1BlockTime" />
-					<PV label="upd_amp_change_mask_time1" pvname="15iddLAX:USAXS:AmpR2BlockTime" />
-					<PV label="upd_amp_change_mask_time2" pvname="15iddLAX:USAXS:AmpR3BlockTime" />
-					<PV label="upd_amp_change_mask_time3" pvname="15iddLAX:USAXS:AmpR4BlockTime" />
-					<PV label="upd_amp_change_mask_time4" pvname="15iddLAX:USAXS:AmpR5BlockTime" />
+					<PV label="upd_amp_change_mask_time0" pvname="15iddLAX:USAXS:FS_AmpR1BlockTime" />
+					<PV label="upd_amp_change_mask_time1" pvname="15iddLAX:USAXS:FS_AmpR2BlockTime" />
+					<PV label="upd_amp_change_mask_time2" pvname="15iddLAX:USAXS:FS_AmpR3BlockTime" />
+					<PV label="upd_amp_change_mask_time3" pvname="15iddLAX:USAXS:FS_AmpR4BlockTime" />
+					<PV label="upd_amp_change_mask_time4" pvname="15iddLAX:USAXS:FS_AmpR5BlockTime" />
 
 					<!-- gas pressures -->
 					<PV label="gas_pressure_Ni" pvname="15IDA:NITROGEN_PRESSURE" />

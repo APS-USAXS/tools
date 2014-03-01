@@ -18,9 +18,23 @@ except Exception, exc:
   print XML_FILE, 'is not valid against rules defined in', XSD_FILE
   raise exc
 
+epics.ca.DEFAULT_CONNECTION_TIMEOUT = 0.2
+
 print '\n'*2
 print 'check that all the defined PVs are actually available'
 print '\n'*2
+not_connected = []
 for i, pv_node in enumerate(config.xpath('//PV')):
-  pvname = pv_node.attrib['pvname'].strip()
-  print i, pvname, epics.caget(pvname)
+    pvname = pv_node.attrib['pvname'].strip()
+    pv = epics.PV(pvname, verbose=False)    # control the output
+    if pv.wait_for_connection():
+        print i, pvname, pv.get()
+    else:
+        print i, pvname, '!!!!!!!!! Could not connect'
+        not_connected.append(pvname)
+
+if len(not_connected) > 0:
+    print '\n'*3
+    print 'These PVs did not connect: \n*', '\n* '.join(not_connected)
+else:
+    print 'All PVs connected'

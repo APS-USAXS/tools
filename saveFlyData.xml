@@ -223,27 +223,55 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="hhl_slitr" pvname="15IDA:m17.RBV" />
 					<PV label="hhl_slitt" pvname="15IDA:m18.RBV" />
 
-					<!-- ion chamber amplifier gains for each range -->
-					<!-- the "data_type" attribute is ad hoc and suggests data reduction to think of this as a number, not text -->
-					<field name="I0_gain0"><attribute name="data_type" value="float" /><text>1e5</text></field>
-					<field name="I0_gain1"><attribute name="data_type" value="float" /><text>1e6</text></field>
-					<field name="I0_gain2"><attribute name="data_type" value="float" /><text>1e7</text></field>
-					<field name="I0_gain3"><attribute name="data_type" value="float" /><text>1e8</text></field>
-					<field name="I0_gain4"><attribute name="data_type" value="float" /><text>1e9</text></field>
+					<!-- I0 amplifier gains at start of scan and gains and measured backgrounds -->
+					<PV label="I0AmpGain"    pvname="15iddUSX:fem02:seq01:gain" />
 
-					<field name="I00_gain0"><attribute name="data_type" value="float" /><text>1e5</text></field>
-					<field name="I00_gain1"><attribute name="data_type" value="float" /><text>1e6</text></field>
-					<field name="I00_gain2"><attribute name="data_type" value="float" /><text>1e7</text></field>
-					<field name="I00_gain3"><attribute name="data_type" value="float" /><text>1e8</text></field>
-					<field name="I00_gain4"><attribute name="data_type" value="float" /><text>1e9</text></field>
+					<PV label="I0_gain0"     pvname="15iddUSX:pd02:seq01:gain0" />
+					<PV label="I0_bkg0"      pvname="15iddUSX:pd02:seq01:bkg0" />
+					<PV label="I0_bkg_err0"  pvname="15iddUSX:pd02:seq01:bkgErr0" />
 
-					<!-- amplifier gains at start of scan -->
-					<PV label="I0AmpGain" pvname="15iddUSX:fem02:seq01:gain" />
-					<PV label="I00AmpGain" pvname="15iddUSX:fem03:seq01:gain" />
+					<PV label="I0_gain1"     pvname="15iddUSX:pd02:seq01:gain1" />
+					<PV label="I0_bkg1"      pvname="15iddUSX:pd02:seq01:bkg1" />
+					<PV label="I0_bkg_err1"  pvname="15iddUSX:pd02:seq01:bkgErr1" />
+
+					<PV label="I0_gain2"     pvname="15iddUSX:pd02:seq01:gain2" />
+					<PV label="I0_bkg2"      pvname="15iddUSX:pd02:seq01:bkg2" />
+					<PV label="I0_bkg_err2"  pvname="15iddUSX:pd02:seq01:bkgErr2" />
+
+					<PV label="I0_gain3"     pvname="15iddUSX:pd02:seq01:gain3" />
+					<PV label="I0_bkg3"      pvname="15iddUSX:pd02:seq01:bkg3" />
+					<PV label="I0_bkg_err3"  pvname="15iddUSX:pd02:seq01:bkgErr3" />
+
+					<PV label="I0_gain4"     pvname="15iddUSX:pd02:seq01:gain4" />
+					<PV label="I0_bkg4"      pvname="15iddUSX:pd02:seq01:bkg4" />
+					<PV label="I0_bkg_err4"  pvname="15iddUSX:pd02:seq01:bkgErr4" />
+
+					<!-- I00 amplifier gains at start of scan and gains and measured backgrounds -->
+					<PV label="I00AmpGain"   pvname="15iddUSX:fem03:seq01:gain" />
+
+					<PV label="I00_gain0"    pvname="15iddUSX:pd03:seq01:gain0" />
+					<PV label="I00_bkg0"     pvname="15iddUSX:pd03:seq01:bkg0" />
+					<PV label="I00_bkg_err0" pvname="15iddUSX:pd03:seq01:bkgErr0" />
+
+					<PV label="I00_gain1"    pvname="15iddUSX:pd03:seq01:gain1" />
+					<PV label="I00_bkg1"     pvname="15iddUSX:pd03:seq01:bkg1" />
+					<PV label="I00_bkg_err1" pvname="15iddUSX:pd03:seq01:bkgErr1" />
+
+					<PV label="I00_gain2"    pvname="15iddUSX:pd03:seq01:gain2" />
+					<PV label="I00_bkg2"     pvname="15iddUSX:pd03:seq01:bkg2" />
+					<PV label="I00_bkg_err2" pvname="15iddUSX:pd03:seq01:bkgErr2" />
+
+					<PV label="I00_gain3"    pvname="15iddUSX:pd03:seq01:gain3" />
+					<PV label="I00_bkg3"     pvname="15iddUSX:pd03:seq01:bkg3" />
+					<PV label="I00_bkg_err3" pvname="15iddUSX:pd03:seq01:bkgErr3" />
+
+					<PV label="I00_gain4"    pvname="15iddUSX:pd03:seq01:gain4" />
+					<PV label="I00_bkg4"     pvname="15iddUSX:pd03:seq01:bkg4" />
+					<PV label="I00_bkg_err4" pvname="15iddUSX:pd03:seq01:bkgErr4" />
 
 					<!-- photodiode amplifier gains and measured backgrounds -->
-					<PV label="upd_gain0" pvname="15iddUSX:pd01:seq02:gain0" />
-					<PV label="upd_bkg0" pvname="15iddUSX:pd01:seq02:bkg0" />
+					<PV label="upd_gain0"    pvname="15iddUSX:pd01:seq02:gain0" />
+					<PV label="upd_bkg0"     pvname="15iddUSX:pd01:seq02:bkg0" />
 					<PV label="upd_bkg_err0" pvname="15iddUSX:pd01:seq02:bkgErr0" />
 
 					<PV label="upd_gain1" pvname="15iddUSX:pd01:seq02:gain1" />

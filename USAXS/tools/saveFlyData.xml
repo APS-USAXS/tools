@@ -117,7 +117,9 @@ OR, check this file for validity and that all PVs exist::
 						* 1: "DDPCA300"
 						-->
 
-					<PV label="upd_flyScan_amplifier"    pvname="15iddUSX:femto:model" />
+					<PV label="upd_flyScan_amplifier"    pvname="15iddUSX:femto:model" />	<!--saves as number, not string-->
+					<PV label="upd_flyScan_amplifier_ZNAM"    pvname="15iddUSX:femto:model.ZNAM" />
+					<PV label="upd_flyScan_amplifier_ONAM"    pvname="15iddUSX:femto:model.ONAM" />
 
 					<PV label="changes_I0_mcsChan"       pvname="15iddLAX:USAXSfly:I0:mcsChan" />
 					<PV label="changes_I0_ampGain"       pvname="15iddLAX:USAXSfly:I0:ampGain" />
@@ -221,7 +223,21 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="hhl_slitr" pvname="15IDA:m17.RBV" />
 					<PV label="hhl_slitt" pvname="15IDA:m18.RBV" />
 
-					<!-- amplifier gains -->
+					<!-- ion chamber amplifier gains for each range -->
+					<!-- the "data_type" attribute is ad hoc and suggests data reduction to think of this as a number, not text -->
+					<field name="I0_gain0"><attribute name="data_type" value="float" /><text>1e5</text></field>
+					<field name="I0_gain1"><attribute name="data_type" value="float" /><text>1e6</text></field>
+					<field name="I0_gain2"><attribute name="data_type" value="float" /><text>1e7</text></field>
+					<field name="I0_gain3"><attribute name="data_type" value="float" /><text>1e8</text></field>
+					<field name="I0_gain4"><attribute name="data_type" value="float" /><text>1e9</text></field>
+
+					<field name="I00_gain0"><attribute name="data_type" value="float" /><text>1e5</text></field>
+					<field name="I00_gain1"><attribute name="data_type" value="float" /><text>1e6</text></field>
+					<field name="I00_gain2"><attribute name="data_type" value="float" /><text>1e7</text></field>
+					<field name="I00_gain3"><attribute name="data_type" value="float" /><text>1e8</text></field>
+					<field name="I00_gain4"><attribute name="data_type" value="float" /><text>1e9</text></field>
+
+					<!-- amplifier gains at start of scan -->
 					<PV label="I0AmpGain" pvname="15iddUSX:fem02:seq01:gain" />
 					<PV label="I00AmpGain" pvname="15iddUSX:fem03:seq01:gain" />
 

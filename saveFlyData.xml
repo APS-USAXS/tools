@@ -45,8 +45,8 @@ OR, check this file for validity and that all PVs exist::
 						<text>APS USAXS at 15ID-D</text>
 					</field>
 					<group name="monochromator" class="NXmonochromator">
-						<PV label="DCM_energy" pvname="15IDA:BraggERdbkAO" />
-						<PV label="DCM_wavelength" pvname="15IDA:BraggLambdaRdbkAO" />
+						<PV label="energy" pvname="15IDA:BraggERdbkAO" />
+						<PV label="wavelength" pvname="15IDA:BraggLambdaRdbkAO" />
 					</group>
 				</group>
 

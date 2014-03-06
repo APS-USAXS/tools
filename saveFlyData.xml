@@ -270,6 +270,7 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="I00_bkg_err4" pvname="15iddUSX:pd03:seq01:bkgErr4" />
 
 					<!-- photodiode amplifier gains and measured backgrounds -->
+					<!-- these names will go away in the near future but are here now to allow downstream s/w to work -->
 					<PV label="upd_gain0"    pvname="15iddUSX:pd01:seq02:gain0" />
 					<PV label="upd_bkg0"     pvname="15iddUSX:pd01:seq02:bkg0" />
 					<PV label="upd_bkg_err0" pvname="15iddUSX:pd01:seq02:bkgErr0" />
@@ -290,6 +291,48 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="upd_bkg4" pvname="15iddUSX:pd01:seq02:bkg4" />
 					<PV label="upd_bkgErr4" pvname="15iddUSX:pd01:seq02:bkgErr4" />
 
+					<!-- photodiode DLPCA-200 amplifier gains and measured backgrounds -->
+					<PV label="DLPCA200_gain0"    pvname="15iddUSX:pd01:seq01:gain0" />
+					<PV label="DLPCA200_bkg0"     pvname="15iddUSX:pd01:seq01:bkg0" />
+					<PV label="DLPCA200_bkg_err0" pvname="15iddUSX:pd01:seq01:bkgErr0" />
+
+					<PV label="DLPCA200_gain1" pvname="15iddUSX:pd01:seq01:gain1" />
+					<PV label="DLPCA200_bkg1" pvname="15iddUSX:pd01:seq01:bkg1" />
+					<PV label="DLPCA200_bkgErr1" pvname="15iddUSX:pd01:seq01:bkgErr1" />
+
+					<PV label="DLPCA200_gain2" pvname="15iddUSX:pd01:seq01:gain2" />
+					<PV label="DLPCA200_bkg2" pvname="15iddUSX:pd01:seq01:bkg2" />
+					<PV label="DLPCA200_bkgErr2" pvname="15iddUSX:pd01:seq01:bkgErr2" />
+
+					<PV label="DLPCA200_gain3" pvname="15iddUSX:pd01:seq01:gain3" />
+					<PV label="DLPCA200_bkg3" pvname="15iddUSX:pd01:seq01:bkg3" />
+					<PV label="DLPCA200_bkgErr3" pvname="15iddUSX:pd01:seq01:bkgErr3" />
+
+					<PV label="DLPCA200_gain4" pvname="15iddUSX:pd01:seq01:gain4" />
+					<PV label="DLPCA200_bkg4" pvname="15iddUSX:pd01:seq01:bkg4" />
+					<PV label="DLPCA200_bkgErr4" pvname="15iddUSX:pd01:seq01:bkgErr4" />
+
+					<!-- photodiode DDPCA-300 amplifier gains and measured backgrounds -->
+					<PV label="DDPCA300_gain0"    pvname="15iddUSX:pd01:seq02:gain0" />
+					<PV label="DDPCA300_bkg0"     pvname="15iddUSX:pd01:seq02:bkg0" />
+					<PV label="DDPCA300_bkg_err0" pvname="15iddUSX:pd01:seq02:bkgErr0" />
+
+					<PV label="DDPCA300_gain1" pvname="15iddUSX:pd01:seq02:gain1" />
+					<PV label="DDPCA300_bkg1" pvname="15iddUSX:pd01:seq02:bkg1" />
+					<PV label="DDPCA300_bkgErr1" pvname="15iddUSX:pd01:seq02:bkgErr1" />
+
+					<PV label="DDPCA300_gain2" pvname="15iddUSX:pd01:seq02:gain2" />
+					<PV label="DDPCA300_bkg2" pvname="15iddUSX:pd01:seq02:bkg2" />
+					<PV label="DDPCA300_bkgErr2" pvname="15iddUSX:pd01:seq02:bkgErr2" />
+
+					<PV label="DDPCA300_gain3" pvname="15iddUSX:pd01:seq02:gain3" />
+					<PV label="DDPCA300_bkg3" pvname="15iddUSX:pd01:seq02:bkg3" />
+					<PV label="DDPCA300_bkgErr3" pvname="15iddUSX:pd01:seq02:bkgErr3" />
+
+					<PV label="DDPCA300_gain4" pvname="15iddUSX:pd01:seq02:gain4" />
+					<PV label="DDPCA300_bkg4" pvname="15iddUSX:pd01:seq02:bkg4" />
+					<PV label="DDPCA300_bkgErr4" pvname="15iddUSX:pd01:seq02:bkgErr4" />
+					
 					<!-- photodiode amplifier range-changing setpoints -->
 					<PV label="upd_gainU" pvname="15iddUSX:pd01:seq02:gainU" />
 					<PV label="upd_gainD" pvname="15iddUSX:pd01:seq02:gainD" />

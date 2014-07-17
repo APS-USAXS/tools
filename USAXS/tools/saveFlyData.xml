@@ -62,6 +62,18 @@ OR, check this file for validity and that all PVs exist::
 				<group name="flyScan" class="NXdata">
 
 					<!-- positioners -->
+					<PV label="AR_PulsePositions" pvname="15iddLAX:traj1:PulsePositions">
+						<attribute name="units" value="degrees" />
+					</PV>
+					<PV label="AR_NumPulsePositions" pvname="15iddLAX:traj1:NumPulsePositions" />
+					<PV label="AR_PulseMode" pvname="15iddLAX:traj1:PulseMode" />
+					<!--
+			   PulseMode is string with type of scan:
+			   1. Fixed fixed pulses as before (we should have that nailed down by now already)
+			   2. Array use PulsePositions
+			   3. TrajPts use trajectory points (the 200 points in current trajectory)
+			-->
+
 					<PV label="AR_waypoints" pvname="15iddLAX:traj1:M1Traj"
 						length_limit="AR_count" />
 					<PV label="AR_count" pvname="15iddLAX:traj1:Nelements" />
@@ -73,6 +85,7 @@ OR, check this file for validity and that all PVs exist::
 
 					<PV label="time_total" pvname="15iddLAX:traj1:ElapsedTime" />
 					<PV label="time_elapsed" pvname="15iddLAX:traj1:Time" />
+
 
 					<!-- detectors -->
 					<PV label="mca_clock_frequency" pvname="15iddLAX:3820:clock_frequency" />
@@ -169,7 +182,7 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="DCM_energy" pvname="15IDA:BraggERdbkAO" />
 					<PV label="DCM_wavelength" pvname="15IDA:BraggLambdaRdbkAO" />
 					<PV label="DCM_theta" pvname="15IDA:m10.RBV" />
-					<PV label="CryoLoad" pvname="15IDCryo:CC01:Power" />
+					<!-- 2014-07-16,PRJ: removed on request <PV label="CryoLoad" pvname="15IDCryo:CC01:Power" /> -->
 
 					<!-- beam line mirrors -->
 					<PV label="VDM_Stripe" pvname="15IDA:m5.RBV" />

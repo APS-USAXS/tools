@@ -168,7 +168,8 @@ class SaveFlyScan(object):
     def saveFile(self):
         '''write all desired data to the file and exit this code'''
         t = datetime.datetime.now()
-        timestamp = ' '.join((t.strftime("%Y-%m-%d"), t.strftime("%H:%M:%S")))
+        #timestamp = ' '.join((t.strftime("%Y-%m-%d"), t.strftime("%H:%M:%S")))
+        timestamp = str(t).split('.')[0]
         f = group_registry['/'].hdf5_group
         eznx.addAttributes(f, timestamp = timestamp)
 

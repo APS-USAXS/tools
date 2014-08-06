@@ -186,15 +186,15 @@ class SaveFlyScan(object):
                         value = value[:length_limit]
             hdf5_parent = pv_spec.group_parent.hdf5_group
             try:
- 		ds = eznx.makeDataset(hdf5_parent, pv_spec.label, value)
- 		self._attachEpicsAttributes(ds, pv_spec.pv)
- 		eznx.addAttributes(ds, **pv_spec.attrib)
+                ds = eznx.makeDataset(hdf5_parent, pv_spec.label, value)
+                self._attachEpicsAttributes(ds, pv_spec.pv)
+                eznx.addAttributes(ds, **pv_spec.attrib)
             except Exception as e:
- 		print "ERROR: ", pv_spec.label, value
-		print "MESSAGE: ", e
- 		print "RESOLUTION: writing as error message string"
-		ds = eznx.makeDataset(hdf5_parent, pv_spec.label, [str(e)])
- 		#raise
+                print "ERROR: ", pv_spec.label, value
+                print "MESSAGE: ", e
+                print "RESOLUTION: writing as error message string"
+                ds = eznx.makeDataset(hdf5_parent, pv_spec.label, [str(e)])
+                #raise
         
         f.close()    # be CERTAIN to close the file
     
@@ -315,7 +315,8 @@ def main():
 if __name__ == '__main__':
     main()	# production system
 
-    # code development
+
+# code development
 #     sfs = SaveFlyScan('test.h5', XML_CONFIGURATION_FILE)
 #     sfs.waitForData()
 

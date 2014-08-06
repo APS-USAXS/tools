@@ -31,7 +31,7 @@ OR, check this file for validity and that all PVs exist::
 			<group name="entry" class="NXentry">
 				<field name="program_name">
 					<!-- version of this configuration file -->
-					<attribute name="config_version" value="1" />
+					<attribute name="config_version" value="1.1" />
 					<text>saveFlyData.py</text>
 				</field>
 				<PV label="title" pvname="15iddLAX:USAXS:sampleTitle" />
@@ -96,19 +96,19 @@ OR, check this file for validity and that all PVs exist::
 					</PV>
 
 					<PV label="mca1_name" pvname="15iddLAX:3820:scaler1.NM1" />
-					<PV label="mca1" pvname="15iddLAX:3820:mca1" length_limit="AR_pulses">		<!-- counts of 50 MHz clock -->
+					<PV label="mca1" pvname="15iddLAX:3820:mca1" length_limit="mca_channels">		<!-- counts of 50 MHz clock -->
 						<attribute name="units" value="pulses" />
 						<attribute name="USAXS_name" value="clock_pulses" />
 					</PV>
 
 					<PV label="mca2_name" pvname="15iddLAX:3820:scaler1.NM2" />
-					<PV label="mca2" pvname="15iddLAX:3820:mca2" length_limit="AR_pulses">
+					<PV label="mca2" pvname="15iddLAX:3820:mca2" length_limit="mca_channels">
 						<attribute name="units" value="counts" />
 						<attribute name="USAXS_name" value="I0" />
 					</PV>
 
 					<PV label="mca3_name" pvname="15iddLAX:3820:scaler1.NM3" />
-					<PV label="mca3" pvname="15iddLAX:3820:mca3" length_limit="AR_pulses">
+					<PV label="mca3" pvname="15iddLAX:3820:mca3" length_limit="mca_channels">
 						<attribute name="signal" value="1" />
 						<!-- <attribute name="axes" value="AR" /> -->
 						<!-- The proper ordinate is obtained via the MAC channel index: 
@@ -169,6 +169,12 @@ OR, check this file for validity and that all PVs exist::
 					</PV>
 					<PV label="FS_ScanTime" pvname="15iddLAX:USAXS:FS_ScanTime" />
 					<PV label="FS_ArStartAyDyMove" pvname="15iddLAX:USAXS:FS_ArStartAyDyMove" />
+
+					<PV label="changes_AR_PSOpulse"    pvname="15iddLAX:USAXSfly:AR:mcsChan" />
+					<PV label="changes_AR_angle"      pvname="15iddLAX:USAXSfly:AR:pos" >
+						<attribute name="meaning"
+							value="AR readback when PSO pulse fired with 10Hz jitter" />
+					</PV>
 
 				</group> 	<!-- entry:NXentry/flyScan:NXdata -->
 

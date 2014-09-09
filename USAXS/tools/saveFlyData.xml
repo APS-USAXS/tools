@@ -80,6 +80,7 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="AR_pulses" pvname="15iddLAX:traj1:Npulses" />
 					<PV label="AR_start" pvname="15iddLAX:USAXS:ARstart" />  <!-- pushed here by SPEC usaxs_flyscan.txt macro -->
 					<PV label="AR_increment" pvname="15iddLAX:USAXS:MinStep" />
+					<PV label="AR_MinStepTraj" pvname="15iddLAX:USAXS:MinStepTraj" /> <!-- minimum step of trajectory waypoints -->
 					<PV label="AR_Finish" pvname="15iddLAX:USAXS:Finish" />
 					<PV label="StartOffset" pvname="15iddLAX:USAXS:StartOffset" />
 

@@ -179,7 +179,7 @@ OR, check this file for validity and that all PVs exist::
 
     					<PV label="is_2D_USAXS_scan"    pvname="15iddLAX:USAXS:is2DUSAXSscan" >
 						<attribute name="meaning"
-							value="does this scan use 2D collimated geometry?" />
+							value="does this scan use 2D collimated geometry" />
 					</PV>
 
 				</group> 	<!-- entry:NXentry/flyScan:NXdata -->

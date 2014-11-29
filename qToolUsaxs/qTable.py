@@ -102,6 +102,8 @@ class TableView(QtGui.QTableView):
     """
     def __init__(self, *args, **kwargs):
         super(TableView, self).__init__(*args, **kwargs)
+        
+        self.setAlternatingRowColors(True)
  
         #self.q_control = FloatControl(self, self.AR_ButtonClicked, '%.6f')
         self.q_control = FloatControl()

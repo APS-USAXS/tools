@@ -1,0 +1,40 @@
+<?xml version="1.0" ?>
+<qTool date="2014-10-09" time="17:26:48" version="2.0">
+  <!-- written by: $Id$ -->
+  <parameter name="AY0">
+    -0.1
+  </parameter>
+  <parameter name="DY0">
+    26.515
+  </parameter>
+  <position Q="0" label="" row="0"/>
+  <position Q="0.0002" label="" row="1"/>
+  <position Q="0.0005" label="" row="2"/>
+  <position Q="0.001" label="" row="3"/>
+  <position Q="0.002" label="" row="4"/>
+  <position Q="0.0005" label="" row="5"/>
+  <position Q="0.0006" label="" row="6"/>
+  <position Q="0.0007" label="" row="7"/>
+  <position Q="0.0008" label="" row="8"/>
+  <position Q="0.0009" label="" row="9"/>
+  <position Q="0.001" label="" row="10"/>
+  <position Q="0.0011" label="" row="11"/>
+  <position Q="0.0012" label="" row="12"/>
+  <position Q="0.0013" label="" row="13"/>
+  <position Q="" label="" row="14"/>
+  <position Q="" label="" row="15"/>
+  <position Q="" label="" row="16"/>
+  <position Q="" label="" row="17"/>
+  <position Q="" label="" row="18"/>
+  <position Q="" label="" row="19"/>
+  <position Q="" label="" row="20"/>
+  <position Q="" label="" row="21"/>
+  <position Q="" label="" row="22"/>
+  <position Q="" label="" row="23"/>
+  <position Q="" label="" row="24"/>
+  <position Q="" label="" row="25"/>
+  <position Q="" label="" row="26"/>
+  <position Q="" label="" row="27"/>
+  <position Q="" label="" row="28"/>
+  <position Q="" label="" row="29"/>
+</qTool>

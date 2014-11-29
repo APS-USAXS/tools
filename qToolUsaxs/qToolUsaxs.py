@@ -164,6 +164,75 @@ class USAXS_Q_tool(object):
     def doSaveConfig(self, config_file):
         '''save the configuration file'''
         pass
+    
+    def doMove(self, *args, **kw):
+        '''move the motor'''
+        self.setStatus('moving ...')
+        # TODO: implement
+
+    def motorLimitsOK(self, axis, value):
+        '''
+        tests if value is within the limits of the named motor axis
+        '''
+        # FIXME: this is wxPython code
+        if not axis in self.AXIS_NAMES:
+            return False
+        hlm = self.db[self.XREF["motor,%s,HLM" % axis]]['value']
+        llm = self.db[self.XREF["motor,%s,LLM" % axis]]['value']
+        result = (llm <= value) and (value <= hlm)
+        return result
+
+    def recalculate(self, *args, **kw):
+        '''recompute all terms'''
+        self.setStatus('recalculating ...')
+        # TODO: implement
+#### wxPython code
+#         A_keV = 12.3984244 # Angstrom * keV
+#         try:   # get initial parameters
+#             arEnc0 = float(self.parameterList['AR,enc,center']['entry'].GetValue())
+#             ar = float(self.motorList['AR']['RBV'].GetValue())
+#             arEnc = float(self.parameterList['AR,enc']['entry'].GetValue())
+#             ar0 = arEnc0
+#             energy = float(self.parameterList['energy']['entry'].GetValue())
+#             lambda_over_4pi = A_keV / (energy * 4 * math.pi)
+#             sad = float(self.parameterList['SAD']['entry'].GetValue())
+#             sdd = float(self.parameterList['SDD']['entry'].GetValue())
+#             ay0 = float(self.parameterList['AY0']['entry'].GetValue())
+#             dy0 = float(self.parameterList['DY0']['entry'].GetValue())
+#         except:
+#             message = "recalc:  Error: " + str(sys.exc_info()[1])
+#             self.postMessage(message)
+#             return
+# 
+#         for row in range(len(self.positionList)):
+#             ar = 'ar ' + str(row)
+#             ay = 'ay ' + str(row)
+#             dy = 'dy ' + str(row)
+#             try:
+#                 strQ = self.positionList[row]['Q']['entry'].GetValue()
+#                 if len(strQ.strip()) > 0:
+#                     q = float(strQ)
+#                     x = -q * lambda_over_4pi
+#                     ar = ar0 + 2*math.degrees(math.asin( x ))
+#                     dy = dy0 + sdd * math.tan( x )
+#                     ay = ay0 + sad * math.tan( x )
+#                     # indicate limit problems with a yellow background
+#                     self.positionList[row]['AR']['entry'].SetBackgroundColour(
+#                         self.BUTTON_COLORS[self.motorLimitsOK("AR", ar)]
+#                     )
+#                     self.positionList[row]['AY']['entry'].SetBackgroundColour(
+#                         self.BUTTON_COLORS[self.motorLimitsOK("AY", ay)]
+#                     )
+#                     self.positionList[row]['DY']['entry'].SetBackgroundColour(
+#                         self.BUTTON_COLORS[self.motorLimitsOK("DY", dy)]
+#                     )
+#             except:
+#                 message = "recalc:\t Error: " + sys.exc_info()[1]
+#                 self.postMessage(message)
+#             # put the values into the button labels
+#             self.positionList[row]['AR']['entry'].SetLabel(str(ar))
+#             self.positionList[row]['AY']['entry'].SetLabel(str(ay))
+#             self.positionList[row]['DY']['entry'].SetLabel(str(dy))
 
     def setStatus(self, message):
         # ts = str(datetime.datetime.now())

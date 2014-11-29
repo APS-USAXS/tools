@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>498</width>
-    <height>625</height>
+    <width>599</width>
+    <height>546</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,9 +21,9 @@
    <property name="autoFillBackground">
     <bool>true</bool>
    </property>
-   <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0,0">
+   <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0">
     <item row="2" column="0">
-     <widget class="QGroupBox" name="groupBox">
+     <widget class="QGroupBox" name="groupBox_EPICS">
       <property name="title">
        <string>watch EPICS motors</string>
       </property>
@@ -254,29 +254,13 @@
      </widget>
     </item>
     <item row="4" column="0">
-     <widget class="QGroupBox" name="groupBox_3">
+     <widget class="QGroupBox" name="groupBox_tableView">
       <property name="title">
        <string>table of Q positions</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="0" column="0">
         <widget class="QTableView" name="tableView"/>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item row="5" column="0">
-     <widget class="QGroupBox" name="config_groupBox">
-      <property name="title">
-       <string>configuration file</string>
-      </property>
-      <layout class="QGridLayout" name="gridLayout_4">
-       <item row="0" column="0">
-        <widget class="QLabel" name="config_file">
-         <property name="text">
-          <string>$HOME/.qToolUsaxsrc</string>
-         </property>
-        </widget>
        </item>
       </layout>
      </widget>
@@ -289,7 +273,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>498</width>
+     <width>599</width>
      <height>21</height>
     </rect>
    </property>
@@ -313,6 +297,8 @@
      <string>Help</string>
     </property>
     <addaction name="actionAbout"/>
+    <addaction name="separator"/>
+    <addaction name="actionConfig_File_name"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -336,6 +322,11 @@
   <action name="actionRead">
    <property name="text">
     <string>Read ...</string>
+   </property>
+  </action>
+  <action name="actionConfig_File_name">
+   <property name="text">
+    <string>Config File name ...</string>
    </property>
   </action>
  </widget>

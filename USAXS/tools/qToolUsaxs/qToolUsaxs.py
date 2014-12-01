@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 '''
 qToolUsaxs: provides table of Q values to position AR, AY, and DY

@@ -3,7 +3,7 @@ table of Q values and computed  motor positions
 '''
 
 
-from PyQt4 import QtCore, QtGui, uic
+from PyQt4 import QtCore, QtGui
 pyqtSignal = QtCore.pyqtSignal
 import datetime
 
@@ -13,17 +13,22 @@ Q_COLUMN        = 1
 AR_COLUMN       = 2
 AY_COLUMN       = 3
 DY_COLUMN       = 4
-DEFAULT_NUMBER_ROWS = 5
+DEFAULT_NUMBER_ROWS = 30
 
 
 class TableModel(QtCore.QAbstractTableModel):
     """
     Model (data) of our table of motor positions for each Q
+    
+    :datain [[label,Q]]: the data model, list of list(label,Q) values, if None, a default model is created
+    :parent obj: groupBox that contains this model and related view
+    :recalc obj: method that computes AR, AY, & DY from Q and user parameters
     """
     
-    def __init__(self, datain, parent=None, *args):
+    def __init__(self, datain, parent=None, recalc=None, *args):
         super(TableModel, self).__init__(parent, *args)
         self.model = []
+        self.recalc = recalc
         self.headers = ['description', 'Q, 1/A', 'AR, degrees', 'AY, mm', 'DY, mm',]
         if datain is None:
             for _ in range(DEFAULT_NUMBER_ROWS):
@@ -48,15 +53,14 @@ class TableModel(QtCore.QAbstractTableModel):
         return len(self.model[0])
 
     def headerData(self, col, orientation, role):
-        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
-            return QtCore.QVariant(self.headers[col])
+        if orientation == QtCore.Qt.Horizontal:
+            if role == QtCore.Qt.DisplayRole:
+                return QtCore.QVariant(self.headers[col])
         return QtCore.QVariant()
 
     def data(self, index, role):
         if index.isValid():
-            if role == QtCore.Qt.DisplayRole:
-                return QtCore.QVariant(self.model[index.row()][index.column()])
-            elif role == QtCore.Qt.EditRole:
+            if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
                 return QtCore.QVariant(self.model[index.row()][index.column()])
         return QtCore.QVariant()
 
@@ -65,19 +69,20 @@ class TableModel(QtCore.QAbstractTableModel):
         if index.isValid():
             row = index.row()
             column = index.column()
-            if column == 0:
-                self.model[row][column] = value
+            if column == LABEL_COLUMN:
+                self.model[row][column] = str(value.toString())
                 return True
-            elif column == 1:
+            elif column == Q_COLUMN:
                 val, ok = value.toDouble()
                 if ok:
                     self.model[row][column] = val
-                    # TODO: update AR, AY, DY model data now from actual computations
-                    # example floating point calculation
-                    arr = [r[Q_COLUMN] for r in self.model]
-                    self.model[row][AR_COLUMN] = sum(arr) / len(arr)
-                    self.model[row][AY_COLUMN] = max(arr)
-                    self.model[row][DY_COLUMN] = min(arr)
+                    if self.recalc is not None:
+                        result = self.recalc(val)
+                        if result is not None:
+                            ar, ay, dy = result
+                            self.model[row][AR_COLUMN] = ar
+                            self.model[row][AY_COLUMN] = ay
+                            self.model[row][DY_COLUMN] = dy
                     return True
         return False
 
@@ -94,9 +99,8 @@ class TableModel(QtCore.QAbstractTableModel):
             return defaultFlags \
                     | QtCore.Qt.ItemIsEnabled \
                     | QtCore.Qt.ItemIsDropEnabled
-                
 
- 
+
 class TableView(QtGui.QTableView):
     """
     A table to demonstrate the button delegate.
@@ -137,8 +141,8 @@ class TableView(QtGui.QTableView):
  
     def DY_ButtonClicked(self):
         self._buttonClicked('DY')
- 
- 
+
+
 class FloatControl(QtGui.QStyledItemDelegate):
     '''Constrained floating-point input on Q column'''
     def createEditor(self, widget, option, index):
@@ -150,8 +154,8 @@ class FloatControl(QtGui.QStyledItemDelegate):
             editor.setValidator(validator)
             return editor
         return super(FloatControl, self).createEditor(widget, option, index)
- 
- 
+
+
 class ButtonControl(QtGui.QItemDelegate):
     '''A QPushButton in every cell of the column to which it's applied'''
     def __init__(self, parent, action, display_format='%f'):

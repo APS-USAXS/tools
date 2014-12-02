@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>599</width>
-    <height>546</height>
+    <height>554</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,7 +27,7 @@
       <property name="title">
        <string>watch EPICS motors</string>
       </property>
-      <layout class="QGridLayout" name="gridLayout_2">
+      <layout class="QGridLayout" name="gridLayout_motors">
        <item row="0" column="0">
         <layout class="QVBoxLayout" name="layout_EPICS">
          <item>
@@ -125,13 +125,13 @@
      </layout>
     </item>
     <item row="3" column="0">
-     <widget class="QGroupBox" name="groupBox_2">
+     <widget class="QGroupBox" name="groupBox_user_parameters">
       <property name="title">
        <string>user parameters</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <layout class="QFormLayout" name="formLayout">
+        <layout class="QFormLayout" name="layout_user_parameters">
          <property name="fieldGrowthPolicy">
           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
          </property>
@@ -163,17 +163,77 @@
            </property>
           </widget>
          </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="w_AY0_user">
+           <property name="styleSheet">
+            <string notr="true">background-color: bisque;</string>
+           </property>
+           <property name="text">
+            <string>0</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="w_DY0_user">
+           <property name="styleSheet">
+            <string notr="true">background-color: bisque;</string>
+           </property>
+           <property name="text">
+            <string>0</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLabel" name="w_ARenc">
+           <property name="styleSheet">
+            <string notr="true">background-color: lightblue;</string>
+           </property>
+           <property name="text">
+            <string>14</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLabel" name="w_ARenc0">
+           <property name="styleSheet">
+            <string notr="true">background-color: lightblue;</string>
+           </property>
+           <property name="text">
+            <string>14</string>
+           </property>
+          </widget>
+         </item>
          <item row="4" column="0">
+          <widget class="QLabel" name="label_12">
+           <property name="text">
+            <string>sample-analyzer distance, mm</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QLabel" name="w_SAD">
+           <property name="styleSheet">
+            <string notr="true">background-color: lightblue;</string>
+           </property>
+           <property name="text">
+            <string>300</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
           <widget class="QLabel" name="label_11">
            <property name="text">
             <string>sample-detector distance, mm</string>
            </property>
           </widget>
          </item>
-         <item row="5" column="0">
-          <widget class="QLabel" name="label_12">
+         <item row="5" column="1">
+          <widget class="QLabel" name="w_SDD">
+           <property name="styleSheet">
+            <string notr="true">background-color: lightblue;</string>
+           </property>
            <property name="text">
-            <string>sample-analyzer distance, mm</string>
+            <string>600</string>
            </property>
           </widget>
          </item>
@@ -184,67 +244,13 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="1">
-          <widget class="QLineEdit" name="w_AY0_user">
-           <property name="styleSheet">
-            <string notr="true">background-color: bisque;</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QLineEdit" name="w_DY0_user">
-           <property name="styleSheet">
-            <string notr="true">background-color: bisque;</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QLabel" name="w_ARenc">
-           <property name="styleSheet">
-            <string notr="true">background-color: lightblue;</string>
-           </property>
-           <property name="text">
-            <string>TextLabel</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QLabel" name="w_ARenc0">
-           <property name="styleSheet">
-            <string notr="true">background-color: lightblue;</string>
-           </property>
-           <property name="text">
-            <string>TextLabel</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1">
-          <widget class="QLabel" name="w_SDD">
-           <property name="styleSheet">
-            <string notr="true">background-color: lightblue;</string>
-           </property>
-           <property name="text">
-            <string>TextLabel</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="1">
-          <widget class="QLabel" name="w_SAD">
-           <property name="styleSheet">
-            <string notr="true">background-color: lightblue;</string>
-           </property>
-           <property name="text">
-            <string>TextLabel</string>
-           </property>
-          </widget>
-         </item>
          <item row="6" column="1">
           <widget class="QLabel" name="w_energy">
            <property name="styleSheet">
             <string notr="true">background-color: lightblue;</string>
            </property>
            <property name="text">
-            <string>TextLabel</string>
+            <string>10</string>
            </property>
           </widget>
          </item>
@@ -258,9 +264,16 @@
       <property name="title">
        <string>table of Q positions</string>
       </property>
-      <layout class="QGridLayout" name="gridLayout_3">
+      <layout class="QGridLayout" name="gridLayout_tableview">
        <item row="0" column="0">
-        <widget class="QTableView" name="tableView"/>
+        <widget class="QTableView" name="tableView">
+         <property name="editTriggers">
+          <set>QAbstractItemView::AllEditTriggers</set>
+         </property>
+         <property name="alternatingRowColors">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -274,7 +287,7 @@
      <x>0</x>
      <y>0</y>
      <width>599</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -316,12 +329,12 @@
   </action>
   <action name="actionSave">
    <property name="text">
-    <string>Save</string>
+    <string>Save config file</string>
    </property>
   </action>
   <action name="actionRead">
    <property name="text">
-    <string>Read ...</string>
+    <string>Read config file</string>
    </property>
   </action>
   <action name="actionConfig_File_name">

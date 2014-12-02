@@ -149,27 +149,8 @@ class USAXS_Q_tool(object):
             obj = self.motors[motor]
             pvname = PV_MAP['motor,' + motor.upper()]
             obj.connect(pvname)
-            obj.w_RBV.ca_connect(pvname+'.RBV', ca_callback=self.myCallback)
+            obj.w_RBV.ca_connect(pvname+'.RBV')
             obj.w_VAL.ca_connect(pvname+'.VAL')
-            # FIXME: when connected, motor PVs say "connected" and not the value
-            # this is a problem in bcdaqwidgets
-    
-    def myCallback(self, *args, **kw):
-        #print kw
-        # print sorted(kw.keys())
-        # pvname
-        # value
-        # status
-        # char_value
-        #self.text_cache = char_value         # cache the new text locally
-        #self.labelSignal.newText.emit()      # threadsafe update of the widget
-        #print 'monitor: pv=%s value=%s' % (kw['pvname'], kw['char_value'])
-        pass
-    
-#     def myConnect(self, *args, **kw):
-#         print kw['conn']
-#         if kw.get('char_value', None) is not None:
-#             pass
     
     def _replace_standard_controls_(self):
         '''replace standard controls with EPICS controls'''

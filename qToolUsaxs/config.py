@@ -1,18 +1,18 @@
 
 '''
-manage the configuration file
+manage the resource configuration file for the qToolUsaxs program
 '''
 
 
 import datetime
 import os
-import sys
 from lxml import etree
 
 CONFIG_FILE_VERSION = '2.0'
 
 
 class Position(object):
+    '''placeholder for each table row'''
     
     def __init__(self, Q='', label=''):
         self.Q = Q
@@ -23,42 +23,54 @@ class Position(object):
 
 
 class ConfigFile(object):
-    """
-    in-memory representation of .rc file
-    """
+    '''in-memory representation of .rc file'''
     
     def __init__(self, fname=None):
-        if not os.path.exists(fname):
-            raise RuntimeError('Cannot find config file: ' + str(fname))
         self.fname = fname
         self.param = {}
         self.positions = []
-        self.rc_read()
+        if os.path.exists(fname):
+            self.rc_read()
+    
+    def toDataModel(self):
+        '''write positions to list for use as data model in GUI'''
+        return [[pos.label, pos.Q] for pos in self.positions]
+    
+    def fromDataModel(self, model):
+        '''get positions from GUI data model'''
+        self.positions = []
+        for row in model:
+            label, Q = row[0:2]
+            self.positions.append(Position(Q, label))
     
     def rc_read(self):
+        '''read the configuration from the resource configuration XML file'''
         root = etree.parse(self.fname)
         for node in root.xpath('//parameter'):
             param_name = node.attrib['name'].strip()
-            value = float(node.text.strip())
+            value = node.text.strip()
             self.param[param_name] = value
         for node in root.xpath('//position'):
             Q = node.attrib['Q'].strip()
             label = node.attrib['label'].strip()
-            _row = node.attrib['row'].strip()
+            # _row = node.attrib['row'].strip()
             position = Position(Q, label)
             # ignore _row
             self.positions.append(position)
     
     def rc_write(self, fname=None):
+        '''write the configuration to the resource configuration XML file'''
+        if fname is None: return
+        
         t = datetime.datetime.now()
         yyyymmdd = t.strftime("%Y-%m-%d")
         hhmmss = t.strftime("%H:%M:%S")
 
-        root = etree.ElementTree.Element("qTool")
+        root = etree.Element('qTool')
         root.set("version", CONFIG_FILE_VERSION)
         root.set("date", yyyymmdd)
         root.set("time", hhmmss)
-        root.append(etree.ElementTree.Comment("written by: " + 'qToolUsaxs.config.py'))
+        root.append(etree.Comment(" written by: " + 'qToolUsaxs.config.py '))
         #root.append(ElementTree.ProcessingInstruction("example ProcessingInstruction()"))
  
         ####################################
@@ -68,21 +80,26 @@ class ConfigFile(object):
         # user parameters
         for key in sorted(self.param.keys()):
             value = self.param[key]
-            node = etree.ElementTree.SubElement(root, "parameter")
+            node = etree.SubElement(root, "parameter")
             node.set("name", key)
             if len(value) > 0:
                 node.text = str(value)
 
         # Q position table
         for row, pos in enumerate(self.positions):
-            node = etree.ElementTree.SubElement(root, "position")
-            node.set("row",   str(row))
+            node = etree.SubElement(root, "position")
+            # node.set("row",   str(row+1))
             for key in "label Q".split():
-                value = pos.get(key)
+                #value = pos._get(key)
+                value = pos.__getattribute__(key)
                 if len(value) == 0: value = ''
                 node.set(key, value)
         
-        # TODO: pretty print to the XML file: fname
+        # pretty print to the XML file: fname
+        if fname is not None:
+            f = open(fname, 'w')
+            f.write(etree.tostring(root, pretty_print=True))
+            f.close()
 
 
 if __name__ == '__main__':
@@ -90,3 +107,8 @@ if __name__ == '__main__':
     cf = ConfigFile('qToolUsaxsrc.xml')
     print cf.param
     print cf.positions
+    cf.rc_write('test.xml')
+    
+    model = cf.toDataModel()
+    print model
+    cf.fromDataModel(model)

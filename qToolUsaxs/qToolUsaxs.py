@@ -7,14 +7,16 @@ It provides a table of known positions and buttons
 to move each of the motors.
 '''
 
-import datetime
+
 import epics
+import math
 import os
 import sys
 from PyQt4 import QtGui, uic
 
 import bcdaqwidgets
 
+import config
 import qTable
 
 __project_name__  = 'qToolUsaxs'
@@ -101,22 +103,26 @@ class USAXS_Q_tool(object):
     '''show the UI file'''
 
     def __init__(self, uifile, config_file = None):
-        self.config_file = config_file or DEFAULT_CONFIG_FILE
-        
         self.motors = {motor: Motor() for motor in MOTOR_SYMBOLS}
+        
+        self.rcfile_name = config_file or DEFAULT_CONFIG_FILE
+        self.rcfile = self.doReadConfig()
 
         self.ui = uic.loadUi(uifile)
         self._replace_standard_controls_()
         self._init_epics_controls_()
         self._init_actions_()
-        # TODO: read configuration file
-        # TODO: connect user parameters
         self.connect_to_EPICS()
+        
+        self.ui.w_AY0_user.setText(self.rcfile.param.get('AY0', 0))
+        self.ui.w_DY0_user.setText(self.rcfile.param.get('DY0', 0))
     
     def _init_actions_(self):
         '''connect buttons with handlers'''
         self.ui.actionAbout.triggered.connect(self.doAbout)
         self.ui.actionExit.triggered.connect(self.doClose)
+        self.ui.actionRead.triggered.connect(self.doReadConfig)
+        self.ui.actionSave.triggered.connect(self.doSaveConfig)
         self.ui.actionConfig_File_name.triggered.connect(self.doShowConfigFileName)
 
         self.ui.pb_stop.clicked.connect(self.doStop)
@@ -145,6 +151,8 @@ class USAXS_Q_tool(object):
             obj.connect(pvname)
             obj.w_RBV.ca_connect(pvname+'.RBV', ca_callback=self.myCallback)
             obj.w_VAL.ca_connect(pvname+'.VAL')
+            # FIXME: when connected, motor PVs say "connected" and not the value
+            # this is a problem in bcdaqwidgets
     
     def myCallback(self, *args, **kw):
         #print kw
@@ -155,6 +163,7 @@ class USAXS_Q_tool(object):
         # char_value
         #self.text_cache = char_value         # cache the new text locally
         #self.labelSignal.newText.emit()      # threadsafe update of the widget
+        #print 'monitor: pv=%s value=%s' % (kw['pvname'], kw['char_value'])
         pass
     
 #     def myConnect(self, *args, **kw):
@@ -164,23 +173,45 @@ class USAXS_Q_tool(object):
     
     def _replace_standard_controls_(self):
         '''replace standard controls with EPICS controls'''
-        self._replace_tableview_(None)
-        # TODO: replace ARenc label
-        # TODO: replace ARenc0 label
-        # TODO: replace SAD label
-        # TODO: replace SDD label
-        # TODO: replace energy label
+        self._replace_tableview_(self.rcfile.toDataModel())
+        
+        layout = self.ui.layout_user_parameters
+        
+        def revise(widget, key, kind=None):
+            kind = kind or bcdaqwidgets.BcdaQLabel
+            row, _role = layout.getWidgetPosition(widget)
+            lbl = layout.labelForField(widget)
+            text = lbl.text()
+            lbl.deleteLater()
+            widget.deleteLater()
+            widget = kind(pvname=PV_MAP[key])
+            layout.insertRow(row, text, widget)
+            return widget
+
+        self.ui.w_ARenc = revise(self.ui.w_ARenc, 'AR,enc')
+        self.ui.w_ARenc0 = revise(self.ui.w_ARenc0, 'AR,enc,center')
+        self.ui.w_SAD = revise(self.ui.w_SAD, 'SAD', kind=bcdaqwidgets.BcdaQLineEdit)
+        self.ui.w_SDD = revise(self.ui.w_SDD, 'SDD', kind=bcdaqwidgets.BcdaQLineEdit)
+        self.ui.w_energy = revise(self.ui.w_energy, 'energy')
 
     def _replace_tableview_(self, q_table):
         '''install custom model-view support for Q table'''
-        self.ui.tableView.deleteLater()
+
+        # these are the parents
         gb = self.ui.groupBox_tableView
-        layout = gb.layout()
-        layout.setColumnStretch(0, 1)
-        self.table = qTable.TableModel(q_table, parent=gb)
+        layout = self.ui.gridLayout_tableview
+        
+        # dispose the standard widget
+        self.ui.tableView.deleteLater()
+
+        # create the new content
+        self.table = qTable.TableModel(q_table, parent=gb, recalc=self.recalculate)
         self.tableview = qTable.TableView(self.doMove)
-        layout.addWidget(self.tableview)
         self.tableview.setModel(self.table)
+        
+        # a touch of configuration
+        layout.setColumnStretch(0, 1)
+        layout.addWidget(self.tableview)
 
     def show(self):
         '''convenience method, hides .ui file implementation'''
@@ -203,6 +234,7 @@ class USAXS_Q_tool(object):
         about.exec_()
 
     def doClose(self, *args, **kw):
+        '''orderly exit'''
         self.setStatus('application exit requested')
         self.ui.close()
     
@@ -214,16 +246,21 @@ class USAXS_Q_tool(object):
     
     def doShowConfigFileName(self, *args, **kw):
         '''display the config file name in the status text'''
-        self.setStatus('config file: ' + self.config_file)
+        self.setStatus('config file: ' + self.rcfile_name)
 
-    def doReadConfig(self, config_file):
+    def doReadConfig(self):
         '''read the configuration file'''
-        if not os.path.exists(config_file):
-            pass
+        self.setStatus('read the config file: ' + self.rcfile_name)
+        return config.ConfigFile(self.rcfile_name)
 
-    def doSaveConfig(self, config_file):
+    def doSaveConfig(self):
         '''save the configuration file'''
-        pass
+        self.setStatus('write to the config file: ' + self.rcfile_name)
+        self.rcfile.param['AY0'] = str(self.ui.w_AY0_user.text())
+        self.rcfile.param['DY0'] = str(self.ui.w_DY0_user.text())
+        self.rcfile.fromDataModel(self.table.model)
+
+        self.rcfile.rc_write(self.rcfile_name)
     
     def doMove(self, motor, text_value, *args, **kw):
         '''move the motor'''
@@ -233,64 +270,48 @@ class USAXS_Q_tool(object):
         value, ok = text_value.toDouble()
         if not ok: return
         
-        self.setStatus('moving ... ' + motor + ' to ' + str(value))
+        self.setStatus('moving ' + motor + ' motor to ' + str(value))
         self.motors[motor].move(value)
 
-    def recalculate(self, *args, **kw):
+    def recalculate(self, Q, *args, **kw):
         '''recompute all terms'''
         self.setStatus('recalculating ...')
-        # TODO: implement
-#### wxPython code
-#         A_keV = 12.3984244 # Angstrom * keV
-#         try:   # get initial parameters
-#             arEnc0 = float(self.parameterList['AR,enc,center']['entry'].GetValue())
-#             ar = float(self.motorList['AR']['RBV'].GetValue())
-#             arEnc = float(self.parameterList['AR,enc']['entry'].GetValue())
-#             ar0 = arEnc0
-#             energy = float(self.parameterList['energy']['entry'].GetValue())
-#             lambda_over_4pi = A_keV / (energy * 4 * math.pi)
-#             sad = float(self.parameterList['SAD']['entry'].GetValue())
-#             sdd = float(self.parameterList['SDD']['entry'].GetValue())
-#             ay0 = float(self.parameterList['AY0']['entry'].GetValue())
-#             dy0 = float(self.parameterList['DY0']['entry'].GetValue())
-#         except:
-#             message = "recalc:  Error: " + str(sys.exc_info()[1])
-#             self.postMessage(message)
-#             return
-# 
-#         for row in range(len(self.positionList)):
-#             ar = 'ar ' + str(row)
-#             ay = 'ay ' + str(row)
-#             dy = 'dy ' + str(row)
-#             try:
-#                 strQ = self.positionList[row]['Q']['entry'].GetValue()
-#                 if len(strQ.strip()) > 0:
-#                     q = float(strQ)
-#                     x = -q * lambda_over_4pi
-#                     ar = ar0 + 2*math.degrees(math.asin( x ))
-#                     dy = dy0 + sdd * math.tan( x )
-#                     ay = ay0 + sad * math.tan( x )
-#                     # indicate limit problems with a yellow background
-#                     self.positionList[row]['AR']['entry'].SetBackgroundColour(
-#                         self.BUTTON_COLORS[self.motorLimitsOK("AR", ar)]
-#                     )
-#                     self.positionList[row]['AY']['entry'].SetBackgroundColour(
-#                         self.BUTTON_COLORS[self.motorLimitsOK("AY", ay)]
-#                     )
-#                     self.positionList[row]['DY']['entry'].SetBackgroundColour(
-#                         self.BUTTON_COLORS[self.motorLimitsOK("DY", dy)]
-#                     )
-#             except:
-#                 message = "recalc:\t Error: " + sys.exc_info()[1]
-#                 self.postMessage(message)
-#             # put the values into the button labels
-#             self.positionList[row]['AR']['entry'].SetLabel(str(ar))
-#             self.positionList[row]['AY']['entry'].SetLabel(str(ay))
-#             self.positionList[row]['DY']['entry'].SetLabel(str(dy))
+        
+        # TODO: compute on update of user parameter (including EPICS PV monitor)
+        # This code responds to qTable updates already
+        
+        try:   # get initial parameters from the GUI
+            A_keV = 12.3984244 # Angstrom * keV
+            ar = self.motors['ar'].pv.RBV
+            ar0 = arEnc0 = float(self.ui.w_ARenc0.text())
+            arEnc = float(self.ui.w_ARenc.text())
+            sad = float(self.ui.w_SAD.text())
+            sdd = float(self.ui.w_SDD.text())
+            ay0 = float(self.ui.w_AY0_user.text())
+            dy0 = float(self.ui.w_DY0_user.text())
+            energy = float(self.ui.w_energy.text())
+            lambda_over_4pi = A_keV / (energy * 4 * math.pi)
+        except Exception, exc:
+            self.setStatus('recalc exception 1: ' + str(exc))
+            return None
+
+        try:
+            x = -Q * lambda_over_4pi
+            ar = ar0 + 2*math.degrees(math.asin( x ))
+            dy = dy0 + sdd * math.tan( x )
+            ay = ay0 + sad * math.tan( x )
+        except Exception, exc:
+            self.setStatus('recalc exception 2: ' + str(exc))
+            return None
+        
+        # TODO: indicate ar, ay, dy limit problems with a yellow button background
+
+        self.setStatus('recalculated')
+        return ar, ay, dy
 
     def setStatus(self, message):
-        # ts = str(datetime.datetime.now())
-        self.ui.statusBar().showMessage(str(message))
+        if hasattr(self, 'ui'):
+            self.ui.statusBar().showMessage(str(message))
 
 
 def main():

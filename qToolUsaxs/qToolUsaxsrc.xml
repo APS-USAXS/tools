@@ -7,9 +7,9 @@
   <parameter name="DY0">
     26.515
   </parameter>
-  <position Q="0" label="" row="0"/>
-  <position Q="0.0002" label="" row="1"/>
-  <position Q="0.0005" label="" row="2"/>
+  <position Q="0" label="home" row="0"/>
+  <position Q="0.0002" label="near" row="1"/>
+  <position Q="0.0005" label="fwhm" row="2"/>
   <position Q="0.001" label="" row="3"/>
   <position Q="0.002" label="" row="4"/>
   <position Q="0.0005" label="" row="5"/>

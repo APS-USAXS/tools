@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-
 '''
-MVC demo
+table of Q values and computed  motor positions
 '''
 
 
@@ -15,6 +13,7 @@ Q_COLUMN        = 1
 AR_COLUMN       = 2
 AY_COLUMN       = 3
 DY_COLUMN       = 4
+DEFAULT_NUMBER_ROWS = 5
 
 
 class TableModel(QtCore.QAbstractTableModel):
@@ -25,20 +24,22 @@ class TableModel(QtCore.QAbstractTableModel):
     def __init__(self, datain, parent=None, *args):
         super(TableModel, self).__init__(parent, *args)
         self.model = []
-        self.newRow(datain)
         self.headers = ['description', 'Q, 1/A', 'AR, degrees', 'AY, mm', 'DY, mm',]
+        if datain is None:
+            for _ in range(DEFAULT_NUMBER_ROWS):
+                self.newRow()
+        else:
+            for row in datain:
+                self.newRow(row)
     
     def newRow(self, data = None):
         if data is None:
             now = str(datetime.datetime.now())
-            self.model.append([now, 0, .3, .4, .5, ])
+            self.model.append([now, 0, 0, 0, 0, ])
         else:
             if not isinstance(data, list):
-                raise RuntimeError('data must be a list of rows')
-            if not isinstance(data[0], list):
-                raise RuntimeError('each row must contain values for: label, Q, AR, AY, DY')
-            for _ in data:
-                self.model.append(_)
+                raise RuntimeError('each row must contain values for: label, Q')
+            self.model.append(data + [0, 0, 0])
 
     def rowCount(self, parent):
         return len(self.model)
@@ -100,11 +101,12 @@ class TableView(QtGui.QTableView):
     """
     A table to demonstrate the button delegate.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, doMove=None, *args, **kwargs):
         super(TableView, self).__init__(*args, **kwargs)
         
         self.setAlternatingRowColors(True)
  
+        self.doMove = doMove
         #self.q_control = FloatControl(self, self.AR_ButtonClicked, '%.6f')
         self.q_control = FloatControl()
         self.setItemDelegate(self.q_control)
@@ -124,6 +126,8 @@ class TableView(QtGui.QTableView):
         statusbar = mw.statusBar()
         msg = buttonname + ' button: ' + self.sender().text()
         statusbar.showMessage(msg)
+        if self.doMove is not None:
+            self.doMove(buttonname, self.sender().text())
 
     def AR_ButtonClicked(self):
         self._buttonClicked('AR')

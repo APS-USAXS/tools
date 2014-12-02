@@ -20,7 +20,7 @@ import config
 import qTable
 
 __project_name__  = 'qToolUsaxs'
-__version__       = '2014-11'
+__version__       = '2014-12'
 __author__        = 'Pete Jemian'
 __contact__       = 'jemian@anl.gov'
 __organization__  = 'Advanced Photon Source, Argonne National Laboratory'

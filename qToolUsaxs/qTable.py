@@ -16,6 +16,11 @@ DY_COLUMN       = 4
 DEFAULT_NUMBER_ROWS = 30
 
 
+# TODO: table width (and column widths) should change when window size changes
+# custom TableView widget should fit into the window
+# this means no horizontal scroll bar
+
+
 class TableModel(QtCore.QAbstractTableModel):
     """
     Model (data) of our table of motor positions for each Q

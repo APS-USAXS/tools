@@ -8,6 +8,7 @@ to move each of the motors.
 '''
 
 import datetime
+import epics
 import os
 import sys
 from PyQt4 import QtGui, uic
@@ -58,6 +59,42 @@ PV_MAP = {      # FIXME: check these PV names
     'motor,AY'      : '9idcLAX:m58:c0:m6',
     'motor,DY'      : '9idcLAX:m58:c2:m4'
 }
+PV_MAP = {      # developer PV names
+    'energy'        : 'vbox:userCalc1.A',
+    'Q,Finish'      : 'vbox:userCalc1.B',
+    'AR,enc'        : 'vbox:m1.RBV',
+    'AR,enc,center' : 'vbox:userCalc1.C',
+    'SDD'           : 'vbox:userCalc1.D',
+    'SAD'           : 'vbox:userCalc1.E',
+    'AY0'           : 'vbox:userCalc1.F',
+    'DY0'           : 'vbox:userCalc1.G',
+    'motor,AR'      : 'vbox:m1',
+    'motor,AY'      : 'vbox:m2',
+    'motor,DY'      : 'vbox:m3'
+}
+MOTOR_SYMBOLS = ('ar', 'ay', 'dy')
+
+
+class Motor(object):
+    
+    pv = None
+    pvname = None
+    w_RBV = None
+    w_VAL = None
+
+    def connect(self, pvname):
+        '''connect with EPICS'''
+        if pvname is not None:
+            self.pvname = pvname
+            self.pv = epics.Motor(pvname)
+    
+    def move(self, value):
+        if self.pv is not None:
+            self.pv.move(value)
+    
+    def stop(self):
+        if self.pvname is not None:
+            self.pv.stop()
 
 
 class USAXS_Q_tool(object):
@@ -65,13 +102,16 @@ class USAXS_Q_tool(object):
 
     def __init__(self, uifile, config_file = None):
         self.config_file = config_file or DEFAULT_CONFIG_FILE
+        
+        self.motors = {motor: Motor() for motor in MOTOR_SYMBOLS}
 
         self.ui = uic.loadUi(uifile)
         self._replace_standard_controls_()
         self._init_epics_controls_()
         self._init_actions_()
         # TODO: read configuration file
-        # TODO: connect EPICS PVs
+        # TODO: connect user parameters
+        self.connect_to_EPICS()
     
     def _init_actions_(self):
         '''connect buttons with handlers'''
@@ -86,41 +126,59 @@ class USAXS_Q_tool(object):
         '''install EPICS motor controls'''
         layout = self.ui.layout_motors
         
-        column = 1
-        self.ar_rbv = bcdaqwidgets.BcdaQLabel()
-        layout.addWidget(self.ar_rbv, 1, column)
-        self.ar_val = bcdaqwidgets.BcdaQLineEdit()
-        layout.addWidget(self.ar_val, 2, column)
+        def build_motor_widgets(motor, column):
+            w = bcdaqwidgets.BcdaQLabel()
+            layout.addWidget(w, 1, column)
+            self.motors[motor].w_RBV = w
+
+            w = bcdaqwidgets.BcdaQLineEdit()
+            layout.addWidget(w, 2, column)
+            self.motors[motor].w_VAL = w
         
-        column = 2
-        self.ay_rbv = bcdaqwidgets.BcdaQLabel()
-        layout.addWidget(self.ay_rbv, 1, column)
-        self.ay_val = bcdaqwidgets.BcdaQLineEdit()
-        layout.addWidget(self.ay_val, 2, column)
-        
-        column = 3
-        self.dy_rbv = bcdaqwidgets.BcdaQLabel()
-        layout.addWidget(self.dy_rbv, 1, column)
-        self.dy_val = bcdaqwidgets.BcdaQLineEdit()
-        layout.addWidget(self.dy_val, 2, column)
+        for col, motor in enumerate(MOTOR_SYMBOLS):
+            build_motor_widgets(motor, col+1)
+    
+    def connect_to_EPICS(self):
+        for motor in MOTOR_SYMBOLS:
+            obj = self.motors[motor]
+            pvname = PV_MAP['motor,' + motor.upper()]
+            obj.connect(pvname)
+            obj.w_RBV.ca_connect(pvname+'.RBV', ca_callback=self.myCallback)
+            obj.w_VAL.ca_connect(pvname+'.VAL')
+    
+    def myCallback(self, *args, **kw):
+        #print kw
+        # print sorted(kw.keys())
+        # pvname
+        # value
+        # status
+        # char_value
+        #self.text_cache = char_value         # cache the new text locally
+        #self.labelSignal.newText.emit()      # threadsafe update of the widget
+        pass
+    
+#     def myConnect(self, *args, **kw):
+#         print kw['conn']
+#         if kw.get('char_value', None) is not None:
+#             pass
     
     def _replace_standard_controls_(self):
         '''replace standard controls with EPICS controls'''
-        self._replace_tableview_()
+        self._replace_tableview_(None)
         # TODO: replace ARenc label
         # TODO: replace ARenc0 label
         # TODO: replace SAD label
         # TODO: replace SDD label
         # TODO: replace energy label
 
-    def _replace_tableview_(self):
+    def _replace_tableview_(self, q_table):
         '''install custom model-view support for Q table'''
         self.ui.tableView.deleteLater()
         gb = self.ui.groupBox_tableView
         layout = gb.layout()
         layout.setColumnStretch(0, 1)
-        self.table = qTable.TableModel(None, parent=gb)
-        self.tableview = qTable.TableView(gb)
+        self.table = qTable.TableModel(q_table, parent=gb)
+        self.tableview = qTable.TableView(self.doMove)
         layout.addWidget(self.tableview)
         self.tableview.setModel(self.table)
 
@@ -151,7 +209,8 @@ class USAXS_Q_tool(object):
     def doStop(self, *args, **kw):
         '''stop all EPICS motors'''
         self.setStatus('STOP all motors requested')
-        # TODO: implement
+        for motor in MOTOR_SYMBOLS:
+            self.motors[motor].stop()
     
     def doShowConfigFileName(self, *args, **kw):
         '''display the config file name in the status text'''
@@ -166,22 +225,16 @@ class USAXS_Q_tool(object):
         '''save the configuration file'''
         pass
     
-    def doMove(self, *args, **kw):
+    def doMove(self, motor, text_value, *args, **kw):
         '''move the motor'''
-        self.setStatus('moving ...')
-        # TODO: implement
-
-    def motorLimitsOK(self, axis, value):
-        '''
-        tests if value is within the limits of the named motor axis
-        '''
-        # FIXME: this is wxPython code
-        if not axis in self.AXIS_NAMES:
-            return False
-        hlm = self.db[self.XREF["motor,%s,HLM" % axis]]['value']
-        llm = self.db[self.XREF["motor,%s,LLM" % axis]]['value']
-        result = (llm <= value) and (value <= hlm)
-        return result
+        # validate first
+        motor = motor.lower()
+        if motor not in MOTOR_SYMBOLS: return
+        value, ok = text_value.toDouble()
+        if not ok: return
+        
+        self.setStatus('moving ... ' + motor + ' to ' + str(value))
+        self.motors[motor].move(value)
 
     def recalculate(self, *args, **kw):
         '''recompute all terms'''

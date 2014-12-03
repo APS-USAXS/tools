@@ -264,8 +264,8 @@ class USAXS_Q_tool(object):
         try:   # get initial parameters from the GUI
             A_keV = 12.3984244 # Angstrom * keV
             ar = self.motors['ar'].pv.RBV
-            ar0 = arEnc0 = float(self.ui.w_ARenc0.text())
-            arEnc = float(self.ui.w_ARenc.text())
+            ar0 = float(self.ui.w_ARenc0.text())
+            #arEnc = float(self.ui.w_ARenc.text())
             sad = float(self.ui.w_SAD.text())
             sdd = float(self.ui.w_SDD.text())
             ay0 = float(self.ui.w_AY0_user.text())

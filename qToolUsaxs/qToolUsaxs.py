@@ -317,9 +317,9 @@ class RBV_label(bcdaqwidgets.BcdaQLabel):
         self.signal = SignalDef()
     
     def ca_connect(self, pvname):
-        base_pvname = pvname.split('.')[0]
+        dmov_pv = pvname.split('.')[0] + '.DMOV'
         super(RBV_label, self).ca_connect(pvname)
-        self.dmov = epics.PV(base_pvname + '.DMOV', callback=self.dmov_callback)
+        self.dmov = epics.PV(dmov_pv, callback=self.dmov_callback)
         self.signal.dmov.connect(self.setBackgroundColor)
     
     def dmov_callback(self, *args, **kw):

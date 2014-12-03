@@ -192,7 +192,7 @@ class USAXS_Q_tool(object):
 
         # create the new content
         self.table = qTable.TableModel(q_table, parent=gb, recalc=self.recalculate)
-        self.tableview = qTable.TableView(self.doMove)
+        self.tableview = qTable.TableView(self.doMove, self.motors)
         self.tableview.setModel(self.table)
         self.table.setView(self.tableview)
         self.table.setMotors(self.motors)

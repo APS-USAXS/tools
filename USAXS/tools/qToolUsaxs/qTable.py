@@ -4,6 +4,7 @@ table of Q values and computed  motor positions
 
 
 from PyQt4 import QtCore, QtGui
+from bcdaqwidgets import BcdaQLabel, StyleSheet
 pyqtSignal = QtCore.pyqtSignal
 import datetime
 
@@ -33,6 +34,7 @@ class TableModel(QtCore.QAbstractTableModel):
     def __init__(self, datain, parent=None, recalc=None, *args):
         super(TableModel, self).__init__(parent, *args)
         self.view = None
+        self.motors = None
         self.model = []
         self.recalc = recalc
         self.headers = ['description', 'Q, 1/A', 'AR, degrees', 'AY, mm', 'DY, mm',]
@@ -106,6 +108,9 @@ class TableModel(QtCore.QAbstractTableModel):
     
     def setView(self, view):
         self.view = view
+    
+    def setMotors(self, motors):
+        self.motors = motors
 
     def calc_row(self, row):
         if self.recalc is not None:
@@ -113,12 +118,27 @@ class TableModel(QtCore.QAbstractTableModel):
             result = self.recalc(Q)
             if result is not None:
                 ar, ay, dy = result
-                self.setData(self.index(row, AR_COLUMN), ar, QtCore.Qt.EditRole)
-                self.setData(self.index(row, AY_COLUMN), ay, QtCore.Qt.EditRole)
-                self.setData(self.index(row, DY_COLUMN), dy, QtCore.Qt.EditRole)
+                index_ar = self.index(row, AR_COLUMN)
+                index_ay = self.index(row, AY_COLUMN)
+                index_dy = self.index(row, DY_COLUMN)
+
+                self.setData(index_ar, ar, QtCore.Qt.EditRole)
+                self.setData(index_ay, ay, QtCore.Qt.EditRole)
+                self.setData(index_dy, dy, QtCore.Qt.EditRole)
+        
+                def set_background_color(mne, index, value):
+                    # FIXME: some buttons (offscreen ones, for example) don't get colors yet
+                    clut = {False: 'yellow', True: 'mintcream'}
+                    color = clut[self.motors[mne].inLimits(value)]
+                    sty = StyleSheet(self.view.indexWidget(index))
+                    sty.updateStyleSheet({'background-color': color})
+                
+                set_background_color('ar', index_ar, ar)
+                set_background_color('ay', index_ay, ay)
+                set_background_color('dy', index_dy, dy)
 
                 # trigger the GUI to redraw
-                self.view.dataChanged(self.index(row, AR_COLUMN), self.index(row, DY_COLUMN))
+                self.view.dataChanged(index_ar, index_dy)
 
     def calc_all(self):
         for row, model in enumerate(self.model):
@@ -134,6 +154,7 @@ class TableView(QtGui.QTableView):
         super(TableView, self).__init__(*args, **kwargs)
         
         self.setAlternatingRowColors(True)
+        #self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
  
         self.doMove = doMove
         #self.q_control = FloatControl(self, self.AR_ButtonClicked, '%.6f')

@@ -98,6 +98,9 @@ class Motor(object):
     def stop(self):
         if self.pvname is not None:
             self.pv.stop()
+    
+    def inLimits(self, value):
+        return self.pv is not None and self.pv.within_limits(value)
 
 
 class USAXS_Q_tool(object):
@@ -192,6 +195,7 @@ class USAXS_Q_tool(object):
         self.tableview = qTable.TableView(self.doMove)
         self.tableview.setModel(self.table)
         self.table.setView(self.tableview)
+        self.table.setMotors(self.motors)
         
         # a touch of configuration
         layout.setColumnStretch(0, 1)
@@ -286,8 +290,6 @@ class USAXS_Q_tool(object):
         except Exception, exc:
             self.setStatus('recalc exception 2: ' + str(exc))
             return None
-        
-        # TODO: indicate ar, ay, dy limit problems with a yellow button background
 
         self.setStatus('recalculated')
         return ar, ay, dy

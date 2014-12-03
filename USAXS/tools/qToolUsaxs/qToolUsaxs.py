@@ -13,6 +13,7 @@ import math
 import os
 import sys
 from PyQt4 import QtCore, QtGui, uic
+pyqtSignal = QtCore.pyqtSignal
 
 import bcdaqwidgets
 
@@ -138,7 +139,7 @@ class USAXS_Q_tool(object):
         layout = self.ui.layout_motors
         
         def build_motor_widgets(motor, column):
-            w = bcdaqwidgets.BcdaQLabel()
+            w = RBV_label()
             layout.addWidget(w, 1, column)
             self.motors[motor].w_RBV = w
 
@@ -297,6 +298,38 @@ class USAXS_Q_tool(object):
     def setStatus(self, message):
         if hasattr(self, 'ui'):
             self.ui.statusBar().showMessage(str(message))
+
+
+class SignalDef(QtCore.QObject):
+    '''Define signals and slot signatures used to communicate between threads.'''
+
+    dmov = pyqtSignal(int)
+
+
+class RBV_label(bcdaqwidgets.BcdaQLabel):
+    '''makes BcdaQLabel background green when motor is moving'''
+    
+    def __init__(self, *args):
+        super(RBV_label, self).__init__(*args)
+        self.color_table = {1: '#bbb', 0: 'lightgreen'}
+        self.sty = bcdaqwidgets.StyleSheet(self)
+        self.dmov = None
+        self.signal = SignalDef()
+    
+    def ca_connect(self, pvname):
+        base_pvname = pvname.split('.')[0]
+        super(RBV_label, self).ca_connect(pvname)
+        self.dmov = epics.PV(base_pvname + '.DMOV', callback=self.dmov_callback)
+        self.signal.dmov.connect(self.setBackgroundColor)
+    
+    def dmov_callback(self, *args, **kw):
+        # called in PyEpics thread
+        self.signal.dmov.emit(kw['value'])
+    
+    def setBackgroundColor(self, value):
+        # called in GUI thread
+        color = self.color_table[value]
+        self.sty.updateStyleSheet({'background-color': color})
 
 
 def main():

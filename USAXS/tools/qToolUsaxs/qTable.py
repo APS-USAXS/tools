@@ -5,7 +5,6 @@ table of Q values and computed  motor positions
 
 from PyQt4 import QtCore, QtGui
 from bcdaqwidgets import BcdaQLabel, StyleSheet
-pyqtSignal = QtCore.pyqtSignal
 import datetime
 
 

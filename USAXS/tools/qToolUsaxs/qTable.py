@@ -16,6 +16,8 @@ AY_COLUMN       = 3
 DY_COLUMN       = 4
 DEFAULT_NUMBER_ROWS = 30
 
+BUTTON_CLUT = {False: 'yellow', True: 'mintcream'}
+
 
 # TODO: table width (and column widths) should change when window size changes
 # custom TableView widget should fit into the window
@@ -125,20 +127,6 @@ class TableModel(QtCore.QAbstractTableModel):
                 self.setData(index_ar, ar, QtCore.Qt.EditRole)
                 self.setData(index_ay, ay, QtCore.Qt.EditRole)
                 self.setData(index_dy, dy, QtCore.Qt.EditRole)
-        
-                def set_background_color(mne, index, value):
-                    # FIXME: some buttons (offscreen ones, for example) don't get colors yet
-                    clut = {False: 'yellow', True: 'mintcream'}
-                    color = clut[self.motors[mne].inLimits(value)]
-                    sty = StyleSheet(self.view.indexWidget(index))
-                    sty.updateStyleSheet({'background-color': color})
-                
-                set_background_color('ar', index_ar, ar)
-                set_background_color('ay', index_ay, ay)
-                set_background_color('dy', index_dy, dy)
-
-                # trigger the GUI to redraw
-                self.view.dataChanged(index_ar, index_dy)
 
     def calc_all(self):
         for row, model in enumerate(self.model):
@@ -150,7 +138,7 @@ class TableView(QtGui.QTableView):
     """
     A table to demonstrate the button delegate.
     """
-    def __init__(self, doMove=None, *args, **kwargs):
+    def __init__(self, doMove=None, motors=None, *args, **kwargs):
         super(TableView, self).__init__(*args, **kwargs)
         
         self.setAlternatingRowColors(True)
@@ -164,6 +152,11 @@ class TableView(QtGui.QTableView):
         self.ar_control = ButtonControl(self, self.AR_ButtonClicked, '%.6f')
         self.ay_control = ButtonControl(self, self.AY_ButtonClicked, '%.3f')
         self.dy_control = ButtonControl(self, self.DY_ButtonClicked, '%.3f')
+        
+        d = dict(ar=self.ar_control, ay=self.ay_control, dy=self.dy_control)
+        for mne, control in d.items():
+            motor = motors[mne]
+            control.setMotor(motor)
 
         self.setItemDelegateForColumn(AR_COLUMN, self.ar_control)
         self.setItemDelegateForColumn(AY_COLUMN, self.ay_control)
@@ -208,6 +201,11 @@ class ButtonControl(QtGui.QItemDelegate):
         QtGui.QItemDelegate.__init__(self, parent)
         self.action = action
         self.format = display_format
+        self.motor = None
+ 
+    def setMotor(self, motor):
+        '''cache the motor mnemonic for use in coloring the button'''
+        self.motor = motor
  
     def paint(self, painter, option, index):
         widget = self.parent().indexWidget(index)
@@ -223,7 +221,14 @@ class ButtonControl(QtGui.QItemDelegate):
             if isinstance(widget, QtGui.QPushButton):
                 # update the PushButton text if the model's value changed
                 value, ok = index.data().toDouble()
+                sty = StyleSheet(widget)
                 if ok:
                     text = self.format % value
                     if text != widget.text():
-                        widget.setText(text)    # update only if non-trivial
+                        # update only if non-trivial
+                        widget.setText(text)
+                    if self.motor is not None:
+                        color = BUTTON_CLUT[self.motor.inLimits(value)]
+                        sty.updateStyleSheet({'background-color': color})
+                else:
+                    sty.updateStyleSheet({'background-color': '#eee'})

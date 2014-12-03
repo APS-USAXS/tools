@@ -32,6 +32,7 @@ class TableModel(QtCore.QAbstractTableModel):
     
     def __init__(self, datain, parent=None, recalc=None, *args):
         super(TableModel, self).__init__(parent, *args)
+        self.view = None
         self.model = []
         self.recalc = recalc
         self.headers = ['description', 'Q, 1/A', 'AR, degrees', 'AY, mm', 'DY, mm',]
@@ -50,6 +51,7 @@ class TableModel(QtCore.QAbstractTableModel):
             if not isinstance(data, list):
                 raise RuntimeError('each row must contain values for: label, Q')
             self.model.append(data + [0, 0, 0])
+        self.calc_row(len(self.model)-1)
 
     def rowCount(self, parent):
         return len(self.model)
@@ -62,6 +64,20 @@ class TableModel(QtCore.QAbstractTableModel):
             if role == QtCore.Qt.DisplayRole:
                 return QtCore.QVariant(self.headers[col])
         return QtCore.QVariant()
+
+    def flags(self, index):
+        defaultFlags = QtCore.QAbstractItemModel.flags(self, index)
+        if index.isValid():
+            return defaultFlags \
+                    | QtCore.Qt.ItemIsEnabled \
+                    | QtCore.Qt.ItemIsEditable \
+                    | QtCore.Qt.ItemIsDragEnabled \
+                    | QtCore.Qt.ItemIsDropEnabled
+           
+        else:
+            return defaultFlags \
+                    | QtCore.Qt.ItemIsEnabled \
+                    | QtCore.Qt.ItemIsDropEnabled
 
     def data(self, index, role):
         if index.isValid():
@@ -81,29 +97,34 @@ class TableModel(QtCore.QAbstractTableModel):
                 val, ok = value.toDouble()
                 if ok:
                     self.model[row][column] = val
-                    if self.recalc is not None:
-                        result = self.recalc(val)
-                        if result is not None:
-                            ar, ay, dy = result
-                            self.model[row][AR_COLUMN] = ar
-                            self.model[row][AY_COLUMN] = ay
-                            self.model[row][DY_COLUMN] = dy
+                    self.calc_row(row)
+                    return True
+            elif column in (AR_COLUMN, AY_COLUMN, DY_COLUMN):
+                    self.model[row][column] = value
                     return True
         return False
+    
+    def setView(self, view):
+        self.view = view
 
-    def flags(self, index):
-        defaultFlags = QtCore.QAbstractItemModel.flags(self, index)
-        if index.isValid():
-            return defaultFlags \
-                    | QtCore.Qt.ItemIsEnabled \
-                    | QtCore.Qt.ItemIsEditable \
-                    | QtCore.Qt.ItemIsDragEnabled \
-                    | QtCore.Qt.ItemIsDropEnabled
-           
-        else:
-            return defaultFlags \
-                    | QtCore.Qt.ItemIsEnabled \
-                    | QtCore.Qt.ItemIsDropEnabled
+    def calc_row(self, row):
+        if self.recalc is not None:
+            Q = self.model[row][Q_COLUMN]
+            result = self.recalc(Q)
+            if result is not None:
+                ar, ay, dy = result
+                self.setData(self.index(row, AR_COLUMN), ar, QtCore.Qt.EditRole)
+                self.setData(self.index(row, AY_COLUMN), ay, QtCore.Qt.EditRole)
+                self.setData(self.index(row, DY_COLUMN), dy, QtCore.Qt.EditRole)
+
+    def calc_all(self):
+        for row, model in enumerate(self.model):
+            if len(model[Q_COLUMN]) > 0:
+                self.calc_row(row)
+        # TODO: trigger the GUI to redraw
+        # select the first table cell - does not work
+        #if self.view is not None:
+        #      self.view.setCurrentIndex(self.index(0, LABEL_COLUMN))
 
 
 class TableView(QtGui.QTableView):

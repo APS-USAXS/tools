@@ -12,7 +12,7 @@ import epics
 import math
 import os
 import sys
-from PyQt4 import QtGui, uic
+from PyQt4 import QtCore, QtGui, uic
 
 import bcdaqwidgets
 
@@ -75,6 +75,7 @@ PV_MAP = {      # developer PV names
     'motor,DY'      : 'vbox:m3'
 }
 MOTOR_SYMBOLS = ('ar', 'ay', 'dy')
+CALC_ALL_DELAY_MS = 250
 
 
 class Motor(object):
@@ -116,6 +117,7 @@ class USAXS_Q_tool(object):
         
         self.ui.w_AY0_user.setText(self.rcfile.param.get('AY0', 0))
         self.ui.w_DY0_user.setText(self.rcfile.param.get('DY0', 0))
+        QtCore.QTimer.singleShot(CALC_ALL_DELAY_MS, self.table.calc_all)
     
     def _init_actions_(self):
         '''connect buttons with handlers'''
@@ -189,6 +191,7 @@ class USAXS_Q_tool(object):
         self.table = qTable.TableModel(q_table, parent=gb, recalc=self.recalculate)
         self.tableview = qTable.TableView(self.doMove)
         self.tableview.setModel(self.table)
+        self.table.setView(self.tableview)
         
         # a touch of configuration
         layout.setColumnStretch(0, 1)
@@ -258,9 +261,6 @@ class USAXS_Q_tool(object):
         '''recompute all terms'''
         self.setStatus('recalculating ...')
         
-        # TODO: compute on update of user parameter (including EPICS PV monitor)
-        # This code responds to qTable updates already
-        
         try:   # get initial parameters from the GUI
             A_keV = 12.3984244 # Angstrom * keV
             ar = self.motors['ar'].pv.RBV
@@ -272,12 +272,14 @@ class USAXS_Q_tool(object):
             dy0 = float(self.ui.w_DY0_user.text())
             energy = float(self.ui.w_energy.text())
             lambda_over_4pi = A_keV / (energy * 4 * math.pi)
+        except AttributeError, exc:
+            pass
         except Exception, exc:
             self.setStatus('recalc exception 1: ' + str(exc))
             return None
 
         try:
-            x = -Q * lambda_over_4pi
+            x = -float(Q) * lambda_over_4pi
             ar = ar0 + 2*math.degrees(math.asin( x ))
             dy = dy0 + sdd * math.tan( x )
             ay = ay0 + sad * math.tan( x )

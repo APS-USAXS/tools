@@ -117,14 +117,13 @@ class TableModel(QtCore.QAbstractTableModel):
                 self.setData(self.index(row, AY_COLUMN), ay, QtCore.Qt.EditRole)
                 self.setData(self.index(row, DY_COLUMN), dy, QtCore.Qt.EditRole)
 
+                # trigger the GUI to redraw
+                self.view.dataChanged(self.index(row, AR_COLUMN), self.index(row, DY_COLUMN))
+
     def calc_all(self):
         for row, model in enumerate(self.model):
             if len(model[Q_COLUMN]) > 0:
                 self.calc_row(row)
-        # TODO: trigger the GUI to redraw
-        # select the first table cell - does not work
-        #if self.view is not None:
-        #      self.view.setCurrentIndex(self.index(0, LABEL_COLUMN))
 
 
 class TableView(QtGui.QTableView):

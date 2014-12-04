@@ -7,7 +7,6 @@ It provides a table of known positions and buttons
 to move each of the motors.
 '''
 
-# TODO: need to recalculate when PVs change
 
 import epics
 import math
@@ -106,8 +105,8 @@ class USAXS_Q_tool(object):
             self.pvmap = self.rcfile.pvmap
         else:
             self.pvmap = PV_MAP
-#         self.user_pv = {}
-#         self.user_pv_signal = {}
+        self.user_pv = {}
+        self.user_pv_signal = {}
 
         self.ui = uic.loadUi(uifile)
         self._replace_standard_controls_()
@@ -156,8 +155,9 @@ class USAXS_Q_tool(object):
             obj.w_RBV.ca_connect(pvname+'.RBV')
             obj.w_VAL.ca_connect(pvname+'.VAL')
         
-#         for key, pv in self.rcfile.pvmap.items():
-#             self.user_pv[key] = epics.PV(pv, callback=self.doRecalculate)
+        for key, pv in self.rcfile.pvmap.items():
+            self.user_pv[key] = epics.PV(pv, callback=self.doRecalculate)
+            self.user_pv_signal[key] = SignalDef()
     
     def _replace_standard_controls_(self):
         '''replace standard controls with EPICS controls'''
@@ -205,8 +205,8 @@ class USAXS_Q_tool(object):
         '''(re)build the model/view support'''
         if self.ui is not None:
             self._replace_tableview_(self.rcfile.toDataModel())
-#             for key in self.rcfile.pvmap.keys():
-#                 self.user_pv_signal[key].recalc.connect(self.table.calc_all)
+            for key in self.rcfile.pvmap.keys():
+                self.user_pv_signal[key].recalc.connect(self.table.calc_all)
 
             QtCore.QTimer.singleShot(CALC_ALL_DELAY_MS, self.table.calc_all)
 
@@ -274,7 +274,8 @@ class USAXS_Q_tool(object):
     def doRecalculate(self, *args, **kw):
         '''called from PyEpics thread'''
         if hasattr(self, 'table'):
-            self.signal.recalc.emit()   # signal to GUI thread
+            key = self.user_pv.keys()[0]            # any key will do
+            self.user_pv_signal[key].recalc.emit()  # signal to GUI thread
 
     def recalculate(self, Q, *args, **kw):
         '''recompute all terms'''

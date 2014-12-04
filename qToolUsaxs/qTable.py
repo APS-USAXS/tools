@@ -4,8 +4,8 @@ table of Q values and computed  motor positions
 
 
 from PyQt4 import QtCore, QtGui
-from bcdaqwidgets import BcdaQLabel, StyleSheet
 import datetime
+import bcdaqwidgets
 
 
 LABEL_COLUMN    = 0
@@ -15,7 +15,7 @@ AY_COLUMN       = 3
 DY_COLUMN       = 4
 DEFAULT_NUMBER_ROWS = 30
 
-BUTTON_CLUT = {False: 'yellow', True: 'mintcream'}
+BUTTON_CLUT = {False: 'yellow', True: 'lightgreen'}
 
 
 # TODO: table width (and column widths) should change when window size changes
@@ -220,7 +220,7 @@ class ButtonControl(QtGui.QItemDelegate):
             if isinstance(widget, QtGui.QPushButton):
                 # update the PushButton text if the model's value changed
                 value, ok = index.data().toDouble()
-                sty = StyleSheet(widget)
+                sty = bcdaqwidgets.StyleSheet(widget)
                 if ok:
                     text = self.format % value
                     if text != widget.text():

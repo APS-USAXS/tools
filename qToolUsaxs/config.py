@@ -8,7 +8,7 @@ import datetime
 import os
 from lxml import etree
 
-CONFIG_FILE_VERSION = '2.0'
+CONFIG_FILE_VERSION = '2.1'
 
 
 class Position(object):
@@ -29,6 +29,7 @@ class ConfigFile(object):
         self.fname = fname
         self.param = {}
         self.positions = []
+        self.pvmap = {}
         if os.path.exists(fname):
             self.rc_read()
     
@@ -57,6 +58,10 @@ class ConfigFile(object):
             position = Position(Q, label)
             # ignore _row
             self.positions.append(position)
+        for node in root.xpath('//EPICS_PV'):
+            pv = node.attrib['pv'].strip()
+            label = node.attrib['name'].strip()
+            self.pvmap[label] = pv
     
     def rc_write(self, fname=None):
         '''write the configuration to the resource configuration XML file'''
@@ -94,6 +99,12 @@ class ConfigFile(object):
                 value = pos.__getattribute__(key)
                 if len(value) == 0: value = ''
                 node.set(key, value)
+
+        # PV map
+        for label, pv in sorted(self.pvmap.items()):
+            node = etree.SubElement(root, "EPICS_PV")
+            node.set('name', label)
+            node.set('pv', pv)
         
         # pretty print to the XML file: fname
         if fname is not None:
@@ -107,6 +118,9 @@ if __name__ == '__main__':
     cf = ConfigFile('qToolUsaxsrc.xml')
     print cf.param
     print cf.positions
+    import qToolUsaxs
+    cf.pvmap = qToolUsaxs.PV_MAP
+    print cf.pvmap
     cf.rc_write('test.xml')
     
     model = cf.toDataModel()

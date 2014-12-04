@@ -49,8 +49,8 @@ STOP_BUTTON_STYLES = '''
         text-align: center;
     }
 '''
-PV_MAP = {      # FIXME: check these PV names
-    'energy'        : '9IDA:BraggERdbkAO',
+PV_MAP = {
+    'energy'        : '9IDA:BraggERdbkAO',      # FIXME: check this PV name
     'Q,Finish'      : '9idcLAX:USAXS:Finish',
     'AR,enc'        : '9idcLAX:aero:c0:m1.RBV',
     'AR,enc,center' : '9idcLAX:USAXS:Q.B',
@@ -61,19 +61,6 @@ PV_MAP = {      # FIXME: check these PV names
     'motor,AR'      : '9idcLAX:aero:c0:m1',
     'motor,AY'      : '9idcLAX:m58:c0:m6',
     'motor,DY'      : '9idcLAX:m58:c2:m4'
-}
-PV_MAP = {      # developer PV names
-    'energy'        : 'vbox:userCalc1.A',
-    'Q,Finish'      : 'vbox:userCalc1.B',
-    'AR,enc'        : 'vbox:m1.RBV',
-    'AR,enc,center' : 'vbox:userCalc1.C',
-    'SDD'           : 'vbox:userCalc1.D',
-    'SAD'           : 'vbox:userCalc1.E',
-    'AY0'           : 'vbox:userCalc1.F',
-    'DY0'           : 'vbox:userCalc1.G',
-    'motor,AR'      : 'vbox:m1',
-    'motor,AY'      : 'vbox:m2',
-    'motor,DY'      : 'vbox:m3'
 }
 MOTOR_SYMBOLS = ('ar', 'ay', 'dy')
 CALC_ALL_DELAY_MS = 250
@@ -112,6 +99,10 @@ class USAXS_Q_tool(object):
         
         self.rcfile_name = config_file or DEFAULT_CONFIG_FILE
         self.rcfile = self.doReadConfig()
+        if len(self.rcfile.pvmap) > 0:
+            self.pvmap = self.rcfile.pvmap
+        else:
+            self.pvmap = PV_MAP
 
         self.ui = uic.loadUi(uifile)
         self._replace_standard_controls_()
@@ -139,7 +130,7 @@ class USAXS_Q_tool(object):
         layout = self.ui.layout_motors
         
         def build_motor_widgets(motor, column):
-            w = RBV_label()
+            w = bcdaqwidgets.RBV_BcdaQLabel()
             layout.addWidget(w, 1, column)
             self.motors[motor].w_RBV = w
 
@@ -153,7 +144,7 @@ class USAXS_Q_tool(object):
     def connect_to_EPICS(self):
         for motor in MOTOR_SYMBOLS:
             obj = self.motors[motor]
-            pvname = PV_MAP['motor,' + motor.upper()]
+            pvname = self.pvmap['motor,' + motor.upper()]
             obj.connect(pvname)
             obj.w_RBV.ca_connect(pvname+'.RBV')
             obj.w_VAL.ca_connect(pvname+'.VAL')
@@ -171,7 +162,7 @@ class USAXS_Q_tool(object):
             text = lbl.text()
             lbl.deleteLater()
             widget.deleteLater()
-            widget = kind(pvname=PV_MAP[key])
+            widget = kind(pvname=self.pvmap[key])
             layout.insertRow(row, text, widget)
             return widget
 
@@ -298,38 +289,6 @@ class USAXS_Q_tool(object):
     def setStatus(self, message):
         if hasattr(self, 'ui'):
             self.ui.statusBar().showMessage(str(message))
-
-
-class SignalDef(QtCore.QObject):
-    '''Define signals and slot signatures used to communicate between threads.'''
-
-    dmov = pyqtSignal(int)
-
-
-class RBV_label(bcdaqwidgets.BcdaQLabel):
-    '''makes BcdaQLabel background green when motor is moving'''
-    
-    def __init__(self, *args):
-        super(RBV_label, self).__init__(*args)
-        self.color_table = {1: '#bbb', 0: 'lightgreen'}
-        self.sty = bcdaqwidgets.StyleSheet(self)
-        self.dmov = None
-        self.signal = SignalDef()
-    
-    def ca_connect(self, rbv_pv):
-        dmov_pv = rbv_pv.split('.')[0] + '.DMOV'
-        super(RBV_label, self).ca_connect(rbv_pv)
-        self.dmov = epics.PV(dmov_pv, callback=self.dmov_callback)
-        self.signal.dmov.connect(self.setBackgroundColor)
-    
-    def dmov_callback(self, *args, **kw):
-        # called in PyEpics thread
-        self.signal.dmov.emit(kw['value'])
-    
-    def setBackgroundColor(self, value):
-        # called in GUI thread
-        color = self.color_table[value]
-        self.sty.updateStyleSheet({'background-color': color})
 
 
 def main():

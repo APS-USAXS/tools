@@ -160,6 +160,9 @@ class TableView(QtGui.QTableView):
         self.setItemDelegateForColumn(AR_COLUMN, self.ar_control)
         self.setItemDelegateForColumn(AY_COLUMN, self.ay_control)
         self.setItemDelegateForColumn(DY_COLUMN, self.dy_control)
+        
+        self.resizeColumnsToContents()
+        self.resizeRowsToContents()
 
     def _buttonClicked(self, buttonname='', *args, **kw):
         gb = self.parent()

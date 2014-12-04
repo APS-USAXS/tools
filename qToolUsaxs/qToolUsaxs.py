@@ -7,6 +7,7 @@ It provides a table of known positions and buttons
 to move each of the motors.
 '''
 
+# TODO: need to recalculate when PVs change
 
 import epics
 import math

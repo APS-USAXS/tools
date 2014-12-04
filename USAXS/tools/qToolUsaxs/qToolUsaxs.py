@@ -219,7 +219,9 @@ class USAXS_Q_tool(object):
         about = uic.loadUi(ABOUT_UI_FILE)
         about.icon.setPixmap(QtGui.QPixmap(LOGO_FILE))
         about.copyright.setText(__copyright__)
-        about.url.setText(__url__)
+        
+        pb = QtGui.QPushButton(__url__, clicked=self.doUrl)
+        about.verticalLayout_main.addWidget(pb)
 
         # feed the status message
         msg = 'About: '
@@ -229,6 +231,11 @@ class USAXS_Q_tool(object):
         self.setStatus(msg)
         about.show()
         about.exec_()
+    
+    def doUrl(self):
+        service = QtGui.QDesktopServices()
+        url = QtCore.QUrl(__url__)
+        service.openUrl(url)
 
     def doClose(self, *args, **kw):
         '''orderly exit'''

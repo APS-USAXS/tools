@@ -98,8 +98,10 @@ class USAXS_Q_tool(object):
     def __init__(self, uifile, config_file = None):
         self.motors = {motor: Motor() for motor in MOTOR_SYMBOLS}
         
+        self.ui = None
         self.rcfile_name = config_file or DEFAULT_CONFIG_FILE
-        self.rcfile = self.doReadConfig()
+        self.rcfile = None
+        self.doReadConfig()
         if len(self.rcfile.pvmap) > 0:
             self.pvmap = self.rcfile.pvmap
         else:
@@ -113,6 +115,8 @@ class USAXS_Q_tool(object):
         
         self.ui.w_AY0_user.setText(self.rcfile.param.get('AY0', 0))
         self.ui.w_DY0_user.setText(self.rcfile.param.get('DY0', 0))
+        
+        self.rebuildModelView()
         QtCore.QTimer.singleShot(CALC_ALL_DELAY_MS, self.table.calc_all)
     
     def _init_actions_(self):
@@ -152,7 +156,7 @@ class USAXS_Q_tool(object):
     
     def _replace_standard_controls_(self):
         '''replace standard controls with EPICS controls'''
-        self._replace_tableview_(self.rcfile.toDataModel())
+        #self._replace_tableview_(self.rcfile.toDataModel())
         
         layout = self.ui.layout_user_parameters
         
@@ -185,14 +189,20 @@ class USAXS_Q_tool(object):
 
         # create the new content
         self.table = qTable.TableModel(q_table, parent=gb, recalc=self.recalculate)
-        self.tableview = qTable.TableView(self.doMove, self.motors)
-        self.tableview.setModel(self.table)
-        self.table.setView(self.tableview)
+        self.ui.tableView = qTable.TableView(self.doMove, self.motors)
+        self.ui.tableView.setModel(self.table)
+        self.table.setView(self.ui.tableView)
         self.table.setMotors(self.motors)
         
         # a touch of configuration
         layout.setColumnStretch(0, 1)
-        layout.addWidget(self.tableview)
+        layout.addWidget(self.ui.tableView)
+
+    def rebuildModelView(self):
+        '''(re)build the model/view support'''
+        if self.ui is not None:
+            self._replace_tableview_(self.rcfile.toDataModel())
+            QtCore.QTimer.singleShot(CALC_ALL_DELAY_MS, self.table.calc_all)
 
     def show(self):
         '''convenience method, hides .ui file implementation'''
@@ -232,7 +242,8 @@ class USAXS_Q_tool(object):
     def doReadConfig(self):
         '''read the configuration file'''
         self.setStatus('read the config file: ' + self.rcfile_name)
-        return config.ConfigFile(self.rcfile_name)
+        self.rcfile = config.ConfigFile(self.rcfile_name)
+        self.rebuildModelView()
 
     def doSaveConfig(self):
         '''save the configuration file'''
@@ -288,7 +299,7 @@ class USAXS_Q_tool(object):
         return ar, ay, dy
 
     def setStatus(self, message):
-        if hasattr(self, 'ui'):
+        if hasattr(self, 'ui') and hasattr(self.ui, 'statusBar'):
             self.ui.statusBar().showMessage(str(message))
 
 

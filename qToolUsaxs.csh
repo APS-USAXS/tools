@@ -1,4 +1,11 @@
 #!/bin/csh
+
+setenv PYTHON `which python`
+setenv DIR    ${HOME}/Documents/eclipse/USAXS/tools/qToolUsaxs
+setenv TOOL   ${DIR}/qToolUsaxs.py
+
+$PYTHON $TOOL &
+
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -6,10 +13,3 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
-
-
-setenv PYTHON /APSshare/bin/python
-setenv DIR    /home/beams/S15USAXS/Documents/eclipse/USAXS/tools
-setenv TOOL   ${DIR}/qToolUsaxs.py
-
-$PYTHON $TOOL &

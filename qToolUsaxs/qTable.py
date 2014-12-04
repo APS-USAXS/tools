@@ -45,16 +45,6 @@ class TableModel(QtCore.QAbstractTableModel):
         else:
             for row in datain:
                 self.newRow(row)
-    
-    def newRow(self, data = None):
-        if data is None:
-            now = str(datetime.datetime.now())
-            self.model.append([now, 0, 0, 0, 0, ])
-        else:
-            if not isinstance(data, list):
-                raise RuntimeError('each row must contain values for: label, Q')
-            self.model.append(data + [0, 0, 0])
-        self.calc_row(len(self.model)-1)
 
     def rowCount(self, parent):
         return len(self.model)
@@ -106,6 +96,16 @@ class TableModel(QtCore.QAbstractTableModel):
                     self.model[row][column] = value
                     return True
         return False
+    
+    def newRow(self, data = None):
+        if data is None:
+            now = str(datetime.datetime.now())
+            self.model.append([now, 0, 0, 0, 0, ])
+        else:
+            if not isinstance(data, list):
+                raise RuntimeError('each row must contain values for: label, Q')
+            self.model.append(data + [0, 0, 0])
+        self.calc_row(len(self.model)-1)
     
     def setView(self, view):
         self.view = view

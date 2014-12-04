@@ -118,7 +118,7 @@ class USAXS_Q_tool(object):
         self.ui.w_DY0_user.setText(self.rcfile.param.get('DY0', 0))
         
         self.rebuildModelView()
-        QtCore.QTimer.singleShot(CALC_ALL_DELAY_MS, self.table.calc_all)
+        #QtCore.QTimer.singleShot(CALC_ALL_DELAY_MS, self.table.calc_all)
     
     def _init_actions_(self):
         '''connect buttons with handlers'''
@@ -208,7 +208,7 @@ class USAXS_Q_tool(object):
             for key in self.rcfile.pvmap.keys():
                 self.user_pv_signal[key].recalc.connect(self.table.calc_all)
 
-            QtCore.QTimer.singleShot(CALC_ALL_DELAY_MS, self.table.calc_all)
+            #QtCore.QTimer.singleShot(CALC_ALL_DELAY_MS, self.table.calc_all)
 
     def show(self):
         '''convenience method, hides .ui file implementation'''

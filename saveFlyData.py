@@ -146,7 +146,7 @@ class PV_Specification(object):
 class SaveFlyScan(object):
     '''watch trigger PV, save data to NeXus file after scan is done'''
 
-    trigger_pv = '15iddLAX:USAXSfly:Start'
+    trigger_pv = '9idcLAX:USAXSfly:Start'
     trigger_accepted_values = (0, 'Done')
     trigger_poll_interval_s = 0.1
     creator_version = 'unknown'
@@ -330,8 +330,8 @@ if __name__ == '__main__':
 ########### SVN repository information ###################
 
 '''
-alias EPD '/APSshare/epd/rh6-x86_64/bin/python '
-cd /home/beams/S15USAXS/Documents/eclipse/USAXS/tools
-/bin/rm test.h5 ; EPD ./saveFlyData.py ./test.h5 ./saveFlyData.xml
-EPD ~/bin/h5toText.py ./test.h5
+cd /home/beams/USAXS/Documents/eclipse/USAXS/tools
+/bin/rm test.h5
+/APSshare/anaconda/x86_64/bin/python ./saveFlyData.py ./test.h5 ./saveFlyData.xml
+/APSshare/anaconda/x86_64/bin/python ~/bin/h5toText.py ./test.h5
 '''

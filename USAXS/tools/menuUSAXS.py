@@ -29,15 +29,13 @@ import pprint
 
 
 MENU_ITEMS = (
-      ("15ID-D USAXS controls (MEDM)", "start_epics"),
+      ("9-ID-C USAXS controls (MEDM)", "start_epics"),
       ("separator", None),
       ("USAXS Q calculator", "qToolUsaxs.csh"),
       ("sample and detector XY position tool", "wxmtxy.csh"),
-      ("USAXS motor beeper", "motorBeeper 15iddLAX 15iddUSX"),
-      ("USAXS scan time calculator", "scanTimeCalc.csh"),
-      ("USAXS sample stage tool", "/home/beams/S15USAXS/Apps/wxmtusaxs/wxmtusaxs"),
+      ("USAXS sample stage tool", "/home/beams/USAXS/Apps/wxmtusaxs/wxmtusaxs"),
       ("PyMca", "/APSshare/bin/pymca"),
-      ("SAXS Imaging tool", "/APSshare/epd/rh5-x86/bin/python /home/beams/S15USAXS/Apps/USAXS_dataworker/Main.py"),
+      ("SAXS Imaging tool", "/APSshare/epd/rh6-x86/bin/python /home/beams/USAXS/Apps/USAXS_dataworker/Main.py"),
       ("Save Instr. status to Elog", "saveToElog.csh")
     )
 
@@ -146,7 +144,7 @@ class Frame1(wx.Frame):
 if __name__ == '__main__':
     app = wx.PySimpleApp()
     menu_items = MENU_ITEMS
-    frame = Frame1(None, label="15ID-D USAXS menu", contents=menu_items)
+    frame = Frame1(None, label="9-ID-C USAXS menu", contents=menu_items)
     frame.Show()
 
     app.MainLoop()

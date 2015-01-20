@@ -366,13 +366,6 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="upd_amp_change_mask_time3" pvname="9idcLAX:USAXS:FS_AmpR4BlockTime" />
 					<PV label="upd_amp_change_mask_time4" pvname="9idcLAX:USAXS:FS_AmpR5BlockTime" />
 
-					<!-- gas pressures -->
-					<!-- TODO: check these exist -->
-					<PV label="gas_pressure_Ni" pvname="9ida:NITROGEN_PRESSURE" />
-					<PV label="gas_pressure_He" pvname="9ida:HELIUM_PRESSURE" />
-					<PV label="gas_pressure_Ar" pvname="9ida:ARGON_PRESSURE" />
-					<PV label="gas_pressure_user" pvname="9ida:USERGAS_PRESSURE" />
-
 					<!-- shutters -->
 					<PV label="CCD_shutter" pvname="9idcUSX:pmm01:reg01:bo01" />
 					<PV label="Ti_pf42_b3" pvname="9idcUSX:ath01:reg01:bo03" />
@@ -380,8 +373,10 @@ OR, check this file for validity and that all PVs exist::
 
 					<PV label="d_beam_available" pvname="9idcLAX:blCalc:userCalc1" />
 					<!-- FIXME: PSS PVs for 9-ID -->
-					<PV label="d_doors_closed" pvname="PA:15ID:STA_D_NO_ACCESS.VAL" />
-					<PV label="white_shtr_opened" pvname="PA:15ID:STA_A_FES_OPEN_PL.VAL" />
+					<!--
+					<PV label="d_doors_closed" pvname="PA:09ID:STA_C_NO_ACCESS.VAL" />
+					<PV label="white_shtr_opened" pvname="PA:09ID:STA_A_FES_OPEN_PL.VAL" />
+					-->
 
 					<PV label="pf4_trans" pvname="9idcUSX:pf4:trans" />
 					<PV label="pf4_thickness_Al" pvname="9idcUSX:pf4:filterAl" />

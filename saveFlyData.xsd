@@ -13,7 +13,14 @@
         <xs:element ref="triggerPV"/>
         <xs:element ref="NX_structure"/>
       </xs:sequence>
-      <xs:attribute name="version" use="required" type="xs:NMTOKEN" />
+      <xs:attribute name="version" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="1.1" />  <!-- data acquired before 2015-01-20 -->
+            <xs:enumeration value="1.2" />  <!-- starting 2015-01-20, meets latest NXcanSAS -->
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
     </xs:complexType>
   </xs:element>
 

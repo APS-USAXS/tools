@@ -20,18 +20,24 @@ OR, check this file for validity and that all PVs exist::
  
  
 <saveFlyData version="1">
-	<triggerPV pvname="9idcLAX:USAXSfly:Start" start_value="1"
-		start_text="Busy" done_value="0" done_text="Done" />
+	<triggerPV pvname="9idcLAX:USAXSfly:Start" 
+		start_value="1"
+		start_text="Busy" 
+		done_value="0" 
+		done_text="Done" />
 
 	<NX_structure>  <!-- http://download.nexusformat.org/doc/html/classes/base_classes/ -->
 		<group name="/" class="file">
 			<attribute name="instrument" value="APS USAXS at 9-ID-C" />
 			<attribute name="scan_mode" value="USAXS fly scan" />
+			<attribute name="canSAS_class" value="SASroot" />
 
 			<group name="entry" class="NXentry">
+				<attribute name="canSAS_class" value="SASentry" />
+
 				<field name="program_name">
 					<!-- version of this configuration file -->
-					<attribute name="config_version" value="1.1" />
+					<attribute name="config_version" value="1.2" />
 					<text>saveFlyData.py</text>
 				</field>
 				<PV label="title" pvname="9idcLAX:USAXS:sampleTitle" />
@@ -39,27 +45,41 @@ OR, check this file for validity and that all PVs exist::
 				<PV label="run_cycle" pvname="9idcLAX:RunCycle" />
 
 				<group name="instrument" class="NXinstrument">
+					<attribute name="canSAS_class" value="SASinstrument" />
 
 					<field name="name">
 						<attribute name="short_name" value="USAXS" />
 						<text>APS USAXS at 9-ID-C</text>
 					</field>
 					<group name="monochromator" class="NXmonochromator">
-						<PV label="energy" pvname="9ida:BraggERdbkAO" />
-						<PV label="wavelength" pvname="9ida:BraggLambdaRdbkAO" />
+						<PV label="energy" pvname="9ida:BraggERdbkAO">
+							<attribute name="units" value="keV" />
+						</PV>
+						<PV label="wavelength" pvname="9ida:BraggLambdaRdbkAO">
+							<attribute name="units" value="Angstrom" />
+						</PV>
+					</group>
+					<group name="source" class="NXsource">
+						<PV label="incident_wavelength" pvname="9ida:BraggLambdaRdbkAO">
+							<attribute name="units" value="Angstrom" />
+						</PV>
 					</group>
 				</group>
 
 				<group name="user" class="NXuser">
+					<attribute name="canSAS_class" value="SASuser" />
 					<PV label="name" pvname="9idcLAX:UserName" />
 				</group>
 
 				<group name="sample" class="NXsample">
+					<attribute name="canSAS_class" value="SASsample" />
 					<PV label="name" pvname="9idcLAX:USAXS:sampleTitle" />
 					<PV label="thickness" pvname="9idcLAX:USAXS:SampleThickness" />
 				</group>
 
 				<group name="flyScan" class="NXdata">
+					<!-- this raw data group is not SASdata, that comes from data reduction -->
+					<attribute name="signal"     value="mca3" />
 
 					<!-- positioners -->
 					<PV label="AR_PulsePositions" pvname="9idcLAX:traj1:PulsePositions">
@@ -68,14 +88,14 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="AR_NumPulsePositions" pvname="9idcLAX:traj1:NumPulsePositions" />
 					<PV label="AR_PulseMode" pvname="9idcLAX:traj1:PulseMode" />
 					<!--
-			   PulseMode is string with type of scan:
-			   1. Fixed fixed pulses as before (we should have that nailed down by now already)
-			   2. Array use PulsePositions
-			   3. TrajPts use trajectory points (the 200 points in current trajectory)
-			-->
+					   PulseMode is a string describing the type of scan:
 
-					<PV label="AR_waypoints" pvname="9idcLAX:traj1:M1Traj"
-						length_limit="AR_count" />
+					   1. Fixed fixed pulses as before (we should have that nailed down by now already)
+					   2. Array use PulsePositions
+					   3. TrajPts use trajectory points (the 200 points in current trajectory)
+					-->
+
+					<PV label="AR_waypoints" pvname="9idcLAX:traj1:M1Traj" length_limit="AR_count" />
 					<PV label="AR_count" pvname="9idcLAX:traj1:Nelements" />
 					<PV label="AR_pulses" pvname="9idcLAX:traj1:Npulses" />
 					<PV label="AR_start" pvname="9idcLAX:USAXS:ARstart" />  <!-- pushed here by SPEC usaxs_flyscan.txt macro -->
@@ -131,7 +151,7 @@ OR, check this file for validity and that all PVs exist::
 						* 1: "DDPCA300"
 						-->
 
-					<PV label="upd_flyScan_amplifier"    pvname="9idcUSX:femto:model" />	<!--saves as number, not string-->
+					<PV label="upd_flyScan_amplifier"         pvname="9idcUSX:femto:model" />	<!--saves as number, not string-->
 					<PV label="upd_flyScan_amplifier_ZNAM"    pvname="9idcUSX:femto:model.ZNAM" />
 					<PV label="upd_flyScan_amplifier_ONAM"    pvname="9idcUSX:femto:model.ONAM" />
 
@@ -176,7 +196,7 @@ OR, check this file for validity and that all PVs exist::
 						<attribute name="meaning"      value="AR readback when PSO pulse fired with 10Hz jitter" />
 					</PV>
 
-    					<PV label="is_2D_USAXS_scan"    pvname="9idcLAX:USAXS:is2DUSAXSscan" >
+   					<PV label="is_2D_USAXS_scan"    pvname="9idcLAX:USAXS:is2DUSAXSscan" >
 						<attribute name="meaning"     value="does this scan use 2D collimated geometry" />
 					</PV>
 
@@ -187,11 +207,21 @@ OR, check this file for validity and that all PVs exist::
 				<group name="metadata" class="NXcollection">    <!-- metadata:NXcollection -->
 
 					<!-- beam line conditions -->
-					<PV label="SR_current" pvname="S:SRcurrentAI" />
-					<PV label="ID_E" pvname="ID09:Energy" />
-					<PV label="DCM_energy" pvname="9ida:BraggERdbkAO" />
-					<PV label="DCM_wavelength" pvname="9ida:BraggLambdaRdbkAO" />
-					<PV label="DCM_theta" pvname="9ida:m10.RBV" />
+					<PV label="SR_current" pvname="S:SRcurrentAI">
+						<attribute name="units" value="A" />
+					</PV>
+					<PV label="ID_E" pvname="ID09:Energy">
+						<attribute name="units" value="keV" />
+					</PV>
+					<PV label="DCM_energy" pvname="9ida:BraggERdbkAO">
+						<attribute name="units" value="keV" />
+					</PV>
+					<PV label="DCM_wavelength" pvname="9ida:BraggLambdaRdbkAO">
+						<attribute name="units" value="Angstrom" />
+					</PV>
+					<PV label="DCM_theta" pvname="9ida:m10.RBV">
+						<attribute name="units" value="degrees" />
+					</PV>
 
 					<!-- beam line mirrors -->
 					<PV label="VDM_Stripe" pvname="9ida:m5.RBV" />

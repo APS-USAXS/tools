@@ -8,18 +8,15 @@ number of data points the MCS can be told to acquire (9idcLAX:3820:MaxChannels).
 
 This is programmed into the Python code that reads this file.
 
-After editing, confirm this file is valid with this command::
+This file will be validated (as an initial step) by the data capture (saveFlyData.py) program.
+Additionally, you can check this file for validity and that all PVs exist with this command line program::
 
-  xmllint -/-schema saveFlyData.xsd saveFlyData.xml
-
-OR, check this file for validity and that all PVs exist::
-
-  EPD check_saveFlyData.py
+  /APSshare/anaconda/x86_64/bin/python check_saveFlyData.py
 
  -->
  
  
-<saveFlyData version="1">
+<saveFlyData version="1.2">
 	<triggerPV pvname="9idcLAX:USAXSfly:Start" 
 		start_value="1"
 		start_text="Busy" 

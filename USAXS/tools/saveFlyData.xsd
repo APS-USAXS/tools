@@ -48,7 +48,7 @@
   <xs:element name="attribute">
 	<xs:complexType>
 		<xs:attribute name="name" use="required" type="xs:NCName"/>
-		<xs:attribute name="value" use="required" type="xs:NMTOKENS"/>
+		<xs:attribute name="value" use="required" type="xs:string"/>
 	</xs:complexType>
   </xs:element>
 
@@ -80,7 +80,7 @@
   <xs:element name="link">
     <xs:complexType>
       <xs:attribute name="name" use="required" type="xs:NCName" />
-      <xs:attribute name="source" use="required" type="xs:NMTOKEN" />
+      <xs:attribute name="source" use="required" type="xs:string" />
       <xs:attribute name="linktype" use="optional" default="NeXus">
         <xs:simpleType>
           <xs:restriction base="xs:NCName">

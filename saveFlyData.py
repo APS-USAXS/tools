@@ -23,8 +23,9 @@ SVN_ID = '$Id$'
 XML_CONFIGURATION_FILE = 'saveFlyData.xml'
 XSD_SCHEMA_FILE = 'saveFlyData.xsd'
 
-group_registry = {}    # key: HDF5 absolute path, value: Group_Specification object
 field_registry = {}    # key: node/@label,        value: Field_Specification object
+group_registry = {}    # key: HDF5 absolute path, value: Group_Specification object
+link_registry = {}     # key: node/@label,        value: Link_Specification object
 pv_registry = {}       # key: node/@label,        value: PV_Specification object
 
 
@@ -104,6 +105,43 @@ class Group_Specification(object):
         return self.hdf5_path or 'Group_Specification object'
 
 
+class Link_Specification(object):
+    '''specification of the "link" element in the XML configuration file'''
+    # TODO: this class needs to be tested before production use
+    
+    def __init__(self, xml_element_node):
+        self.xml_node = xml_element_node
+
+        self.name = xml_element_node.attrib['name']
+        self.source_hdf5_path = xml_element_node.attrib['source']   # path to existing object
+        self.linktype = xml_element_node.attrib['linktype']
+        if self.linktype not in ('hard', ):
+            msg = "Cannot create HDF5 " + self.linktype + " link: " + self.hdf5_path
+            raise RuntimeError, msg
+
+        xml_parent_node = xml_element_node.getparent()
+        self.group_parent = getGroupObjectByXmlNode(xml_parent_node)
+        self.name = xml_element_node.attrib['name']
+        self.hdf5_path = self.group_parent.hdf5_path + '/' + self.name
+
+        link_registry[self.hdf5_path] = self
+    
+    def make_link(self):
+        '''make this link in the HDF5 file'''
+        source = self.source_hdf5_path      # source: existing HDF5 object
+        parent = source.getparent()         # parent: parent HDF5 path of source
+        parent = getGroupObjectByXmlNode(parent)        # FIXME: is this needed?
+        target = self.hdf5_path             # target: HDF5 node path to be created
+        eznx.makeLink(parent, source, target)
+    
+    def __str__(self):
+        try:
+            nm = self.label + ' <' + self.pvname + '>'
+        except:
+            nm = 'Link_Specification object'
+        return nm
+
+
 class PV_Specification(object):
     '''specification of the "PV" element in the XML configuration file'''
     
@@ -176,7 +214,7 @@ class SaveFlyScan(object):
         for pv_spec in pv_registry.values():
             value = pv_spec.pv.get()
             if value is [None]:
-              value = 'no data'
+                value = 'no data'
             if not isinstance(value, numpy.ndarray):
                 value = [value]
             else:
@@ -184,6 +222,7 @@ class SaveFlyScan(object):
                     length_limit = pv_registry[pv_spec.length_limit].pv.get()
                     if len(value) > length_limit:
                         value = value[:length_limit]
+
             hdf5_parent = pv_spec.group_parent.hdf5_group
             try:
                 ds = eznx.makeDataset(hdf5_parent, pv_spec.label, value)
@@ -195,6 +234,10 @@ class SaveFlyScan(object):
                 print "RESOLUTION: writing as error message string"
                 ds = eznx.makeDataset(hdf5_parent, pv_spec.label, [str(e)])
                 #raise
+            
+            # make all the links as directed
+            for _k, v in link_registry.items():
+                v.make_link()
         
         f.close()    # be CERTAIN to close the file
     
@@ -228,8 +271,9 @@ class SaveFlyScan(object):
         xsd_root = xmlschema_doc.getroot()
         xsd_node = xsd_root.xpath("//xs:attribute[@name='poll_time_s']", # name="poll_time_s"
                               namespaces={'xs': 'http://www.w3.org/2001/XMLSchema'})
+        
+        # allow XML configuration to override trigger_poll_interval_s
         default_value = float(xsd_node[0].get('default', self.trigger_poll_interval_s))
-        # allow XML configuration to override
         self.trigger_poll_interval_s = node.get('poll_time_s', default_value)
         
         nx_structure = root.xpath('/saveFlyData/NX_structure')[0]
@@ -241,6 +285,9 @@ class SaveFlyScan(object):
         
         for node in nx_structure.xpath('//PV'):
             PV_Specification(node)
+        
+        for node in nx_structure.xpath('//link'):
+            Link_Specification(node)
     
     def _get_support_code_dir(self):
         return os.path.split(os.path.abspath(__file__))[0]

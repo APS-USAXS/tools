@@ -51,18 +51,16 @@ OR, check this file for validity and that all PVs exist::
 						<attribute name="short_name" value="USAXS" />
 						<text>APS USAXS at 9-ID-C</text>
 					</field>
-					<group name="monochromator" class="NXmonochromator">
-						<PV label="energy" pvname="9ida:BraggERdbkAO">
-							<attribute name="units" value="keV" />
-						</PV>
-						<PV label="wavelength" pvname="9ida:BraggLambdaRdbkAO">
-							<attribute name="units" value="Angstrom" />
-						</PV>
-					</group>
 					<group name="source" class="NXsource">
 						<PV label="incident_wavelength" pvname="9ida:BraggLambdaRdbkAO">
 							<attribute name="units" value="Angstrom" />
 						</PV>
+					</group>
+					<group name="monochromator" class="NXmonochromator">
+						<PV label="energy" pvname="9ida:BraggERdbkAO">
+							<attribute name="units" value="keV" />
+						</PV>
+						<link name="wavelength" source="/entry/instrument/source/incident_wavelength" />
 					</group>
 				</group>
 
@@ -90,26 +88,48 @@ OR, check this file for validity and that all PVs exist::
 					<!--
 					   PulseMode is a string describing the type of scan:
 
-					   1. Fixed fixed pulses as before (we should have that nailed down by now already)
-					   2. Array use PulsePositions
-					   3. TrajPts use trajectory points (the 200 points in current trajectory)
+					   1. Fixed: fixed pulses as before (we should have that nailed down by now already)
+					   2. Array: use PulsePositions
+					   3. TrajPts: use trajectory points (the 200 points in current trajectory)
 					-->
 
-					<PV label="AR_waypoints" pvname="9idcLAX:traj1:M1Traj" length_limit="AR_count" />
+					<PV label="AR_waypoints" pvname="9idcLAX:traj1:M1Traj" length_limit="AR_count">
+						<attribute name="units" value="degrees" />
+					</PV>
 					<PV label="AR_count" pvname="9idcLAX:traj1:Nelements" />
-					<PV label="AR_pulses" pvname="9idcLAX:traj1:Npulses" />
-					<PV label="AR_start" pvname="9idcLAX:USAXS:ARstart" />  <!-- pushed here by SPEC usaxs_flyscan.txt macro -->
-					<PV label="AR_increment" pvname="9idcLAX:USAXS:MinStep" />
-					<PV label="AR_MinStepTraj" pvname="9idcLAX:USAXS:MinStepTraj" /> <!-- minimum step of trajectory waypoints -->
-					<PV label="AR_Finish" pvname="9idcLAX:USAXS:Finish" />
-					<PV label="StartOffset" pvname="9idcLAX:USAXS:StartOffset" />
+					<PV label="AR_pulses" pvname="9idcLAX:traj1:Npulses">
+						<attribute name="units" value="pulses" />
+					</PV>
+					<PV label="AR_start" pvname="9idcLAX:USAXS:ARstart">
+						<!-- pushed here by SPEC usaxs_flyscan.txt macro -->
+						<attribute name="units" value="degrees" />
+					</PV>
+					<PV label="AR_increment" pvname="9idcLAX:USAXS:MinStep">
+						<attribute name="units" value="degrees" />
+					</PV>
+					<PV label="AR_MinStepTraj" pvname="9idcLAX:USAXS:MinStepTraj">
+						<!-- minimum step of trajectory waypoints -->
+						<attribute name="units" value="degrees" />
+					</PV>
+					<PV label="AR_Finish" pvname="9idcLAX:USAXS:Finish">
+						<attribute name="units" value="degrees" />
+					</PV>
+					<PV label="StartOffset" pvname="9idcLAX:USAXS:StartOffset">
+						<attribute name="units" value="degrees" />
+					</PV>
 
-					<PV label="time_total" pvname="9idcLAX:traj1:ElapsedTime" />
-					<PV label="time_elapsed" pvname="9idcLAX:traj1:Time" />
+					<PV label="time_total" pvname="9idcLAX:traj1:ElapsedTime">
+						<attribute name="units" value="s" />
+					</PV>
+					<PV label="time_elapsed" pvname="9idcLAX:traj1:Time">
+						<attribute name="units" value="s" />
+					</PV>
 
 
 					<!-- detectors -->
-					<PV label="mca_clock_frequency" pvname="9idcLAX:3820:clock_frequency" />
+					<PV label="mca_clock_frequency" pvname="9idcLAX:3820:clock_frequency">
+						<attribute name="units" value="1/s" />
+					</PV>
 					<PV label="mca_channels" pvname="9idcLAX:3820:CurrentChannel" />
 					<PV label="mca_channel_max" pvname="9idcLAX:3820:MaxChannels" />
 					<PV label="mca_channels_used" pvname="9idcLAX:3820:NuseAll">
@@ -131,13 +151,13 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="mca3_name" pvname="9idcLAX:3820:scaler1.NM3" />
 					<PV label="mca3" pvname="9idcLAX:3820:mca3" length_limit="mca_channels">
 						<attribute name="signal" value="1" />
+						<attribute name="units" value="pulses" />
 						<!-- <attribute name="axes" value="AR" /> -->
 						<!-- The proper ordinate is obtained via the MAC channel index: 
 							AR[i] = AR_start + AR_increment * i 
 							
 							Can the AR array be made available in EPICS? 
 						-->
-						<attribute name="units" value="counts" />
 						<attribute name="USAXS_name" value="upd" />
 					</PV>
 
@@ -402,11 +422,10 @@ OR, check this file for validity and that all PVs exist::
 					<PV label="Ti_pf42_b4" pvname="9idcUSX:ath01:reg01:bo04" />
 
 					<PV label="d_beam_available" pvname="9idcLAX:blCalc:userCalc1" />
-					<!-- FIXME: PSS PVs for 9-ID -->
-					<!--
-					<PV label="d_doors_closed" pvname="PA:09ID:STA_C_NO_ACCESS.VAL" />
-					<PV label="white_shtr_opened" pvname="PA:09ID:STA_A_FES_OPEN_PL.VAL" />
-					-->
+
+					<!-- PSS PVs for 9-ID -->
+					<PV label="d_doors_closed" pvname="PA:09ID:Q40:07.VAL" />
+					<PV label="white_shtr_opened" pvname="PA:09ID:Q20:05.VAL" />
 
 					<PV label="pf4_trans" pvname="9idcUSX:pf4:trans" />
 					<PV label="pf4_thickness_Al" pvname="9idcUSX:pf4:filterAl" />

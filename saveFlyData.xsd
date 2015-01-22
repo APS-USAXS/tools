@@ -45,32 +45,6 @@
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="group">
-    <xs:complexType>
-      <xs:choice minOccurs="0" maxOccurs="unbounded">
-        <xs:element ref="attribute" minOccurs="0" maxOccurs="unbounded"/>
-        <xs:element ref="group"/>
-        <xs:element ref="field"/>
-        <xs:element ref="PV"/>
-      </xs:choice>
-      <xs:attribute name="class" use="required" type="xs:NCName"/>
-      <xs:attribute name="name" use="required"/>
-      <xs:anyAttribute processContents="skip"/>
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="PV">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element ref="attribute" minOccurs="0" maxOccurs="unbounded"/>
-      </xs:sequence>
-      <xs:attribute name="label" use="required" type="xs:NCName"/>
-      <xs:attribute name="pvname" use="required" type="xs:NMTOKEN"/>
-      <xs:attribute name="length_limit" use="optional" type="xs:NCName"/>
-      <xs:anyAttribute processContents="skip"/>
-    </xs:complexType>
-  </xs:element>
-
   <xs:element name="attribute">
 	<xs:complexType>
 		<xs:attribute name="name" use="required" type="xs:NCName"/>
@@ -85,6 +59,51 @@
         <xs:element name="text" />
       </xs:choice>
       <xs:attribute name="name" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="group">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="attribute" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element ref="group"/>
+        <xs:element ref="field"/>
+        <xs:element ref="PV"/>
+        <xs:element ref="link"/>
+      </xs:choice>
+      <xs:attribute name="class" use="required" type="xs:NCName"/>
+      <xs:attribute name="name" use="required"/>
+      <xs:anyAttribute processContents="skip"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="link">
+    <xs:complexType>
+      <xs:attribute name="name" use="required" type="xs:NCName" />
+      <xs:attribute name="source" use="required" type="xs:NMTOKEN" />
+      <xs:attribute name="linktype" use="optional" default="NeXus">
+        <xs:simpleType>
+          <xs:restriction base="xs:NCName">
+            <xs:enumeration value="NeXus" />
+            <!-- TODO: <xs:enumeration value="hard" /> -->
+            <!-- TODO: <xs:enumeration value="soft" /> -->
+            <!-- TODO: <xs:enumeration value="external" /> -->
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <!-- TODO: <xs:attribute name="external_file" use="optional" default="xs:NMTOKEN" /> -->
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="PV">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="attribute" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="label" use="required" type="xs:NCName"/>
+      <xs:attribute name="pvname" use="required" type="xs:NMTOKEN"/>
+      <xs:attribute name="length_limit" use="optional" type="xs:NCName"/>
+      <xs:anyAttribute processContents="skip"/>
     </xs:complexType>
   </xs:element>
 

@@ -334,12 +334,25 @@ class SaveFlyScan(object):
         )
 
 
-def main():
-    if len(sys.argv) != 3:
-        msg = 'usage: saveFlyData.py /hdf5/file/to/save /path/to/xml/config/file.xml'
-        raise RuntimeError, msg
+def get_CLI_options():
+    import argparse    
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument('data_file', 
+                    action='store', 
+                    help="/path/to/new/hdf5/data/file")
+
+    parser.add_argument('xml_config_file', 
+                    action='store', 
+                    help="XML configuration file")
     
-    dataFile = sys.argv[1]
+    return parser.parse_args()
+
+
+def main():
+    cli_options = get_CLI_options()
+    
+    dataFile = cli_options.data_file
     path = os.path.split(dataFile)[0]
     if len(path) > 0 and not os.path.exists(path):
         msg = 'directory for that file does not exist: ' + dataFile
@@ -349,7 +362,7 @@ def main():
         msg = 'file exists: ' + dataFile
         raise RuntimeError, msg
 
-    configFile = sys.argv[2]
+    configFile = cli_options.xml_config_file
     if not os.path.exists(configFile):
         msg = 'config file not found: ' + configFile
         raise RuntimeError, msg

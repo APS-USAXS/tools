@@ -107,15 +107,14 @@ class Group_Specification(object):
 
 class Link_Specification(object):
     '''specification of the "link" element in the XML configuration file'''
-    # TODO: this class needs to be tested before production use
     
     def __init__(self, xml_element_node):
         self.xml_node = xml_element_node
 
         self.name = xml_element_node.attrib['name']
         self.source_hdf5_path = xml_element_node.attrib['source']   # path to existing object
-        self.linktype = xml_element_node.attrib['linktype']
-        if self.linktype not in ('hard', ):
+        self.linktype = xml_element_node.get('linktype', 'NeXus')
+        if self.linktype not in ('NeXus', ):
             msg = "Cannot create HDF5 " + self.linktype + " link: " + self.hdf5_path
             raise RuntimeError, msg
 
@@ -126,13 +125,14 @@ class Link_Specification(object):
 
         link_registry[self.hdf5_path] = self
     
-    def make_link(self):
+    def make_link(self, hdf_file_object):
         '''make this link in the HDF5 file'''
         source = self.source_hdf5_path      # source: existing HDF5 object
-        parent = source.getparent()         # parent: parent HDF5 path of source
-        parent = getGroupObjectByXmlNode(parent)        # FIXME: is this needed?
+        parent = '/'.join(source.split('/')[0:-1])     # parent: parent HDF5 path of source
         target = self.hdf5_path             # target: HDF5 node path to be created
-        eznx.makeLink(parent, source, target)
+        parent_obj = hdf_file_object[parent]
+        source_obj = hdf_file_object[source]
+        eznx.makeLink(parent_obj, source_obj, target)
     
     def __str__(self):
         try:
@@ -184,7 +184,7 @@ class PV_Specification(object):
 class SaveFlyScan(object):
     '''watch trigger PV, save data to NeXus file after scan is done'''
 
-    trigger_pv = '9idcLAX:USAXSfly:Start'
+    trigger_pv = ''	# '9idcLAX:USAXSfly:Start'
     trigger_accepted_values = (0, 'Done')
     trigger_poll_interval_s = 0.1
     creator_version = 'unknown'
@@ -235,9 +235,9 @@ class SaveFlyScan(object):
                 ds = eznx.makeDataset(hdf5_parent, pv_spec.label, [str(e)])
                 #raise
             
-            # make all the links as directed
-            for _k, v in link_registry.items():
-                v.make_link()
+        # as the final step, make all the links as directed
+        for _k, v in link_registry.items():
+            v.make_link(f)
         
         f.close()    # be CERTAIN to close the file
     

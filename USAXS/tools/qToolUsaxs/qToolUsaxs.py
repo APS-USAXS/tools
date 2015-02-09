@@ -95,7 +95,9 @@ class USAXS_Q_tool(object):
     '''show the UI file'''
 
     def __init__(self, uifile, config_file = None):
-        self.motors = {motor: Motor() for motor in MOTOR_SYMBOLS}
+        self.motors = {}
+        for motor in MOTOR_SYMBOLS:
+            self.motors[motor] = Motor()
         
         self.ui = None
         self.rcfile_name = config_file or DEFAULT_CONFIG_FILE

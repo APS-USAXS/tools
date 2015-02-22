@@ -4,14 +4,6 @@
 write current instrument conditions to the elog
 '''
 
-########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
-########### SVN repository information ###################
-
 
 #import setup_PyEpics_uc2	# remove dependency until needed
 from epics import PV
@@ -250,3 +242,12 @@ f.close()
 #os.system('elog -h 164.54.162.133 -p 8081 -l 15-ID-D -a Author=SYSTEM -a Type=Routine -a Subject="System snapshot" -f /share1/Elog/ID_elog_data " "')
 
 os.system('elog -h 15id.xray.aps.anl.gov -p 8096 -l "15ID Operations" -u "s15usaxs" "mu8rubo!" -a "Author=USAXS" -a "Category=USAXS_operations" -a "Type=Configuration" -a "Subject=Instrument/PV Snapshot" -f /share1/Elog/ID_elog_data " "')
+
+
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################

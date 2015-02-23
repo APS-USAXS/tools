@@ -11,6 +11,7 @@
     <xs:complexType>
       <xs:sequence>
         <xs:element ref="triggerPV"/>
+        <xs:element ref="wait_timeout" />
         <xs:element ref="NX_structure"/>
       </xs:sequence>
       <xs:attribute name="version" use="required">
@@ -34,6 +35,19 @@
       <xs:attribute name="start_text" use="required" type="xs:NCName"/>
       <xs:attribute name="start_value" use="required" type="xs:integer"/>
       <xs:attribute name="poll_time_s" use="optional" type="xs:decimal" default="0.1"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="wait_timeout" default="900">
+    <xs:complexType>
+    <xs:attribute name="value" type="xs:integer" />
+      <xs:attribute name="units" use="required">
+      	<xs:simpleType>
+   		  <xs:restriction base="xs:string">
+   		  	<xs:enumeration value="s" />
+   		  </xs:restriction>
+      	</xs:simpleType>
+      </xs:attribute>
     </xs:complexType>
   </xs:element>
 

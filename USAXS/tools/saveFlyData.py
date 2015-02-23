@@ -22,6 +22,7 @@ from spec2nexus import eznx     # NeXus r/w support using h5py
 SVN_ID = '$Id$'
 XML_CONFIGURATION_FILE = 'saveFlyData.xml'
 XSD_SCHEMA_FILE = 'saveFlyData.xsd'
+DEFAULT_WAIT_TIMEOUT = 900
 
 field_registry = {}    # key: node/@label,        value: Field_Specification object
 group_registry = {}    # key: HDF5 absolute path, value: Group_Specification object
@@ -187,6 +188,7 @@ class SaveFlyScan(object):
     trigger_pv = ''	# '9idcLAX:USAXSfly:Start'
     trigger_accepted_values = (0, 'Done')
     trigger_poll_interval_s = 0.1
+    timeout = DEFAULT_WAIT_TIMEOUT
     creator_version = 'unknown'
     
     def __init__(self, hdf5_file, config_file = None):
@@ -198,8 +200,13 @@ class SaveFlyScan(object):
 
     def waitForData(self):
         '''wait until the data is ready, then save it'''
+        def keep_waiting():
+            triggered = self.trigger.get() in self.trigger_accepted_values
+            time_remains = quitting_time >= datetime.datetime.now()
+            return time_remains and not triggered
         self.trigger = epics.PV(self.trigger_pv)
-        while not self.trigger.get() in self.trigger_accepted_values:
+        quitting_time = datetime.datetime.now() + datetime.timedelta(seconds=self.timeout)
+        while keep_waiting():
             time.sleep(self.trigger_poll_interval_s)
         self.saveFile()
 
@@ -265,6 +272,9 @@ class SaveFlyScan(object):
         self.trigger_pv = node.attrib['pvname']
         acceptable_values = (int(node.attrib['done_value']), node.attrib['done_text'])
         self.trigger_accepted_values = acceptable_values
+        
+        node = root.xpath('/saveFlyData/wait_timeout')[0]
+        self.timeout = int(node.get('value', DEFAULT_WAIT_TIMEOUT))
         
         # initial default value set in this code
         # pull default poll_interval_s from XML Schema (XSD) file

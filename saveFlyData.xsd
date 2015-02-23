@@ -38,9 +38,9 @@
     </xs:complexType>
   </xs:element>
   
-  <xs:element name="wait_timeout" default="900">
+  <xs:element name="wait_timeout">
     <xs:complexType>
-    <xs:attribute name="value" type="xs:integer" />
+    <xs:attribute name="value" default="900" type="xs:integer" />
       <xs:attribute name="units" use="required">
       	<xs:simpleType>
    		  <xs:restriction base="xs:string">

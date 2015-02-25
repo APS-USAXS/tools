@@ -22,7 +22,7 @@ Additionally, you can check this file for validity and that all PVs exist with t
 		start_text="Busy" 
 		done_value="0" 
 		done_text="Done" />
-	<wait_timeout value="300" units="s" />
+	<wait_timeout value="400" units="s" />
 
 	<NX_structure>  <!-- http://download.nexusformat.org/doc/html/classes/base_classes/ -->
 		<group name="/" class="file">

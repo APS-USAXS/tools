@@ -22,12 +22,14 @@ from spec2nexus import eznx     # NeXus r/w support using h5py
 SVN_ID = '$Id$'
 XML_CONFIGURATION_FILE = 'saveFlyData.xml'
 XSD_SCHEMA_FILE = 'saveFlyData.xsd'
-DEFAULT_WAIT_TIMEOUT = 900
 
 field_registry = {}    # key: node/@label,        value: Field_Specification object
 group_registry = {}    # key: HDF5 absolute path, value: Group_Specification object
 link_registry = {}     # key: node/@label,        value: Link_Specification object
 pv_registry = {}       # key: node/@label,        value: PV_Specification object
+
+
+class TimeoutException(Exception): pass
 
 
 def getGroupObjectByXmlNode(xml_node):
@@ -188,7 +190,7 @@ class SaveFlyScan(object):
     trigger_pv = ''	# '9idcLAX:USAXSfly:Start'
     trigger_accepted_values = (0, 'Done')
     trigger_poll_interval_s = 0.1
-    timeout = DEFAULT_WAIT_TIMEOUT
+    timeout_pv = ''
     creator_version = 'unknown'
     
     def __init__(self, hdf5_file, config_file = None):
@@ -203,9 +205,12 @@ class SaveFlyScan(object):
         def keep_waiting():
             triggered = self.trigger.get() in self.trigger_accepted_values
             time_remains = quitting_time >= datetime.datetime.now()
-            return time_remains and not triggered
+            if not time_remains:
+                raise TimeoutException
+            return not triggered
         self.trigger = epics.PV(self.trigger_pv)
-        quitting_time = datetime.datetime.now() + datetime.timedelta(seconds=self.timeout)
+        timeout_s = max(0, epics.caget(self.timeout_pv))
+        quitting_time = datetime.datetime.now() + datetime.timedelta(seconds=timeout_s)
         while keep_waiting():
             time.sleep(self.trigger_poll_interval_s)
         self.saveFile()
@@ -273,8 +278,8 @@ class SaveFlyScan(object):
         acceptable_values = (int(node.attrib['done_value']), node.attrib['done_text'])
         self.trigger_accepted_values = acceptable_values
         
-        node = root.xpath('/saveFlyData/wait_timeout')[0]
-        self.timeout = int(node.get('value', DEFAULT_WAIT_TIMEOUT))
+        node = root.xpath('/saveFlyData/timeoutPV')[0]
+        self.timeout_pv = node.attrib['pvname']
         
         # initial default value set in this code
         # pull default poll_interval_s from XML Schema (XSD) file
@@ -378,7 +383,10 @@ def main():
         raise RuntimeError, msg
     
     sfs = SaveFlyScan(dataFile, configFile)
-    sfs.waitForData()
+    try:
+        sfs.waitForData()
+    except TimeoutException, _exception_message:
+        sys.exit(1)     # exit silently with error, 1=TIMEOUT
     print 'wrote file: ' + dataFile
 
 

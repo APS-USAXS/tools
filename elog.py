@@ -13,115 +13,110 @@ import sys, epics, time, string, os
 # Create global variables with lists of PVs for various groups of information 
 
 #			PV name[0]		   PV name[1]			    Message[2]             Use?[3]
-undulator = 	[	('15IDA:ID15_gap',     '15IDA:ID15_gap',	  'Undulator gap (mm)',	 	    'Y'),
-	                ('15IDA:ID15_energy',  '15IDA:ID15_energy',       'Undulator energy (keV)',         'Y')]
+undulator = 	[	('ID09ds:GapSet.VAL',       'ID09ds:Gap.VAL',	         'Undulator gap (mm)',	 	    'Y'),
+                        ('ID09ds:EnergySet.VAL',    'ID09ds:Energy.VAL',          'Undulator ds energy [keV]',      'Y'),
+                        ('ID09us:GapSet.VAL',       'ID09us:Gap.VAL',             'Undulator us gap (mm)',          'Y'),
+	                ('ID09us:EnergySet.VAL',    'ID09us:Energy.VAL',          'Undulator energy (keV)',         'Y')]
 
-HHL_Slits = 	[   	('15IDA:m17.RBV',     '15IDA:m17.DRBV',  	  '(m17) HHL-Hor-Slit-Up (mm)',      'Y'),
-       			('15IDA:m18.RBV',     '15IDA:m18.DRBV',	          '(m18) HHL-Vert-Slit-Up(mm)',      'Y'),
-       			('15IDA:m19.RBV',     '15IDA:m19.DRBV',	          '(m19) HHL-Hor-Slit-Dwr(mm)',      'Y'),
-       			('15IDA:m20.RBV',     '15IDA:m20.DRBV',	          '(m20) HHL-Vert-Slit-Dwr(mm)',     'Y')]
+HHL_Slits = 	[   	('9ida:wbsupX.VAL',     '9ida:wbsupXRBV.VAL',  	  'HHL-Upstr-X (mm)',      'Y'),
+       			('9ida:wbsupY.VAL',     '9ida:wbsupYRBV.VAL',	  'HHL-Upstr-Y(mm)',      'Y'),
+       			('9ida:wbsdnX.VAL',     '9ida:wbsdnXRBV.VAL',	  'HHL-Dwnst-X(mm)',      'Y'),
+       			('9ida:wbsdnY.VAL',     '9ida:wbsdnYRBV.VAL',	  'HHL-Dwnst-Y(mm)',     'Y')]
 
-Monochromator = [	('15IDA:BraggERdbkAO','15IDA:BraggERdbkAO',  	  'Monochromator energy (keV)',      'Y'),
-       			('15IDA:m10.RBV',     '15IDA:m10.DRBV',           '(m10) Bragg-Angle(degrees)',      'Y'),
-      			('15IDA:m11.RBV',     '15IDA:m11.DRBV',           '(m11) Xtal-Gap(mm)',              'Y'),
-       			('15IDA:m30.RBV',     '15IDA:m30.DRBV',  	  '(m30) 1st-Xtal-Roll(degrees)',    'Y'),
-       			('15IDA:m31.RBV',     '15IDA:m31.DRBV',	          '(m31) 2nd-Xtal-Roll(degrees)',    'Y'),
-       			('15IDA:m32.RBV',     '15IDA:m32.DRBV', 	  '(m32) 2nd-Xtal-Pitch(degrees)',   'Y')]
+Monochromator = [	('9ida:BraggERdbkAO','9ida:BraggERdbkAO',  	  'Monochromator energy (keV)',      'Y'),
+       			('9ida:m11.RBV',     '9ida:m11.DRBV',             '(m11) Bragg-Angle(degrees)',      'Y'),
+      			('9ida:m12.RBV',     '9ida:m12.DRBV',             '(m12) Xtal-Gap(mm)',              'Y'),
+       			('9ida:m16.RBV',     '9ida:m16.DRBV',  	          '(m16) 2st-Xtal-Chi(degrees)',    'Y'),
+      			('9ida:m15.RBV',     '9ida:m15.DRBV', 	           '(m15) 2nd-Xtal-Theta2(degrees)',   'Y')]
 
-ADC_Slits = 	[	('15IDA:m25.RBV',     '15IDA:m25.DRBV',           '(m25) UHV-Slit-top(mm)',          'Y'),
-       			('15IDA:m26.RBV',     '15IDA:m26.DRBV',	          '(m26) UHV-Slit-Bot(mm)',          'Y'),
-       			('15IDA:m27.RBV',     '15IDA:m27.DRBV', 	  '(m27) UHV-Slit-InB(mm)',          'Y'),
-       			('15IDA:m28.RBV',     '15IDA:m28.DRBV',	          '(m28) UHV-Slit-OutB(mm)',         'Y')]
+#ADC_Slits = 	[	('9ida:m25.RBV',     '9ida:m25.DRBV',           '(m25) UHV-Slit-top(mm)',          'Y'),
+#       			('9ida:m26.RBV',     '9ida:m26.DRBV',	          '(m26) UHV-Slit-Bot(mm)',          'Y'),
+#       			('9ida:m27.RBV',     '9ida:m27.DRBV', 	  '(m27) UHV-Slit-InB(mm)',          'Y'),
+#       			('9ida:m28.RBV',     '9ida:m28.DRBV',	          '(m28) UHV-Slit-OutB(mm)',         'Y')]
 
-bpm_up =	[	('15IDA:m21.RBV',     '15IDA:m21.DRBV', 	  '(m21) Upstream-BPM-Foil(mm)',     'Y')]
+#bpm_up =	[	('9ida:m21.RBV',     '9ida:m21.DRBV', 	  '(m21) Upstream-BPM-Foil(mm)',     'Y')]
  
-bpm_down = 	[       ('15IDA:m22.RBV',     '15IDA:m22.DRBV', 	  '(m22) Downstream-BPM-Foil(mm)',   'Y')]
+#bpm_down = 	[       ('9ida:m22.RBV',     '9ida:m22.DRBV', 	  '(m22) Downstream-BPM-Foil(mm)',   'Y')]
 
-Mirrors = 	[	('15IDA:m4.RBV',      '15IDA:m4.DRBV',   	  '(m4) VFM-Translation(mm)',        'Y'),
-       			('15IDA:m5.RBV',      '15IDA:m5.DRBV',	          '(m5) VFM-VDM-Stripe(mm)',         'Y'),
-       			('15IDA:m6.RBV',      '15IDA:m6.DRBV', 	          '(m6) VFM-Pitch    (mrad)',        'Y'),
-       			('15IDA:m7.RBV',      '15IDA:m7.DRBV',	          '(m7) VDM-Translation(mm)',        'Y'),
-       			('15IDA:m8.RBV',      '15IDA:m8.DRBV', 	          '(m8) VDM-Pitch  (mrad)',          'Y')]
-
-USAXS_Slits = 	[	('15iddLAX:m58:c2:m5.RBV',     '15iddLAX:m58:c2:m5.DRBV',        'USAXS Slit vert center(mm)',          'Y'),
-       			('15iddLAX:m58:c2:m6.RBV',     '15iddLAX:m58:c2:m6.DRBV',	 'USAXS Slit hor  center(mm)',          'Y'),
-       			('15iddLAX:m58:c2:m7.RBV',     '15iddLAX:m58:c2:m7.DRBV', 	 'USAXS Slit vert aperture(mm)',        'Y'),
-       			('15iddLAX:m58:c2:m8.RBV',     '15iddLAX:m58:c2:m8.DRBV',        'USAXS Slit hor  aperture(mm)',	'Y')]
+USAXS_Slits = 	[	('9idcLAX:m58:c2:m5.RBV',     '9idcLAX:m58:c2:m5.DRBV',        'USAXS Slit vert center(mm)',          'Y'),
+       			('9idcLAX:m58:c2:m6.RBV',     '9idcLAX:m58:c2:m6.DRBV',	       'USAXS Slit hor  center(mm)',          'Y'),
+       			('9idcLAX:m58:c2:m7.RBV',     '9idcLAX:m58:c2:m7.DRBV', 	 'USAXS Slit vert aperture(mm)',        'Y'),
+       			('9idcLAX:m58:c2:m8.RBV',     '9idcLAX:m58:c2:m8.DRBV',        'USAXS Slit hor  aperture(mm)',	'Y')]
 
 
-M_stage = 	[	('15iddLAX:xps:c0:m1.RBV',     '15iddLAX:xps:c0:m1.DRBV',        'USAXS MR (degrees)',                    'Y'),
-       			('15iddLAX:m58:c0:m2.RBV',     '15iddLAX:m58:c0:m2.DRBV',	 'USAXS mx (mm)',		          'Y'),
-       			('15iddLAX:m58:c0:m3.RBV',     '15iddLAX:m58:c0:m3.DRBV', 	 'USAXS my (mm)',		          'Y'),
-       			('15iddLAX:m58:c0:m4.RBV',     '15iddLAX:m58:c0:m4.DRBV',        'USAXS m1y(mm)',		       	  'Y'),
-			('15iddLAX:USAXS:MRcenter',    '15iddLAX:USAXS:MRcenter',        'USAXS MR center',		          'Y')]
+M_stage = 	[	('9idcLAX:xps:c0:m1.RBV',     '9idcLAX:xps:c0:m1.DRBV',        'USAXS MR (degrees)',                    'Y'),
+       			('9idcLAX:m58:c0:m2.RBV',     '9idcLAX:m58:c0:m2.DRBV',	 	'USAXS mx (mm)',		          'Y'),
+       			('9idcLAX:m58:c0:m3.RBV',     '9idcLAX:m58:c0:m3.DRBV', 	 'USAXS my (mm)',		          'Y'),
+       			('9idcLAX:m58:c0:m4.RBV',     '9idcLAX:m58:c0:m4.DRBV',        'USAXS m1y(mm)',		       		  'Y'),
+			('9idcLAX:USAXS:MRcenter',    '9idcLAX:USAXS:MRcenter',        'USAXS MR center',		          'Y')]
 
-MS_stage = 	[	('15iddLAX:xps:c0:m5.RBV',     '15iddLAX:xps:c0:m5.DRBV',        'USAXS MS stage angle(degrees)',         'Y'),
-       			('15iddLAX:m58:c1:m1.RBV',     '15iddLAX:m58:c1:m1.DRBV',	 'USAXS msx (mm)',		          'Y'),
-       			('15iddLAX:m58:c1:m2.RBV',     '15iddLAX:m58:c1:m2.DRBV', 	 'USAXS msy (mm)',		          'Y'),
-       			('15iddLAX:xps:c0:m3.RBV',     '15iddLAX:xps:c0:m3.DRBV',        'USAXS mst (deg)',		       	  'Y'),
-			('15iddLAX:USAXS:MSRcenter',    '15iddLAX:USAXS:MSRcenter',        'USAXS MSR center',		          'Y')]
+MS_stage = 	[	('9idcLAX:xps:c0:m5.RBV',     '9idcLAX:xps:c0:m5.DRBV',        'USAXS MS stage angle(degrees)',         'Y'),
+       			('9idcLAX:m58:c1:m1.RBV',     '9idcLAX:m58:c1:m1.DRBV',	 	'USAXS msx (mm)',		          'Y'),
+       			('9idcLAX:m58:c1:m2.RBV',     '9idcLAX:m58:c1:m2.DRBV', 	 'USAXS msy (mm)',		          'Y'),
+       			('9idcLAX:xps:c0:m3.RBV',     '9idcLAX:xps:c0:m3.DRBV',        'USAXS mst (deg)',		       	  'Y'),
+			('9idcLAX:USAXS:MSRcenter',    '9idcLAX:USAXS:MSRcenter',        'USAXS MSR center',		          'Y')]
 
 
-AS_stage = 	[	('15iddLAX:xps:c0:m6.RBV',     '15iddLAX:xps:c0:m6.DRBV',        'USAXS AS stage angle(degrees)',         'Y'),
-       			('15iddLAX:m58:c1:m3.RBV',     '15iddLAX:m58:c1:m3.DRBV',	 'USAXS asx (mm)',		          'Y'),
-       			('15iddLAX:m58:c1:m4.RBV',     '15iddLAX:m58:c1:m4.DRBV', 	 'USAXS asy (mm)',		          'Y'),
-       			('15iddLAX:xps:c0:m4.RBV',     '15iddLAX:xps:c0:m4.DRBV',        'USAXS ast (deg)',		       	  'Y'),
- 			('15iddLAX:USAXS:ASRcenter',    '15iddLAX:USAXS:ASRcenter',      'USAXS ASR center',		          'Y')]
+AS_stage = 	[	('9idcLAX:xps:c0:m6.RBV',     '9idcLAX:xps:c0:m6.DRBV',        'USAXS AS stage angle(degrees)',         'Y'),
+       			('9idcLAX:m58:c1:m3.RBV',     '9idcLAX:m58:c1:m3.DRBV',	 	'USAXS asx (mm)',		          'Y'),
+       			('9idcLAX:m58:c1:m4.RBV',     '9idcLAX:m58:c1:m4.DRBV', 	 'USAXS asy (mm)',		          'Y'),
+       			('9idcLAX:xps:c0:m4.RBV',     '9idcLAX:xps:c0:m4.DRBV',        'USAXS ast (deg)',		       	  'Y'),
+ 			('9idcLAX:USAXS:ASRcenter',    '9idcLAX:USAXS:ASRcenter',      'USAXS ASR center',		          'Y')]
 
-A_stage = 	[	('15iddLAX:aero:c0:m1.RBV',     '15iddLAX:aero:c0:m1.DRBV',      'USAXS AR (degrees)',                    'Y'),
-       			('15iddLAX:m58:c0:m5.RBV',     '15iddLAX:m58:c0:m5.DRBV',	 'USAXS ax (mm)',		          'Y'),
-       			('15iddLAX:m58:c0:m6.RBV',     '15iddLAX:m58:c0:m6.DRBV', 	 'USAXS ay (mm)',		          'Y'),
-       			('15iddLAX:m58:c0:m7.RBV',     '15iddLAX:m58:c0:m7.DRBV',        'USAXS az (mm)',		       	  'Y'),
-			('15iddLAX:USAXS:ARcenter',    '15iddLAX:USAXS:ARcenter',        'USAXS AR center',		          'Y')]
+A_stage = 	[	('9idcLAX:aero:c0:m1.RBV',     '9idcLAX:aero:c0:m1.DRBV',      'USAXS AR (degrees)',                    'Y'),
+       			('9idcLAX:m58:c0:m5.RBV',     '9idcLAX:m58:c0:m5.DRBV',	 	'USAXS ax (mm)',		          'Y'),
+       			('9idcLAX:m58:c0:m6.RBV',     '9idcLAX:m58:c0:m6.DRBV', 	 'USAXS ay (mm)',		          'Y'),
+       			('9idcLAX:m58:c0:m7.RBV',     '9idcLAX:m58:c0:m7.DRBV',        'USAXS az (mm)',		       		  'Y'),
+			('9idcLAX:USAXS:ARcenter',    '9idcLAX:USAXS:ARcenter',        'USAXS AR center',		          'Y')]
 
-User_Info = 	[	('15iddLAX:RunCycle',          '15iddLAX:RunCycle',              'Run cycle',                             'Y'),
-       			('15iddLAX:UserName',          '15iddLAX:Username',    	         'User name',		                  'Y'),
-       			('15iddLAX:GUPNumber',         '15iddLAX:GUPNumber', 	         'GUP number',		                  'Y')]
+User_Info = 	[	('9idcLAX:RunCycle',          '9idcLAX:RunCycle',              'Run cycle',                             'Y'),
+       			('9idcLAX:UserName',          '9idcLAX:Username',    	         'User name',		                  'Y'),
+       			('9idcLAX:GUPNumber',         '9idcLAX:GUPNumber', 	         'GUP number',		                  'Y')]
 
-Amplifiers = 	[	('15iddUSX:fem03:seq01:gain',  '15iddUSX:fem03:seq01:gain',      'I00 Gain',                              'Y'),
-       			('15iddUSX:fem02:seq01:gain',  '15iddUSX:fem02:seq01:gain',      'I0 Gain',		                  'Y'),
-       			('15iddLAX:m58:c1:m5.RBV',     '15iddLAX:m58:c1:m5.DRBV', 	 'I0 stage (mm)',	                  'Y')]
+Amplifiers = 	[	('9idcUSX:fem03:seq01:gain',  '9idcUSX:fem03:seq01:gain',      'I00 Gain',                              'Y'),
+       			('9idcUSX:fem02:seq01:gain',  '9idcUSX:fem02:seq01:gain',      'I0 Gain',		                  'Y'),
+       			('9idcLAX:m58:c1:m5.RBV',     '9idcLAX:m58:c1:m5.DRBV', 	 'I0 stage (mm)',	                  'Y')]
 
-SD_stages = 	[	('15iddLAX:m58:c2:m1.RBV',     '15iddLAX:m58:c2:m1.DRBV',        'USAXS sx (mm)',                         'Y'),
-       			('15iddLAX:m58:c0:m2.RBV',     '15iddLAX:m58:c0:m2.DRBV',	 'USAXS sy (mm)',		          'Y'),
-       			('15iddLAX:m58:c0:m3.RBV',     '15iddLAX:m58:c0:m3.DRBV', 	 'USAXS dx (mm)',		          'Y'),
-       			('15iddLAX:m58:c0:m4.RBV',     '15iddLAX:m58:c0:m4.DRBV',        'USAXS dy (mm)',		       	  'Y')]
+SD_stages = 	[	('9idcLAX:m58:c2:m1.RBV',     '9idcLAX:m58:c2:m1.DRBV',        'USAXS sx (mm)',                         'Y'),
+       			('9idcLAX:m58:c0:m2.RBV',     '9idcLAX:m58:c0:m2.DRBV',	 	'USAXS sy (mm)',		          'Y'),
+       			('9idcLAX:m58:c0:m3.RBV',     '9idcLAX:m58:c0:m3.DRBV', 	 'USAXS dx (mm)',		          'Y'),
+       			('9idcLAX:m58:c0:m4.RBV',     '9idcLAX:m58:c0:m4.DRBV',        'USAXS dy (mm)',		       		  'Y')]
 
-PinSAXS = 	[	('15iddLAX:mxv:c0:m1.RBV',     '15iddLAX:mxv:c0:m1.DRBV',        'USAXS pin_x (mm)',                      'Y'),
-       			('15iddLAX:mxv:c0:m2.RBV',     '15iddLAX:mxv:c0:m2.DRBV', 	 'USAXS pin_z (mm)',		          'Y'),
-       			('15iddLAX:mxv:c0:m8.RBV',     '15iddLAX:mxv:c0:m8.DRBV',        'USAXS pin_y (mm)',		       	  'Y')]
+PinSAXS = 	[	('9idcLAX:mxv:c0:m1.RBV',     '9idcLAX:mxv:c0:m1.DRBV',        'USAXS pin_x (mm)',                      'Y'),
+       			('9idcLAX:mxv:c0:m2.RBV',     '9idcLAX:mxv:c0:m2.DRBV', 	 'USAXS pin_z (mm)',		          'Y'),
+       			('9idcLAX:mxv:c0:m8.RBV',     '9idcLAX:mxv:c0:m8.DRBV',        'USAXS pin_y (mm)',		       	  'Y')]
 
-USAXS_Params = 	[	('15iddLAX:USAXS:CountTime',   		'15iddLAX:USAXS:CountTime',    			'USAXS Count Time',           	'Y'),
-			('15iddLAX:USAXS:NumPoints',   		'15iddLAX:USAXS:NumPoints',    			'USAXS Num Points',             'Y'),
-			('15iddLAX:USAXS:Finish',    		'15iddLAX:USAXS:Finish',    			'USAXS Q max',                 	'Y'),
-			('15iddLAX:USAXS:StartOffset',  	'15iddLAX:USAXS:StartOffset',    		'USAXS Start Offset',          	'Y'),
-			('15iddLAX:USAXS:Sample_Y_Step',  	'15iddLAX:USAXS:Sample_Y_Step',    		'USAXS Sample Y Step',         	'Y'),
-			('15iddLAX:USAXS_Pin:ax_in',	   	'15iddLAX:USAXS_Pin:ax_in',   			'USAXS ax in',                	'Y'),
-			('15iddLAX:USAXS_Pin:Pin_y_out',	   	'15iddLAX:USAXS_Pin:Pin_y_out',   	'USAXS pin_y out',             	'Y'),
-			('15iddLAX:USAXS_Pin:Pin_z_out',	   	'15iddLAX:USAXS_Pin:Pin_z_out',   	'USAXS pin_z out',             	'Y'),		
-			('15iddLAX:USAXS_Pin:USAXS_hslit_ap',   	'15iddLAX:USAXS_Pin:USAXS_hslit_ap',    'USAXS hor slit',               'Y'),
-       			('15iddLAX:USAXS_Pin:USAXS_vslit_ap',   	'15iddLAX:USAXS_Pin:USAXS_hslit_ap',    'USAXS vert slit',              'Y'),
-       			('15iddLAX:USAXS_Pin:USAXS_hgslit_ap',   	'15iddLAX:USAXS_Pin:USAXS_hgslit_ap',   'USAXS Guard vert slit',      	'Y'),
-       			('15iddLAX:USAXS_Pin:USAXS_vgslit_ap',   	'15iddLAX:USAXS_Pin:USAXS_vgslit_ap',   'USAXS Guard vert slit',      	'Y')]
+USAXS_Params = 	[	('9idcLAX:USAXS:CountTime',   		'9idcLAX:USAXS:CountTime',    			'USAXS Count Time',           	'Y'),
+			('9idcLAX:USAXS:NumPoints',   		'9idcLAX:USAXS:NumPoints',    			'USAXS Num Points',             'Y'),
+			('9idcLAX:USAXS:Finish',    		'9idcLAX:USAXS:Finish',    			'USAXS Q max',                 	'Y'),
+			('9idcLAX:USAXS:StartOffset',     	'9idcLAX:USAXS:StartOffset',    		'USAXS Start Offset',          	'Y'),
+			('9idcLAX:USAXS:Sample_Y_Step',  	'9idcLAX:USAXS:Sample_Y_Step',    		'USAXS Sample Y Step',         	'Y'),
+			('9idcLAX:USAXS_Pin:ax_in',	   	'9idcLAX:USAXS_Pin:ax_in',   			'USAXS ax in',                	'Y'),
+			('9idcLAX:USAXS_Pin:Pin_y_out',	   	'9idcLAX:USAXS_Pin:Pin_y_out',   	    	'USAXS pin_y out',             	'Y'),
+			('9idcLAX:USAXS_Pin:Pin_z_out',	   	'9idcLAX:USAXS_Pin:Pin_z_out',   		'USAXS pin_z out',             	'Y'),		
+			('9idcLAX:USAXS_Pin:USAXS_hslit_ap',   	'9idcLAX:USAXS_Pin:USAXS_hslit_ap',   		 'USAXS hor slit',               'Y'),
+       			('9idcLAX:USAXS_Pin:USAXS_vslit_ap',   	'9idcLAX:USAXS_Pin:USAXS_hslit_ap',   		 'USAXS vert slit',              'Y'),
+       			('9idcLAX:USAXS_Pin:USAXS_hgslit_ap',   '9idcLAX:USAXS_Pin:USAXS_hgslit_ap',  		 'USAXS Guard vert slit',      	'Y'),
+       			('9idcLAX:USAXS_Pin:USAXS_vgslit_ap',   '9idcLAX:USAXS_Pin:USAXS_vgslit_ap',   		'USAXS Guard vert slit',      	'Y')]
 			
-Pin_Params = 	[	('15iddLAX:WavelengthSpread',   	'15iddLAX:WavelengthSpread',    		'Wavelength Spread',           	'Y'),
-			('15iddLAX:USAXS_Pin:BeamCenterX',	'15iddLAX:USAXS_Pin:BeamCenterX',    		'PinSAXS Beam Center X',        'Y'),
-			('15iddLAX:USAXS_Pin:BeamCenterY',    	'15iddLAX:USAXS_Pin:BeamCenterY',    		'PinSAXS Beam Center Y',       	'Y'),
-			('15iddLAX:USAXS_Pin:Distance',  	'15iddLAX:USAXS_Pin:Distance',    		'PinSAXS distance (mm)',      	'Y'),
-			('15iddLAX:USAXS_Pin:PinPixSizeX',  	'15iddLAX:USAXS_Pin:PinPixSizeX',    		'PinSAXS pixels size X (mm)',  	'Y'),
-			('15iddLAX:USAXS_Pin:PinPixSizeY',  	'15iddLAX:USAXS_Pin:PinPixSizeY',    		'PinSAXS pixels size Y (mm)',  	'Y'),
-			('15iddLAX:USAXS_Pin:Exp_Al_Filter',  	'15iddLAX:USAXS_Pin:Exp_Al_Filter',    		'PinSAXS Exp Al Filter',  	'Y'),
-			('15iddLAX:USAXS_Pin:Exp_Ti_Filter',  	'15iddLAX:USAXS_Pin:Exp_Ti_Filter',    		'PinSAXS Exp Ti Filter',  	'Y'),
-			('15iddLAX:USAXS_Pin:directory',  	'15iddLAX:USAXS_Pin:directory',    		'PinSAXS Image bese directory', 'Y'),
-			('15iddLAX:USAXS_Pin:ax_out',	   	'15iddLAX:USAXS_Pin:ax_out',   			'PinSAXS ax out',             	'Y'),
-			('15iddLAX:USAXS_Pin:dx_out',	   	'15iddLAX:USAXS_Pin:dx_out',   			'PinSAXS dx out',             	'Y'),
-			('15iddLAX:USAXS_Pin:Pin_y_in',	   	'15iddLAX:USAXS_Pin:Pin_y_in',   		'PinSAXS pin_y in',           	'Y'),
-			('15iddLAX:USAXS_Pin:Pin_z_in',	   	'15iddLAX:USAXS_Pin:Pin_z_in',   		'PinSAXS pin_z in',             'Y'),					
-			('15iddLAX:USAXS_Pin:AcquireTime',   	'15iddLAX:USAXS_Pin:AcquireTime',   	 	'PinSAXS acquire time',         'Y'),
-			('15iddLAX:USAXS_Pin:Pin_hslit_ap',   	'15iddLAX:USAXS_Pin:Pin_hslit_ap',   	 	'PinSAXS hor slit',             'Y'),
-       			('15iddLAX:USAXS_Pin:Pin_vslit_ap',   	'15iddLAX:USAXS_Pin:Pin_hslit_ap',    		'PinSAXS vert slit',            'Y'),
-       			('15iddLAX:USAXS_Pin:Pin_hgslit_ap',   	'15iddLAX:USAXS_Pin:Pin_hgslit_ap',    		'PinSAXS Guard vert slit',      'Y'),
-       			('15iddLAX:USAXS_Pin:Pin_vgslit_ap',   	'15iddLAX:USAXS_Pin:Pin_vgslit_ap',    		'PinSAXS Guard vert slit',      'Y')]
+Pin_Params = 	[	('9idcLAX:WavelengthSpread',  	 	'9idcLAX:WavelengthSpread',    			'Wavelength Spread',           	'Y'),
+			('9idcLAX:USAXS_Pin:BeamCenterX',	'9idcLAX:USAXS_Pin:BeamCenterX',    		'PinSAXS Beam Center X',        'Y'),
+			('9idcLAX:USAXS_Pin:BeamCenterY',    	'9idcLAX:USAXS_Pin:BeamCenterY',    		'PinSAXS Beam Center Y',       	'Y'),
+			('9idcLAX:USAXS_Pin:Distance',  	'9idcLAX:USAXS_Pin:Distance',    		'PinSAXS distance (mm)',      	'Y'),
+			('9idcLAX:USAXS_Pin:PinPixSizeX',  	'9idcLAX:USAXS_Pin:PinPixSizeX',    		'PinSAXS pixels size X (mm)',  	'Y'),
+			('9idcLAX:USAXS_Pin:PinPixSizeY',  	'9idcLAX:USAXS_Pin:PinPixSizeY',    		'PinSAXS pixels size Y (mm)',  	'Y'),
+			('9idcLAX:USAXS_Pin:Exp_Al_Filter',  	'9idcLAX:USAXS_Pin:Exp_Al_Filter',    		'PinSAXS Exp Al Filter',  	'Y'),
+			('9idcLAX:USAXS_Pin:Exp_Ti_Filter',  	'9idcLAX:USAXS_Pin:Exp_Ti_Filter',    		'PinSAXS Exp Ti Filter',  	'Y'),
+			('9idcLAX:USAXS_Pin:directory',  	'9idcLAX:USAXS_Pin:directory',    		'PinSAXS Image bese directory', 'Y'),
+			('9idcLAX:USAXS_Pin:ax_out',	   	'9idcLAX:USAXS_Pin:ax_out',   			'PinSAXS ax out',             	'Y'),
+			('9idcLAX:USAXS_Pin:dx_out',	   	'9idcLAX:USAXS_Pin:dx_out',   			'PinSAXS dx out',             	'Y'),
+			('9idcLAX:USAXS_Pin:Pin_y_in',	   	'9idcLAX:USAXS_Pin:Pin_y_in',   		'PinSAXS pin_y in',           	'Y'),
+			('9idcLAX:USAXS_Pin:Pin_z_in',	   	'9idcLAX:USAXS_Pin:Pin_z_in',   		'PinSAXS pin_z in',             'Y'),					
+			('9idcLAX:USAXS_Pin:AcquireTime',   	'9idcLAX:USAXS_Pin:AcquireTime',   	 	'PinSAXS acquire time',         'Y'),
+			('9idcLAX:USAXS_Pin:Pin_hslit_ap',   	'9idcLAX:USAXS_Pin:Pin_hslit_ap',   	 	'PinSAXS hor slit',             'Y'),
+       			('9idcLAX:USAXS_Pin:Pin_vslit_ap',   	'9idcLAX:USAXS_Pin:Pin_hslit_ap',    		'PinSAXS vert slit',            'Y'),
+       			('9idcLAX:USAXS_Pin:Pin_hgslit_ap',   	'9idcLAX:USAXS_Pin:Pin_hgslit_ap',    		'PinSAXS Guard vert slit',      'Y'),
+       			('9idcLAX:USAXS_Pin:Pin_vgslit_ap',   	'9idcLAX:USAXS_Pin:Pin_vgslit_ap',    		'PinSAXS Guard vert slit',      'Y')]
 
 
 size2 = 33
@@ -211,10 +206,8 @@ createCategory("HHL Slits")
 numCheck(HHL_Slits)
 createCategory("Monochromator")
 numCheck(Monochromator)
-createCategory("ADC slits")
-numCheck(ADC_Slits)
-createCategory("Mirrors")
-numCheck(Mirrors)
+#createCategory("ADC slits")
+#numCheck(ADC_Slits)
 createCategory("USAXS slits positons")
 numCheck(USAXS_Slits)
 createCategory("USAXS M stage")
@@ -241,7 +234,8 @@ f.close()
 
 #os.system('elog -h 164.54.162.133 -p 8081 -l 15-ID-D -a Author=SYSTEM -a Type=Routine -a Subject="System snapshot" -f /share1/Elog/ID_elog_data " "')
 
-os.system('elog -h 15id.xray.aps.anl.gov -p 8096 -l "15ID Operations" -u "s15usaxs" "mu8rubo!" -a "Author=USAXS" -a "Category=USAXS_operations" -a "Type=Configuration" -a "Subject=Instrument/PV Snapshot" -f /share1/Elog/ID_elog_data " "')
+os.system('elog -h s9elog.xray.aps.anl.gov -d elog -p 80 -l "9ID Operations" -u "usaxs" "mu8rubo!" -a "Author=USAXS" -a "Category=USAXS_operations" -a "Type=Configuration" -a "Subject=Instrument/PV Snapshot" -f /share1/Elog/ID_elog_data " "')
+
 
 
 ########### SVN repository information ###################

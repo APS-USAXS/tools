@@ -410,6 +410,7 @@ if __name__ == '__main__':
 '''
 cd /home/beams/USAXS/Documents/eclipse/USAXS/tools
 /bin/rm test.h5
+caput 9idcLAX:USAXSfly:Start 0
 /APSshare/anaconda/x86_64/bin/python ./saveFlyData.py ./test.h5 ./saveFlyData.xml
 /APSshare/anaconda/x86_64/bin/python ~/bin/h5toText.py ./test.h5
 '''

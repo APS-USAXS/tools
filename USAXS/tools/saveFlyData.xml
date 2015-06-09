@@ -29,9 +29,11 @@ Additionally, you can check this file for validity and that all PVs exist with t
 			<attribute name="instrument" value="APS USAXS at 9-ID-C" />
 			<attribute name="scan_mode" value="USAXS fly scan" />
 			<attribute name="canSAS_class" value="SASroot" />
+			<attribute name="default" value="entry" />
 
 			<group name="entry" class="NXentry">
 				<attribute name="canSAS_class" value="SASentry" />
+				<attribute name="default" value="flyScan" />
 
 				<field name="program_name">
 					<!-- version of this configuration file -->
@@ -422,8 +424,9 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="d_beam_available" pvname="9idcLAX:blCalc:userCalc1" />
 
 					<!-- PSS PVs for 9-ID -->
-					<PV label="d_doors_closed" pvname="PA:09ID:Q40:07.VAL" />
-					<PV label="white_shtr_opened" pvname="PA:09ID:Q20:05.VAL" />
+					<PV label="doors_closed" pvname="PA:09ID:STA_C_NO_ACCESS.VAL" />
+					<PV label="white_shtr_opened" pvname="PA:09ID:STA_A_FES_OPEN_PL.VAL" />
+					<PV label="mono_shtr_opened"  pvname="PA:09ID:STA_B_SBS_OPEN_PL.VAL" />
 
 					<PV label="pf4_trans" pvname="9idcUSX:pf4:trans" />
 					<PV label="pf4_thickness_Al" pvname="9idcUSX:pf4:filterAl" />

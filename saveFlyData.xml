@@ -273,6 +273,7 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="ASR_center" pvname="9idcLAX:USAXS:ASRcenter" />
 					<PV label="ARenc_0" pvname="9idcLAX:USAXS:Q.B" />
 					<PV label="feedback_ON" pvname="9idcLAX:fbe:omega:on" />
+					<PV label="UPDsize" pvname="9idcLAX:USAXS:UPDsize" />
 
 					<!-- USAXS sample slit positions -->
 					<PV label="uslit_v_center" pvname="9idcLAX:m58:c2:m5" />

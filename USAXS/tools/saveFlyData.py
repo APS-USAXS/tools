@@ -7,6 +7,12 @@
 import datetime
 import os
 import sys
+
+# do not warn if the HDF5 library version has changed
+# headers are 1.8.15, library is 1.8.16
+# THIS SETTING MIGHT BITE US IN THE FUTURE!
+os.environ['HDF5_DISABLE_VERSION_CHECK'] = '2'
+
 import h5py
 import numpy
 import time

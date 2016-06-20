@@ -59,8 +59,8 @@ PV_MAP = {
     'AY0'           : '9idcLAX:USAXS:AY0.VAL',
     'DY0'           : '9idcLAX:USAXS:DY0.VAL',
     'motor,AR'      : '9idcLAX:aero:c0:m1',
-    'motor,AY'      : '9idcLAX:m58:c0:m6',
-    'motor,DY'      : '9idcLAX:m58:c2:m4'
+    'motor,AY'      : '9idcLAX:aero:c1:m1',
+    'motor,DY'      : '9idcLAX:aero:c2:m1'
 }
 MOTOR_SYMBOLS = ('ar', 'ay', 'dy')
 CALC_ALL_DELAY_MS = 250

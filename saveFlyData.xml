@@ -462,12 +462,12 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="asx" pvname="9idcLAX:m58:c1:m3.RBV" />
 					<PV label="asy" pvname="9idcLAX:m58:c1:m4.RBV" />
 					<PV label="ax" pvname="9idcLAX:m58:c0:m5.RBV" />
-					<PV label="ay" pvname="9idcLAX:m58:c0:m6.RBV" />
+					<PV label="ay" pvname="9idcLAX:aero:c1:m1.RBV" />
 					<PV label="az" pvname="9idcLAX:m58:c0:m7.RBV" />
 					<PV label="sx" pvname="9idcLAX:m58:c2:m1.RBV" />
 					<PV label="sy" pvname="9idcLAX:m58:c2:m2.RBV" />
 					<PV label="dx" pvname="9idcLAX:m58:c2:m3.RBV" />
-					<PV label="dy" pvname="9idcLAX:m58:c2:m4.RBV" />
+					<PV label="dy" pvname="9idcLAX:aero:c2:m1.RBV" />
 					<PV label="m1y" pvname="9idcLAX:m58:c0:m4.RBV" />
 					<PV label="mr" pvname="9idcLAX:xps:c0:m1.RBV" />
 					<PV label="mr_enc" pvname="9idcLAX:mr:encoder" />

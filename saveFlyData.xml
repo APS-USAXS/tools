@@ -191,10 +191,12 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="changes_DDPCA300_ampGain"    pvname="9idcLAX:USAXSfly:DDPCA300:ampGain" />
 					<PV label="changes_DDPCA300_ampReqGain" pvname="9idcLAX:USAXSfly:DDPCA300:ampReqGain" />
 
+					<!-- 2016-06-21,prj:  PV not needed and removed from IOC now, take it out here, too
 					<PV label="AYDYstart" pvname="9idcLAX:USAXSfly:AYDYstart">
 						<attribute name="meaning"
 							value="point number when to start moving ay and dy stages" />
 					</PV>
+					-->
 					<PV label="dyMaxSpeed" pvname="9idcLAX:USAXSfly:dyMaxSpeed" />
 					<PV label="ayMaxSpeed" pvname="9idcLAX:USAXSfly:ayMaxSpeed" />
 					<PV label="arMaxSpeed" pvname="9idcLAX:USAXSfly:arMaxSpeed" />

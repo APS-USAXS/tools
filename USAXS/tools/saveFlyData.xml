@@ -137,7 +137,7 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					</PV>
 
 					<PV label="mca1_name" pvname="9idcLAX:3820:scaler1.NM1" />
-					<PV label="mca1" pvname="9idcLAX:3820:mca1" length_limit="mca_channels">		<!-- counts of 50 MHz clock -->
+					<PV label="mca1" pvname="9idcLAX:3820:mca1" length_limit="mca_channels" acquire_after_scan="true">		<!-- counts of 50 MHz clock -->
 						<attribute name="units" value="pulses" />
 						<attribute name="USAXS_name" value="clock_pulses" />
 					</PV>

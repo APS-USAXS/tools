@@ -1,7 +1,66 @@
 #!/usr/bin/env python
 
 
-'''save EPICS data to a NeXus file'''
+'''
+save EPICS data to a NeXus file
+'''
+
+
+# TODO: 2016-06-29: speed up this process
+#-------------------------- checklist
+# [ ] saveFlyData.py updated
+# [ ] saveFlyData.xml updated
+# [x] saveFlyData.xsd updated
+# [ ] spec macros updated
+#--------------------------
+#     spec (what is proposed)
+#     1. prepare for flyscan
+#     2. wait until 9idcLAX:USAXS:FlyScanNotSaved = 0  (needs a timeout?)
+#     3. epics_put("9idcLAX:USAXS:FlyScanNotSaved", 1)
+#     4. push "Go"
+#     5. unix("python saveFlyData.py &")
+#     6. report user countdown
+#     7. sleep a little
+#     8. if 9idcLAX:USAXS:FlyScanNotSaved != 0, go back to 6
+#     9. return to Q=0 and do other stuff as needed
+#     
+#     saveFlyData.py (what is proposed)
+#     1. read config file
+#     2. make sure 9idcLAX:USAXS:FlyScanNotSaved = 1
+#     3. setup all PV monitors
+#     4. gather and cache all pre-scan PV content
+#     5. monitor trigger PV (9idcLAX:USAXSfly:Start) for end of scan
+#     6. gather all post-scan PV content
+#     7. write HDF5 file
+#     8. set 9idcLAX:USAXS:FlyScanNotSaved = 0
+#     9. quit
+#     
+#     If you want, we could program saveFlyData.py to set
+#         9idcLAX:USAXS:FlyScanNotSaved = 2
+#     when it starts, if that is of any benefit 
+#     (such as to signal SPEC that the program DID in fact start).  
+#     If we do that, the SPEC code should
+#     expect this to happen and respond appropriately 
+#     if it does not happen.
+#     
+#     In the saveFlyData.py code we have now, EPICS PVs are 
+#     connected (not monitored) at the start of the scan, 
+#     based on PVs declared in the config file.  The HDF5 
+#     file structure is setup (based on the layout in the 
+#     config file) while the scan is running.  Once the scan is 
+#     complete (as indicated by the trigger PV), the value of 
+#     each of the connected PVs is obtained from EPICS, checked 
+#     for certain valid content, and then written to the HDF5 file.
+#     
+#     One obvious optimization would be, as saveFlyData.py 
+#     starts (step 3 above), to place PV monitors on all 
+#     the PVs and build a local cache. This _may_ already 
+#     be done by PyEpics so I will check on that first. 
+#     Additionally, we can mark some PVs with an 
+#     acquire_after_scan="true" attribute so that the value 
+#     is retrieved from EPICS after the scan completes.  
+#     That new attribute in the config file is not setup 
+#     yet but is a simple addition (needs to be added to the .xsd file as well).
 
 
 import datetime

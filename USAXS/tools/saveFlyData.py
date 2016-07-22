@@ -8,8 +8,8 @@ save EPICS data to a NeXus file
 
 # TODO: 2016-06-29: speed up this process
 #-------------------------- checklist
-# [ ] saveFlyData.py updated
-# [ ] saveFlyData.xml updated
+# [x] saveFlyData.py updated
+# [x] saveFlyData.xml updated
 # [x] saveFlyData.xsd updated
 # [ ] spec macros updated
 #--------------------------
@@ -221,6 +221,8 @@ class PV_Specification(object):
             raise RuntimeError, msg
         self.pvname = xml_element_node.attrib['pvname']
         self.pv = None
+        aas = xml_element_node.attrib.get('acquire_after_scan', 'false')
+        self.acquire_after_scan = aas.lower() in ('t', 'true')
 
         self.attrib = {}
         for node in xml_element_node.xpath('attribute'):
@@ -252,11 +254,12 @@ class PV_Specification(object):
 class SaveFlyScan(object):
     '''watch trigger PV, save data to NeXus file after scan is done'''
 
-    trigger_pv = ''	# '9idcLAX:USAXSfly:Start'
+    trigger_pv = '9idcLAX:USAXSfly:Start'
     trigger_accepted_values = (0, 'Done')
     trigger_poll_interval_s = 0.1
-    timeout_pv = ''
+    scantime_pv = '9idcLAX:USAXS:FS_ScanTime'
     creator_version = 'unknown'
+    flyScanNotSaved_pv = '9idcLAX:USAXS:FlyScanNotSaved'
     
     def __init__(self, hdf5_file, config_file = None):
         self.hdf5_file_name = hdf5_file
@@ -269,16 +272,62 @@ class SaveFlyScan(object):
         '''wait until the data is ready, then save it'''
         def keep_waiting():
             triggered = self.trigger.get() in self.trigger_accepted_values
-            time_remains = quitting_time >= datetime.datetime.now()
-            if not time_remains:
-                raise TimeoutException
+            #time_remains = quitting_time >= datetime.datetime.now()
+            #if not time_remains:
+            #    raise TimeoutException
             return not triggered
         self.trigger = epics.PV(self.trigger_pv)
-        timeout_s = max(0, epics.caget(self.timeout_pv))
-        quitting_time = datetime.datetime.now() + datetime.timedelta(seconds=timeout_s)
+        #timeout_s = max(0, epics.caget(self.scantime_pv))
+        #quitting_time = datetime.datetime.now() + datetime.timedelta(seconds=(timeout_s+70))
+        epics.caput(self.flyScanNotSaved_pv, 1)
+        #!# measure amount of time spent in next step and write to a PV
+        #!t0 = time.time()
+        self.preliminaryWriteFile()        # file is already open, write preliminary data
+        #!t1 = time.time()
+        #!epics.caput('9idcLAX:float15.DESC', 'preliminaryWriteFile()')
+        #!epics.caput('9idcLAX:float15', t1 - t0)
+        #!# measure amount of time spent in next step and write to a PV
+        #!t0 = time.time()
         while keep_waiting():
             time.sleep(self.trigger_poll_interval_s)
-        self.saveFile()
+        #!t1 = time.time()
+        #!epics.caput('9idcLAX:float16.DESC', 'keep_waiting()')
+        #!epics.caput('9idcLAX:float16', t1 - t0)
+        #!# measure amount of time spent in next step and write to a PV
+        #!t0 = time.time()
+        self.saveFile()                    # write the remaining data and close the file
+        #!t1 = time.time()
+        #!epics.caput('9idcLAX:float17.DESC', 'saveFile()')
+        #!epics.caput('9idcLAX:float17', t1 - t0)
+        epics.caput(self.flyScanNotSaved_pv, 0)
+
+    def preliminaryWriteFile(self):
+        '''write all preliminary data to the file while fly scan is running'''
+        for pv_spec in pv_registry.values():
+            if pv_spec.acquire_after_scan:
+                continue
+            value = pv_spec.pv.get()
+            if value is [None]:
+                value = 'no data'
+            if not isinstance(value, numpy.ndarray):
+                value = [value]
+            else:
+                if pv_spec.length_limit and pv_spec.length_limit in pv_registry:
+                    length_limit = pv_registry[pv_spec.length_limit].pv.get()
+                    if len(value) > length_limit:
+                        value = value[:length_limit]
+
+            hdf5_parent = pv_spec.group_parent.hdf5_group
+            try:
+                ds = eznx.makeDataset(hdf5_parent, pv_spec.label, value)
+                self._attachEpicsAttributes(ds, pv_spec.pv)
+                eznx.addAttributes(ds, **pv_spec.attrib)
+            except Exception as e:
+                print "ERROR: ", pv_spec.label, value
+                print "MESSAGE: ", e
+                print "RESOLUTION: writing as error message string"
+                ds = eznx.makeDataset(hdf5_parent, pv_spec.label, [str(e)])
+                #raise
 
     def saveFile(self):
         '''write all desired data to the file and exit this code'''
@@ -288,7 +337,10 @@ class SaveFlyScan(object):
         f = group_registry['/'].hdf5_group
         eznx.addAttributes(f, timestamp = timestamp)
 
+        # TODO: will len(caget(array)) = NORD or NELM? (useful data or full array)
         for pv_spec in pv_registry.values():
+            if not pv_spec.acquire_after_scan:
+                continue
             value = pv_spec.pv.get()
             if value is [None]:
                 value = 'no data'
@@ -431,7 +483,6 @@ def get_CLI_options():
 
 def main():
     cli_options = get_CLI_options()
-    
     dataFile = cli_options.data_file
     path = os.path.split(dataFile)[0]
     if len(path) > 0 and not os.path.exists(path):
@@ -451,17 +502,18 @@ def main():
     try:
         sfs.waitForData()
     except TimeoutException, _exception_message:
+        print "exiting because of timeout!!!!!!!"
         sys.exit(1)     # exit silently with error, 1=TIMEOUT
     print 'wrote file: ' + dataFile
 
 
+def developer():
+    sfs = SaveFlyScan('test.h5', XML_CONFIGURATION_FILE)
+    sfs.waitForData()
+
 if __name__ == '__main__':
     main()	# production system
-
-
-# code development
-#     sfs = SaveFlyScan('test.h5', XML_CONFIGURATION_FILE)
-#     sfs.waitForData()
+    # developer()
 
 
 ########### SVN repository information ###################

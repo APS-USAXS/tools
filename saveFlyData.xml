@@ -420,9 +420,9 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="upd_amp_change_mask_time4" pvname="9idcLAX:USAXS:FS_AmpR5BlockTime" />
 
 					<!-- shutters -->
-					<PV label="CCD_shutter" pvname="9idcUSX:pmm01:reg01:bo01" />
-					<PV label="Ti_pf42_b3" pvname="9idcUSX:ath01:reg01:bo03" />
-					<PV label="Ti_pf42_b4" pvname="9idcUSX:ath01:reg01:bo04" />
+					<PV label="CCD_shutter" pvname="9idcRIO:Galil2Bo0_CMD" />
+					<PV label="Ti_pf42_b3" pvname="9idcRIO:Galil2Bo14_CMD" />
+					<PV label="Ti_pf42_b4" pvname="9idcRIO:Galil2Bo15_CMD" />
 
 					<PV label="d_beam_available" pvname="9idcLAX:blCalc:userCalc1" />
 
@@ -437,7 +437,7 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="pf4_thickness_Ti" pvname="9idcUSX:pf4:filterTi" />
 
 					<!-- piezos -->
-					<PV label="M2Rp_VDC" pvname="9idcUSX:rmm01:ana01:ao02" />
+					<!--PV label="M2Rp_VDC" pvname="9idcUSX:rmm01:ana01:ao02" />
 					<PV label="M2Rp_rbv" pvname="9idcUSX:ath01:ana01:ai02" />
 
 					<PV label="MSRp_VDC" pvname="9idcUSX:rmm01:ana01:ao04" />

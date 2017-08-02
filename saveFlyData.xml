@@ -447,7 +447,7 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="A2Rp_rbv" pvname="9idcUSX:ath01:ana01:ai01" />
 
 					<PV label="ASRp_VDC" pvname="9idcUSX:rmm01:ana01:ao03" />
-					<PV label="ASRp_rbv" pvname="9idcUSX:ath01:ana01:ai03" />
+					<PV label="ASRp_rbv" pvname="9idcUSX:ath01:ana01:ai03" /-->
 
 					<!-- other positioners -->
 					<PV label="GuardBot" pvname="9idcLAX:mxv:c0:m6.RBV" />

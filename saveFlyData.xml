@@ -496,6 +496,14 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="linkam_temp1" pvname="9idcLAX:ci94:temp" />
 					<PV label="linkam_temp2" pvname="9idcLAX:ci94:temp2" />
 
+					<!-- Temperatures  -->
+					<PV label="Hutch_Temperature_C" pvname="9idcLAX:adam1:rtd0" />
+					<PV label="RTD1_Temperature_C" pvname="9idcLAX:adam1:rtd1" />
+					<PV label="RTD2_Temperature_C" pvname="9idcLAX:adam1:rtd2" />
+					<PV label="RTD3_Temperature_C" pvname="9idcLAX:adam1:rtd3" />
+					<PV label="RTD4_Temperature_C" pvname="9idcLAX:adam1:rtd4" />
+					<PV label="RTD5_Temperature_C" pvname="9idcLAX:adam1:rtd5" />
+
 				</group> 	<!-- entry:NXentry/metadata:NXcollection -->
 
 			</group>	     <!-- entry:NXentry -->

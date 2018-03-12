@@ -10,7 +10,7 @@ from epics import PV
 from epics import caget
 import sys, epics, time, string, os
 
-# Create global variables with lists of PVs for various groups of information 
+# Create global variables with lists of PVs for various groups of information
 
 #			PV name[0]		   PV name[1]			    Message[2]             Use?[3]
 undulator = 	[	('ID09ds:GapSet.VAL',       'ID09ds:Gap.VAL',	         'Undulator gap (mm)',	 	    'Y'),
@@ -35,7 +35,7 @@ Monochromator = [	('9ida:BraggERdbkAO','9ida:BraggERdbkAO',  	  'Monochromator e
 #       			('9ida:m28.RBV',     '9ida:m28.DRBV',	          '(m28) UHV-Slit-OutB(mm)',         'Y')]
 
 #bpm_up =	[	('9ida:m21.RBV',     '9ida:m21.DRBV', 	  '(m21) Upstream-BPM-Foil(mm)',     'Y')]
- 
+
 #bpm_down = 	[       ('9ida:m22.RBV',     '9ida:m22.DRBV', 	  '(m22) Downstream-BPM-Foil(mm)',   'Y')]
 
 USAXS_Slits = 	[	('9idcLAX:m58:c2:m5.RBV',     '9idcLAX:m58:c2:m5.DRBV',        'USAXS Slit vert center(mm)',          'Y'),
@@ -93,12 +93,12 @@ USAXS_Params = 	[	('9idcLAX:USAXS:CountTime',   		'9idcLAX:USAXS:CountTime',    
 			('9idcLAX:USAXS:Sample_Y_Step',  	'9idcLAX:USAXS:Sample_Y_Step',    		'USAXS Sample Y Step',         	'Y'),
 			('9idcLAX:USAXS_Pin:ax_in',	   	'9idcLAX:USAXS_Pin:ax_in',   			'USAXS ax in',                	'Y'),
 			('9idcLAX:USAXS_Pin:Pin_y_out',	   	'9idcLAX:USAXS_Pin:Pin_y_out',   	    	'USAXS pin_y out',             	'Y'),
-			('9idcLAX:USAXS_Pin:Pin_z_out',	   	'9idcLAX:USAXS_Pin:Pin_z_out',   		'USAXS pin_z out',             	'Y'),		
+			('9idcLAX:USAXS_Pin:Pin_z_out',	   	'9idcLAX:USAXS_Pin:Pin_z_out',   		'USAXS pin_z out',             	'Y'),
 			('9idcLAX:USAXS_Pin:USAXS_hslit_ap',   	'9idcLAX:USAXS_Pin:USAXS_hslit_ap',   		 'USAXS hor slit',               'Y'),
        			('9idcLAX:USAXS_Pin:USAXS_vslit_ap',   	'9idcLAX:USAXS_Pin:USAXS_hslit_ap',   		 'USAXS vert slit',              'Y'),
        			('9idcLAX:USAXS_Pin:USAXS_hgslit_ap',   '9idcLAX:USAXS_Pin:USAXS_hgslit_ap',  		 'USAXS Guard vert slit',      	'Y'),
        			('9idcLAX:USAXS_Pin:USAXS_vgslit_ap',   '9idcLAX:USAXS_Pin:USAXS_vgslit_ap',   		'USAXS Guard vert slit',      	'Y')]
-			
+
 Pin_Params = 	[	('9idcLAX:WavelengthSpread',  	 	'9idcLAX:WavelengthSpread',    			'Wavelength Spread',           	'Y'),
 			('9idcLAX:USAXS_Pin:BeamCenterX',	'9idcLAX:USAXS_Pin:BeamCenterX',    		'PinSAXS Beam Center X',        'Y'),
 			('9idcLAX:USAXS_Pin:BeamCenterY',    	'9idcLAX:USAXS_Pin:BeamCenterY',    		'PinSAXS Beam Center Y',       	'Y'),
@@ -111,7 +111,7 @@ Pin_Params = 	[	('9idcLAX:WavelengthSpread',  	 	'9idcLAX:WavelengthSpread',    
 			('9idcLAX:USAXS_Pin:ax_out',	   	'9idcLAX:USAXS_Pin:ax_out',   			'PinSAXS ax out',             	'Y'),
 			('9idcLAX:USAXS_Pin:dx_out',	   	'9idcLAX:USAXS_Pin:dx_out',   			'PinSAXS dx out',             	'Y'),
 			('9idcLAX:USAXS_Pin:Pin_y_in',	   	'9idcLAX:USAXS_Pin:Pin_y_in',   		'PinSAXS pin_y in',           	'Y'),
-			('9idcLAX:USAXS_Pin:Pin_z_in',	   	'9idcLAX:USAXS_Pin:Pin_z_in',   		'PinSAXS pin_z in',             'Y'),					
+			('9idcLAX:USAXS_Pin:Pin_z_in',	   	'9idcLAX:USAXS_Pin:Pin_z_in',   		'PinSAXS pin_z in',             'Y'),
 			('9idcLAX:USAXS_Pin:AcquireTime',   	'9idcLAX:USAXS_Pin:AcquireTime',   	 	'PinSAXS acquire time',         'Y'),
 			('9idcLAX:USAXS_Pin:Pin_hslit_ap',   	'9idcLAX:USAXS_Pin:Pin_hslit_ap',   	 	'PinSAXS hor slit',             'Y'),
        			('9idcLAX:USAXS_Pin:Pin_vslit_ap',   	'9idcLAX:USAXS_Pin:Pin_hslit_ap',    		'PinSAXS vert slit',            'Y'),
@@ -146,12 +146,12 @@ def writeLines(list):
         time.sleep(.2)
         s1 = getpv1.char_value
         s2 = getpv2.char_value
-        space1 = size2 - len(list[i][2])+1 
-	space2 = size2 - len(str(caget(list[i][0])))-10 
+        space1 = size2 - len(list[i][2])+1
+	space2 = size2 - len(str(caget(list[i][0])))-10
         line = list[i][2]+space1*' '+str(s1) + space2*' ' + str(s2)
-        return line 
+        return line
 
-    #Enter the entries 
+    #Enter the entries
     """
     for i in range(len(list)):
     	if (i+1)%2 == 0:
@@ -189,10 +189,10 @@ def createCategory(title):
 
 #  End of create functions...
 
-# write the log file.... 
-  
-    
-# and this now gets run when all above was setup....    
+# write the log file....
+
+
+# and this now gets run when all above was setup....
 # Open file
 f=file('/share1/Elog/ID_elog_data','w+')
 
@@ -235,13 +235,3 @@ f.close()
 #os.system('elog -h 164.54.162.133 -p 8081 -l 15-ID-D -a Author=SYSTEM -a Type=Routine -a Subject="System snapshot" -f /share1/Elog/ID_elog_data " "')
 
 os.system('elog -h s9elog.xray.aps.anl.gov -d elog -p 80 -l "9ID Operations" -u "usaxs" "mu8rubo!" -a "Author=USAXS" -a "Category=USAXS_operations" -a "Type=Configuration" -a "Subject=Instrument/PV Snapshot" -f /share1/Elog/ID_elog_data " "')
-
-
-
-########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
-########### SVN repository information ###################

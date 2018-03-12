@@ -6,7 +6,7 @@
 # Copyright (c) 2009 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # This file is distributed subject to a Software License Agreement found
-# in the file LICENSE that is included with this distribution. 
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
 
 '''
@@ -44,20 +44,12 @@ Provides these utility routines:
     receiver(value)
         Example response to an EPICS monitor on the channel
         @param value: str(epics_args['pv_value'])
-    
+
     MonitoredConnection(callback, pv = None)
         Connect to the EPICS PV and monitor it.
         Invoke the callback routine specified by the caller.
         Set the PV name to be reported in the user_args term of the callback
 
-@version: 
-########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
-########### SVN repository information ###################
 '''
 
 
@@ -84,22 +76,22 @@ except:
 
 class CaPollWx:
     '''Use in WX-based GUIs to call ca.poll() in the background
-        
-        Set up a separate thread to trigger periodic calls to the 
-        EPICS CaChannel.ca.poll() connection.  Awaiting (a.k.a., 
-        outstanding or pending) channel access background 
-        activity executes during the poll.  Calls pend_event() 
-        with a timeout short enough to poll.  
+
+        Set up a separate thread to trigger periodic calls to the
+        EPICS CaChannel.ca.poll() connection.  Awaiting (a.k.a.,
+        outstanding or pending) channel access background
+        activity executes during the poll.  Calls pend_event()
+        with a timeout short enough to poll.
 
         The default polling interval is 0.1 second.
-    
+
         @note: The code will silently do nothing if wx was not imported.
-        This routine use the wx.PyTimer() to call ca.poll() frequently 
+        This routine use the wx.PyTimer() to call ca.poll() frequently
         during the main WX event loop.
 
-        @warning: Only use this in a routine that has already called 
-        wx.App() or an exception will occur.  
-        Command line code will need to call ca.poll() using a different 
+        @warning: Only use this in a routine that has already called
+        wx.App() or an exception will occur.
+        Command line code will need to call ca.poll() using a different
         method (such as CaPoll() below).
     '''
 
@@ -186,9 +178,9 @@ class EpicsPv:
             self.chan = None
 
     def monitor(self):
-        '''Initiate a monitor on the EPICS channel, delivering the 
+        '''Initiate a monitor on the EPICS channel, delivering the
             CaChannel callback to the supplied function.
-            
+
             @note: Example:
                 ch = EpicsPv(test_pv)
                 ch.connectw()
@@ -196,7 +188,7 @@ class EpicsPv:
                 ch.SetUserArgs(uargs)
                 ch.SetUserCallback(myCallback)
                 ch.monitor()
-            
+
             @warning: At this time, there is not an easy way to turn off monitors.
                 Instead, ch.release() the channel (which will set self.chan = None),
                 To re-start a monitor after a ch.release(), connect as usual and start
@@ -206,7 +198,7 @@ class EpicsPv:
             type = CaChannel.ca.dbf_type_to_DBR_GR(self.chan.field_type())
             # call supplied callback routine with default argument list
             #       self.user_callback(epics_args, user_args)
-            self.chan.add_masked_array_event(type, 
+            self.chan.add_masked_array_event(type,
                 None, self.mask, self.callback, self.user_args)
 
     def MonitoredConnection(self, callback, pv = None):

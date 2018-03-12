@@ -11,14 +11,6 @@
 #*************************************************************************
 
 '''menuLauncher: Launch command-line statements from a wxPython menu
-
-########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
-########### SVN repository information ###################
 '''
 
 

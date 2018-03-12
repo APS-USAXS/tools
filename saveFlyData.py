@@ -21,13 +21,12 @@ import time
 from lxml import etree as lxml_etree
 
 # matches IOC for big arrays
-os.environ['EPICS_CA_MAX_ARRAY_BYTES'] = '1280000'    # was 200000000 
+os.environ['EPICS_CA_MAX_ARRAY_BYTES'] = '1280000'    # was 200000000
 
 import epics		        # PyEpics support
 from spec2nexus import eznx     # NeXus r/w support using h5py
 
 
-SVN_ID = '$Id$'
 XML_CONFIGURATION_FILE = 'saveFlyData.xml'
 XSD_SCHEMA_FILE = 'saveFlyData.xsd'
 
@@ -50,7 +49,7 @@ def getGroupObjectByXmlNode(xml_node):
 
 class Field_Specification(object):
     '''specification of the "field" element in the XML configuration file'''
-    
+
     def __init__(self, xml_element_node):
         self.xml_node = xml_element_node
         xml_parent_node = xml_element_node.getparent()
@@ -69,7 +68,7 @@ class Field_Specification(object):
             self.attrib[node.attrib['name']] = node.attrib['value']
 
         field_registry[self.hdf5_path] = self
-    
+
     def __str__(self):
         try:
             nm = self.hdf5_path
@@ -80,7 +79,7 @@ class Field_Specification(object):
 
 class Group_Specification(object):
     '''specification of the "group" element in the XML configuration file'''
-    
+
     def __init__(self, xml_element_node):
         self.hdf5_path = None
         self.xml_node = xml_element_node
@@ -91,7 +90,7 @@ class Group_Specification(object):
         self.attrib = {}
         for node in xml_element_node.xpath('attribute'):
             self.attrib[node.attrib['name']] = node.attrib['value']
-        
+
         xml_parent_node = xml_element_node.getparent()
         self.group_children = {}
         if xml_parent_node.tag == 'group':
@@ -111,14 +110,14 @@ class Group_Specification(object):
             msg = "Cannot create duplicate HDF5 path names: " + self.hdf5_path
             raise RuntimeError, msg
         group_registry[self.hdf5_path] = self
-    
+
     def __str__(self):
         return self.hdf5_path or 'Group_Specification object'
 
 
 class Link_Specification(object):
     '''specification of the "link" element in the XML configuration file'''
-    
+
     def __init__(self, xml_element_node):
         self.xml_node = xml_element_node
 
@@ -135,7 +134,7 @@ class Link_Specification(object):
         self.hdf5_path = self.group_parent.hdf5_path + '/' + self.name
 
         link_registry[self.hdf5_path] = self
-    
+
     def make_link(self, hdf_file_object):
         '''make this link in the HDF5 file'''
         source = self.source_hdf5_path      # source: existing HDF5 object
@@ -144,7 +143,7 @@ class Link_Specification(object):
         parent_obj = hdf_file_object[parent]
         source_obj = hdf_file_object[source]
         eznx.makeLink(parent_obj, source_obj, target)
-    
+
     def __str__(self):
         try:
             nm = self.label + ' <' + self.pvname + '>'
@@ -155,7 +154,7 @@ class Link_Specification(object):
 
 class PV_Specification(object):
     '''specification of the "PV" element in the XML configuration file'''
-    
+
     def __init__(self, xml_element_node):
         self.xml_node = xml_element_node
         self.label = xml_element_node.attrib['label']
@@ -170,7 +169,7 @@ class PV_Specification(object):
         self.attrib = {}
         for node in xml_element_node.xpath('attribute'):
             self.attrib[node.attrib['name']] = node.attrib['value']
-        
+
         # identify our parent
         xml_parent_node = xml_element_node.getparent()
         self.group_parent = getGroupObjectByXmlNode(xml_parent_node)
@@ -185,7 +184,7 @@ class PV_Specification(object):
         self.hdf5_path = self.group_parent.hdf5_path + '/' + self.label
         self.group_parent.group_children[self.hdf5_path] = self
         pv_registry[self.hdf5_path] = self
-    
+
     def __str__(self):
         try:
             nm = self.label + ' <' + self.pvname + '>'
@@ -203,7 +202,7 @@ class SaveFlyScan(object):
     scantime_pv = '9idcLAX:USAXS:FS_ScanTime'
     creator_version = 'unknown'
     flyScanNotSaved_pv = '9idcLAX:USAXS:FlyScanNotSaved'
-    
+
     def __init__(self, hdf5_file, config_file = None):
         self.hdf5_file_name = hdf5_file
         path = self._get_support_code_dir()
@@ -306,13 +305,13 @@ class SaveFlyScan(object):
                 print "RESOLUTION: writing as error message string"
                 ds = eznx.makeDataset(hdf5_parent, pv_spec.label, [str(e)])
                 #raise
-            
+
         # as the final step, make all the links as directed
         for _k, v in link_registry.items():
             v.make_link(f)
-        
+
         f.close()    # be CERTAIN to close the file
-    
+
     def _read_configuration(self):
         # first, validate configuration file against an XML Schema
         path = self._get_support_code_dir()
@@ -330,43 +329,43 @@ class SaveFlyScan(object):
         root = config.getroot()
         if root.tag != "saveFlyData":
             raise RuntimeError, "XML file not valid for configuring saveFlyData"
-        
+
         self.creator_version = root.attrib['version']
-        
+
         node = root.xpath('/saveFlyData/triggerPV')[0]
         self.trigger_pv = node.attrib['pvname']
         acceptable_values = (int(node.attrib['done_value']), node.attrib['done_text'])
         self.trigger_accepted_values = acceptable_values
-        
+
         node = root.xpath('/saveFlyData/timeoutPV')[0]
         self.timeout_pv = node.attrib['pvname']
-        
+
         # initial default value set in this code
         # pull default poll_interval_s from XML Schema (XSD) file
         xsd_root = xmlschema_doc.getroot()
         xsd_node = xsd_root.xpath("//xs:attribute[@name='poll_time_s']", # name="poll_time_s"
                               namespaces={'xs': 'http://www.w3.org/2001/XMLSchema'})
-        
+
         # allow XML configuration to override trigger_poll_interval_s
         default_value = float(xsd_node[0].get('default', self.trigger_poll_interval_s))
         self.trigger_poll_interval_s = node.get('poll_time_s', default_value)
-        
+
         nx_structure = root.xpath('/saveFlyData/NX_structure')[0]
         for node in nx_structure.xpath('//group'):
             Group_Specification(node)
-        
+
         for node in nx_structure.xpath('//field'):
             Field_Specification(node)
-        
+
         for node in nx_structure.xpath('//PV'):
             PV_Specification(node)
-        
+
         for node in nx_structure.xpath('//link'):
             Link_Specification(node)
-    
+
     def _get_support_code_dir(self):
         return os.path.split(os.path.abspath(__file__))[0]
-  
+
     def _prepare_to_acquire(self):
         '''connect to EPICS and create the HDF5 file and structure'''
         # connect to EPICS PVs
@@ -383,7 +382,6 @@ class SaveFlyScan(object):
                   creator = __file__,
                   creator_version = self.creator_version,
                   creator_config_file=self.config_file,
-                  svn_id = SVN_ID,
                   HDF5_Version = h5py.version.hdf5_version,
                   h5py_version = h5py.version.version,
                 )
@@ -401,7 +399,7 @@ class SaveFlyScan(object):
         '''attach common attributes from EPICS to the HDF5 tree node'''
         pvname = os.path.splitext(pv.pvname)[0]
         desc = epics.caget(pvname+'.DESC') or ''
-        eznx.addAttributes(node, 
+        eznx.addAttributes(node,
           epics_pv = pv.pvname,
           units = pv.units or '',
           epics_type = pv.type,
@@ -410,17 +408,17 @@ class SaveFlyScan(object):
 
 
 def get_CLI_options():
-    import argparse    
+    import argparse
     parser = argparse.ArgumentParser(description=__doc__)
 
-    parser.add_argument('data_file', 
-                    action='store', 
+    parser.add_argument('data_file',
+                    action='store',
                     help="/path/to/new/hdf5/data/file")
 
-    parser.add_argument('xml_config_file', 
-                    action='store', 
+    parser.add_argument('xml_config_file',
+                    action='store',
                     help="XML configuration file")
-    
+
     return parser.parse_args()
 
 
@@ -431,7 +429,7 @@ def main():
     if len(path) > 0 and not os.path.exists(path):
         msg = 'directory for that file does not exist: ' + dataFile
         raise RuntimeError, msg
-    
+
     if os.path.exists(dataFile):
         msg = 'file exists: ' + dataFile
         raise RuntimeError, msg
@@ -440,7 +438,7 @@ def main():
     if not os.path.exists(configFile):
         msg = 'config file not found: ' + configFile
         raise RuntimeError, msg
-    
+
     sfs = SaveFlyScan(dataFile, configFile)
     try:
         sfs.waitForData()
@@ -458,14 +456,6 @@ if __name__ == '__main__':
     main()	# production system
     # developer()
 
-
-########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
-########### SVN repository information ###################
 
 '''
 cd /home/beams/USAXS/Documents/eclipse/USAXS/tools

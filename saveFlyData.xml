@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 
-<!-- 
+<!--
 
 You MUST set EPICS_CA_MAX_ARRAY_BYTES to >= 1280000 to read the maximum
 number of data points the MCS can be told to acquire (9idcLAX:3820:MaxChannels).
@@ -14,13 +14,13 @@ Additionally, you can check this file for validity and that all PVs exist with t
   /APSshare/anaconda/x86_64/bin/python check_saveFlyData.py
 
  -->
- 
- 
+
+
 <saveFlyData version="1.2">
-	<triggerPV pvname="9idcLAX:USAXSfly:Start" 
+	<triggerPV pvname="9idcLAX:USAXSfly:Start"
 		start_value="1"
-		start_text="Busy" 
-		done_value="0" 
+		start_text="Busy"
+		done_value="0"
 		done_text="Done" />
 	<timeoutPV pvname="9idcLAX:USAXS:FS_timeout" units="s" />
 
@@ -153,16 +153,16 @@ Additionally, you can check this file for validity and that all PVs exist with t
 						<attribute name="signal" value="1" />
 						<attribute name="units" value="pulses" />
 						<!-- <attribute name="axes" value="AR" /> -->
-						<!-- The proper ordinate is obtained via the MAC channel index: 
-							AR[i] = AR_start + AR_increment * i 
-							
-							Can the AR array be made available in EPICS? 
+						<!-- The proper ordinate is obtained via the MAC channel index:
+							AR[i] = AR_start + AR_increment * i
+
+							Can the AR array be made available in EPICS?
 						-->
 						<attribute name="USAXS_name" value="upd" />
 					</PV>
 
 					<!-- 2014-02-28, PRJ
-					    The following PVs record amplifier gain changes 
+					    The following PVs record amplifier gain changes
 						and the corresponding MCS channel number at which the change occurred
 						for each of four detector amplifiers.  (Two monitors and two UPD amplifiers)
 						Choice of the UPD amplifier in use is found in: 9idcUSX:femto:model
@@ -175,7 +175,7 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="upd_flyScan_amplifier_ZNAM"    pvname="9idcUSX:femto:model.ZNAM" />
 					<PV label="upd_flyScan_amplifier_ONAM"    pvname="9idcUSX:femto:model.ONAM" />
 
-                                        <!-- these record when the amplifiers have changed gain during the fly scan -->					
+                                        <!-- these record when the amplifiers have changed gain during the fly scan -->
                                         <PV label="changes_I0_mcsChan"       pvname="9idcLAX:USAXSfly:I0:mcsChan" acquire_after_scan="true" />
 					<PV label="changes_I0_ampGain"       pvname="9idcLAX:USAXSfly:I0:ampGain" acquire_after_scan="true" />
 					<PV label="changes_I0_ampReqGain"    pvname="9idcLAX:USAXSfly:I0:ampReqGain" acquire_after_scan="true" />
@@ -201,10 +201,10 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="dyMaxSpeed" pvname="9idcLAX:USAXSfly:dyMaxSpeed" />
 					<PV label="ayMaxSpeed" pvname="9idcLAX:USAXSfly:ayMaxSpeed" />
 					<PV label="arMaxSpeed" pvname="9idcLAX:USAXSfly:arMaxSpeed" />
-					<!-- do not save these three PVs, they are not quite the same as the three above 
-						<PV label="FS_AyMaxSpeed" pvname="9idcLAX:USAXS:FS_AyMaxSpeed" /> 
-						<PV label="FS_DyMaxSpeed" pvname="9idcLAX:USAXS:FS_DyMaxSpeed" /> 
-						<PV label="FS_ArMaxSpeed" pvname="9idcLAX:USAXS:FS_ArMaxSpeed" /> 
+					<!-- do not save these three PVs, they are not quite the same as the three above
+						<PV label="FS_AyMaxSpeed" pvname="9idcLAX:USAXS:FS_AyMaxSpeed" />
+						<PV label="FS_DyMaxSpeed" pvname="9idcLAX:USAXS:FS_DyMaxSpeed" />
+						<PV label="FS_ArMaxSpeed" pvname="9idcLAX:USAXS:FS_ArMaxSpeed" />
 					-->
 					<PV label="FS_ElapsedTime" pvname="9idcLAX:USAXS:FS_ElapsedTime" acquire_after_scan="true" />
 
@@ -407,7 +407,7 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="DDPCA300_gain4" pvname="9idcUSX:pd01:seq02:gain4" />
 					<PV label="DDPCA300_bkg4" pvname="9idcUSX:pd01:seq02:bkg4" />
 					<PV label="DDPCA300_bkgErr4" pvname="9idcUSX:pd01:seq02:bkgErr4" />
-					
+
 					<!-- photodiode amplifier range-changing setpoints -->
 					<PV label="upd_gainU" pvname="9idcUSX:pd01:seq02:gainU" />
 					<PV label="upd_gainD" pvname="9idcUSX:pd01:seq02:gainD" />
@@ -510,15 +510,3 @@ Additionally, you can check this file for validity and that all PVs exist with t
 		</group>	     <!-- file -->
 	</NX_structure>
 </saveFlyData>
-
-
-
-<!--
-########### SVN repository information ###################
-# $Date$
-# $Author$
-# $Revision$
-# $URL$
-# $Id$
-########### SVN repository information ###################
--->

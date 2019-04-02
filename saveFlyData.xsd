@@ -119,6 +119,7 @@
       <xs:attribute name="pvname" use="required" type="xs:NMTOKEN"/>
       <xs:attribute name="length_limit" use="optional" type="xs:NCName"/>
       <xs:attribute name="acquire_after_scan" use="optional" default="false" type="xs:boolean"/>
+      <xs:attribute name="string" use="optional" default="false" type="xs:boolean"/>
       <xs:anyAttribute processContents="skip"/>
     </xs:complexType>
   </xs:element>

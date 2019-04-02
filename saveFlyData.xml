@@ -40,7 +40,7 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<attribute name="config_version" value="1.2" />
 					<text>saveFlyData.py</text>
 				</field>
-				<PV label="title" pvname="9idcLAX:USAXS:sampleTitle" />
+				<PV label="title" pvname="9idcLAX:USAXS:sampleTitle" string="true" />
 				<PV label="experiment_identifier" pvname="9idcLAX:GUPNumber" />
 				<PV label="run_cycle" pvname="9idcLAX:RunCycle" />
 
@@ -71,7 +71,7 @@ Additionally, you can check this file for validity and that all PVs exist with t
 
 				<group name="sample" class="NXsample">
 					<attribute name="canSAS_class" value="SASsample" />
-					<PV label="name" pvname="9idcLAX:USAXS:sampleTitle" />
+					<PV label="name" pvname="9idcLAX:USAXS:sampleTitle" string="true" />
 					<PV label="thickness" pvname="9idcLAX:USAXS:SampleThickness" />
 				</group>
 
@@ -257,13 +257,13 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="mir_slitt" pvname="9ida:m26.RBV" />
 
 					<!-- SPEC -->
-					<PV label="SPEC_macro_file_string19" pvname="9idcLAX:string19" />
-					<PV label="SPEC_macro_file" pvname="9idcLAX:USAXS:macroFile" />
-					<PV label="SPEC_data_file" pvname="9idcLAX:USAXS:specFile" />
-					<PV label="SPEC_data_dir" pvname="9idcLAX:USAXS:userDir" />
-					<PV label="spec_scan" pvname="9idcLAX:USAXS:specScan" />
-					<PV label="state" pvname="9idcLAX:USAXS:state" />
-					<PV label="timeStamp" pvname="9idcLAX:USAXS:timeStamp" />
+					<PV label="SPEC_macro_file_string19" pvname="9idcLAX:string19" string="true" />
+					<PV label="SPEC_macro_file" pvname="9idcLAX:USAXS:macroFile" string="true" />
+					<PV label="SPEC_data_file" pvname="9idcLAX:USAXS:specFile" string="true" />
+					<PV label="SPEC_data_dir" pvname="9idcLAX:USAXS:userDir" string="true" />
+					<PV label="spec_scan" pvname="9idcLAX:USAXS:specScan" string="true" />
+					<PV label="state" pvname="9idcLAX:USAXS:state" string="true" />
+					<PV label="timeStamp" pvname="9idcLAX:USAXS:timeStamp" string="true" />
 
 					<!-- USAXS terms -->
 					<PV label="analyzer_distance" pvname="9idcLAX:USAXS:SAD" />
@@ -488,21 +488,45 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="diode_dx" pvname="9idcLAX:USAXS:Diode_dx" />
 					<PV label="diode_dy" pvname="9idcLAX:USAXS:Diode_dy" />
 
-					<!-- Linkam -->
-					<PV label="linkam_errors" pvname="9idcLAX:ci94:errorByte" />
-					<PV label="linkam_limit" pvname="9idcLAX:ci94:setLimit" />
-					<PV label="linkam_rate" pvname="9idcLAX:ci94:setRate" />
-					<PV label="linkam_status" pvname="9idcLAX:ci94:status" />
-					<PV label="linkam_temp1" pvname="9idcLAX:ci94:temp" />
-					<PV label="linkam_temp2" pvname="9idcLAX:ci94:temp2" />
+                    <!-- Linkam ci94 -->
+                    <PV label="linkam_ci94_temp1"	pvname="9idcLAX:ci94:temp" />
+                    <PV label="linkam_ci94_temp2"	pvname="9idcLAX:ci94:temp2" />
+                    <PV label="linkam_ci94_errors"	pvname="9idcLAX:ci94:errorByte" />
+                    <PV label="linkam_ci94_limit"	pvname="9idcLAX:ci94:setLimit" />
+                    <PV label="linkam_ci94_rate"	pvname="9idcLAX:ci94:setRate" />
+                    <PV label="linkam_ci94_status"	pvname="9idcLAX:ci94:status" />
+
+                    <!-- Linkam T96 -->
+                    <PV label="linkam_T96_temp" 		pvname="9idcLINKAM:tc1:temperature_RBV" />
+                    <PV label="linkam_T96_status"		pvname="9idcLINKAM:tc1:heating" />
+                    <PV label="linkam_T96_rate" 		pvname="9idcLINKAM:tc1:rampRate_RBV" />
+                    <PV label="linkam_T96_limit"		pvname="9idcLINKAM:tc1:rampLimit_RBV" />
+                    <PV label="linkam_T96_errors"		pvname="9idcLINKAM:tc1:statusError_RBV" />
+                    <PV label="linkam_T96_ln2Status" 	pvname="9idcLINKAM:tc1:lnpStatus_RBV" />
+                    <PV label="linkam_T96_pressure"		pvname="9idcLINKAM:tc1:vacuumLimit_RBV" />
+                    <PV label="linkam_T96_vacuumStatus"	pvname="9idcLINKAM:tc1:vacuumStatus_RBV" />
 
 					<!-- Temperatures  -->
-					<PV label="Hutch_Temperature_C" pvname="9idcLAX:adam1:rtd0" />
-					<PV label="RTD1_Temperature_C" pvname="9idcLAX:adam1:rtd1" />
-					<PV label="RTD2_Temperature_C" pvname="9idcLAX:adam1:rtd2" />
-					<PV label="RTD3_Temperature_C" pvname="9idcLAX:adam1:rtd3" />
-					<PV label="RTD4_Temperature_C" pvname="9idcLAX:adam1:rtd4" />
-					<PV label="RTD5_Temperature_C" pvname="9idcLAX:adam1:rtd5" />
+					<PV label="Hutch_Temperature_C"		pvname="9idcLAX:adam1:rtd0" />
+					<PV label="RTD1_Temperature_C"		pvname="9idcLAX:adam1:rtd1" />
+					<PV label="RTD2_Temperature_C"		pvname="9idcLAX:adam1:rtd2" />
+					<PV label="RTD3_Temperature_C"		pvname="9idcLAX:adam1:rtd3" />
+					<PV label="RTD4_Temperature_C"		pvname="9idcLAX:adam1:rtd4" />
+					<PV label="RTD5_Temperature_C"		pvname="9idcLAX:adam1:rtd5" />
+
+					<!-- Beamtime Scheduling System experiment info  -->
+					<PV label="BSS_activity" 		pvname="9id_bss:activity" string="true" />
+					<PV label="BSS_badge" 			pvname="9id_bss:badge" string="true" />
+					<PV label="BSS_bss_name" 		pvname="9id_bss:bss_name" string="true" />
+					<PV label="BSS_contact" 		pvname="9id_bss:contact" string="true" />
+					<PV label="BSS_email" 			pvname="9id_bss:email" string="true" />
+					<PV label="BSS_institution" 	pvname="9id_bss:institution" string="true" />
+					<PV label="BSS_station" 		pvname="9id_bss:station" string="true" />
+					<PV label="BSS_team_others" 	pvname="9id_bss:team_others" string="true" />
+					<PV label="BSS_time_begin" 		pvname="9id_bss:time_begin" string="true" />
+					<PV label="BSS_time_end" 		pvname="9id_bss:time_end" string="true" />
+					<PV label="BSS_timestamp" 		pvname="9id_bss:timestamp" string="true" />
+					<PV label="BSS_title" 			pvname="9id_bss:title" string="true" />
 
 				</group> 	<!-- entry:NXentry/metadata:NXcollection -->
 

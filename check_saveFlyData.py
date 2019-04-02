@@ -26,9 +26,14 @@ print '\n'*2
 not_connected = []
 for i, pv_node in enumerate(config.xpath('//PV')):
     pvname = pv_node.attrib['pvname'].strip()
+    as_string = pv_node.attrib.get('string', "false").lower() in ('t', 'true')
     pv = epics.PV(pvname, verbose=False)    # control the output
     if pv.wait_for_connection():
-        print i, pvname, pv.get()
+        if as_string:
+            v = pv.get(as_string=True)
+        else:
+            v = pv.get()
+        print i, pvname, v
     else:
         print i, pvname, '!!!!!!!!! Could not connect'
         not_connected.append(pvname)

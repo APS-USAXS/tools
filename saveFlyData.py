@@ -162,6 +162,7 @@ class PV_Specification(object):
             msg = "Cannot use PV label more than once: " + self.label
             raise RuntimeError, msg
         self.pvname = xml_element_node.attrib['pvname']
+        self.as_string = xml_element_node.attrib.get('string', "false").lower() in ('t', 'true')
         self.pv = None
         aas = xml_element_node.attrib.get('acquire_after_scan', 'false')
         self.acquire_after_scan = aas.lower() in ('t', 'true')
@@ -248,7 +249,10 @@ class SaveFlyScan(object):
         for pv_spec in pv_registry.values():
             if pv_spec.acquire_after_scan:
                 continue
-            value = pv_spec.pv.get()
+            if pv_spec.as_string:
+                value = pv_spec.pv.get(as_string=True)
+            else:
+                value = pv_spec.pv.get()
             if value is [None]:
                 value = 'no data'
             if not isinstance(value, numpy.ndarray):
@@ -283,7 +287,10 @@ class SaveFlyScan(object):
         for pv_spec in pv_registry.values():
             if not pv_spec.acquire_after_scan:
                 continue
-            value = pv_spec.pv.get()
+            if pv_spec.as_string:
+                value = pv_spec.pv.get(as_string=True)
+            else:
+                value = pv_spec.pv.get()
             if value is [None]:
                 value = 'no data'
             if not isinstance(value, numpy.ndarray):

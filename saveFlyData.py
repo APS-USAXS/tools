@@ -72,7 +72,7 @@ class Field_Specification(object):
     def __str__(self):
         try:
             nm = self.hdf5_path
-        except:
+        except Exception:
             nm = 'Field_Specification object'
         return nm
 
@@ -147,7 +147,7 @@ class Link_Specification(object):
     def __str__(self):
         try:
             nm = self.label + ' <' + self.pvname + '>'
-        except:
+        except Exception:
             nm = 'Link_Specification object'
         return nm
 
@@ -189,7 +189,7 @@ class PV_Specification(object):
     def __str__(self):
         try:
             nm = self.label + ' <' + self.pvname + '>'
-        except:
+        except Exception:
             nm = 'PV_Specification object'
         return nm
 
@@ -272,7 +272,7 @@ class SaveFlyScan(object):
                 print "ERROR: ", pv_spec.label, value
                 print "MESSAGE: ", e
                 print "RESOLUTION: writing as error message string"
-                ds = eznx.makeDataset(hdf5_parent, pv_spec.label, [str(e)])
+                eznx.makeDataset(hdf5_parent, pv_spec.label, [str(e)])
                 #raise
 
     def saveFile(self):
@@ -310,7 +310,7 @@ class SaveFlyScan(object):
                 print "ERROR: ", pv_spec.label, value
                 print "MESSAGE: ", e
                 print "RESOLUTION: writing as error message string"
-                ds = eznx.makeDataset(hdf5_parent, pv_spec.label, [str(e)])
+                eznx.makeDataset(hdf5_parent, pv_spec.label, [str(e)])
                 #raise
 
         # as the final step, make all the links as directed

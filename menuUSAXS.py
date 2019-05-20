@@ -17,7 +17,6 @@
 import wx
 import subprocess
 import os
-import pprint
 
 
 MENU_ITEMS = (
@@ -65,7 +64,7 @@ class Frame1(wx.Frame):
     def __init__(self, parent,
             label="Command-line tools ...",
             contents=None):
-        if contents == None:
+        if contents is None:
             contents = (
                 ("Here's looking at you, kid!", "xeyes"),
                 ("separator", None),
@@ -74,7 +73,7 @@ class Frame1(wx.Frame):
             )
         self._init_ctrls(parent)
         self.registry = {}
-	self.SetTitle(label)
+        self.SetTitle(label)
         b = self.button1
         b.SetLabel(label)
         b.SetBackgroundColour("bisque")
@@ -84,7 +83,7 @@ class Frame1(wx.Frame):
         self.popupmenu = wx.Menu()
         for entry in contents:
             #pprint.pprint(entry)
-	    text, command = entry
+            text, command = entry
             if text == "separator":
                 self.appendSeparator(self.popupmenu)
             else:

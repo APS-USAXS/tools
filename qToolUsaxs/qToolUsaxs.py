@@ -37,12 +37,12 @@ USER_HOME_DIR = os.getenv('USERPROFILE') or os.getenv('HOME') # windows or Linux
 DEFAULT_CONFIG_FILE = os.path.join(USER_HOME_DIR, '.qToolUsaxsrc')
 
 STOP_BUTTON_STYLES = '''
-    QPushButton { 
+    QPushButton {
         background-color: #f44;
         color: black;
         text-align: center;
     }
-    QPushButton:hover { 
+    QPushButton:hover {
         background-color: #f11;
         color: yellow;
         font: bold;
@@ -67,7 +67,7 @@ CALC_ALL_DELAY_MS = 250
 
 
 class Motor(object):
-    
+
     pv = None
     pvname = None
     w_RBV = None
@@ -78,15 +78,15 @@ class Motor(object):
         if pvname is not None:
             self.pvname = pvname
             self.pv = epics.Motor(pvname)
-    
+
     def move(self, value):
         if self.pv is not None:
             self.pv.move(value)
-    
+
     def stop(self):
         if self.pvname is not None:
             self.pv.stop()
-    
+
     def inLimits(self, value):
         return self.pv is not None and self.pv.within_limits(value)
 
@@ -98,7 +98,7 @@ class USAXS_Q_tool(object):
         self.motors = {}
         for motor in MOTOR_SYMBOLS:
             self.motors[motor] = Motor()
-        
+
         self.ui = None
         self.rcfile_name = config_file or DEFAULT_CONFIG_FILE
         self.rcfile = None
@@ -115,13 +115,13 @@ class USAXS_Q_tool(object):
         self._init_epics_controls_()
         self._init_actions_()
         self.connect_to_EPICS()
-        
+
         self.ui.w_AY0_user.setText(self.rcfile.param.get('AY0', 0))
         self.ui.w_DY0_user.setText(self.rcfile.param.get('DY0', 0))
-        
+
         self.rebuildModelView()
         #QtCore.QTimer.singleShot(CALC_ALL_DELAY_MS, self.table.calc_all)
-    
+
     def _init_actions_(self):
         '''connect buttons with handlers'''
         self.ui.actionAbout.triggered.connect(self.doAbout)
@@ -132,11 +132,11 @@ class USAXS_Q_tool(object):
 
         self.ui.pb_stop.clicked.connect(self.doStop)
         self.ui.pb_stop.setStyleSheet(STOP_BUTTON_STYLES)
-    
+
     def _init_epics_controls_(self):
         '''install EPICS motor controls'''
         layout = self.ui.layout_motors
-        
+
         def build_motor_widgets(motor, column):
             w = bcdaqwidgets.RBV_BcdaQLabel()
             layout.addWidget(w, 1, column)
@@ -145,10 +145,10 @@ class USAXS_Q_tool(object):
             w = bcdaqwidgets.BcdaQLineEdit()
             layout.addWidget(w, 2, column)
             self.motors[motor].w_VAL = w
-        
+
         for col, motor in enumerate(MOTOR_SYMBOLS):
             build_motor_widgets(motor, col+1)
-    
+
     def connect_to_EPICS(self):
         for motor in MOTOR_SYMBOLS:
             obj = self.motors[motor]
@@ -156,15 +156,15 @@ class USAXS_Q_tool(object):
             obj.connect(pvname)
             obj.w_RBV.ca_connect(pvname+'.RBV')
             obj.w_VAL.ca_connect(pvname+'.VAL')
-        
+
         for key, pv in self.rcfile.pvmap.items():
             self.user_pv[key] = epics.PV(pv, callback=self.doRecalculate)
             self.user_pv_signal[key] = SignalDef()
-    
+
     def _replace_standard_controls_(self):
         '''replace standard controls with EPICS controls'''
         layout = self.ui.layout_user_parameters
-        
+
         def revise(widget, key, kind=None):
             kind = kind or bcdaqwidgets.BcdaQLabel
             row, _role = layout.getWidgetPosition(widget)
@@ -188,7 +188,7 @@ class USAXS_Q_tool(object):
         # these are the parents
         gb = self.ui.groupBox_tableView
         layout = self.ui.gridLayout_tableview
-        
+
         # dispose the standard widget
         self.ui.tableView.deleteLater()
 
@@ -198,7 +198,7 @@ class USAXS_Q_tool(object):
         self.ui.tableView.setModel(self.table)
         self.table.setView(self.ui.tableView)
         self.table.setMotors(self.motors)
-        
+
         # a touch of configuration
         layout.setColumnStretch(0, 1)
         layout.addWidget(self.ui.tableView)
@@ -221,19 +221,19 @@ class USAXS_Q_tool(object):
         about = uic.loadUi(ABOUT_UI_FILE)
         about.icon.setPixmap(QtGui.QPixmap(LOGO_FILE))
         about.copyright.setText(__copyright__)
-        
+
         pb = QtGui.QPushButton(__url__, clicked=self.doUrl)
         about.verticalLayout_main.addWidget(pb)
 
         # feed the status message
         msg = 'About: '
-        msg += __project_name__ 
+        msg += __project_name__
         msg += ', v' + __version__
         msg += ', PID=' + str(os.getpid())
         self.setStatus(msg)
         about.show()
         about.exec_()
-    
+
     def doUrl(self):
         service = QtGui.QDesktopServices()
         url = QtCore.QUrl(__url__)
@@ -243,13 +243,13 @@ class USAXS_Q_tool(object):
         '''orderly exit'''
         self.setStatus('application exit requested')
         self.ui.close()
-    
+
     def doStop(self, *args, **kw):
         '''stop all EPICS motors'''
         self.setStatus('STOP all motors requested')
         for motor in MOTOR_SYMBOLS:
             self.motors[motor].stop()
-    
+
     def doShowConfigFileName(self, *args, **kw):
         '''display the config file name in the status text'''
         self.setStatus('config file: ' + self.rcfile_name)
@@ -268,7 +268,7 @@ class USAXS_Q_tool(object):
         self.rcfile.fromDataModel(self.table.model)
 
         self.rcfile.rc_write(self.rcfile_name)
-    
+
     def doMove(self, motor, text_value, *args, **kw):
         '''move the motor'''
         # validate first
@@ -276,7 +276,7 @@ class USAXS_Q_tool(object):
         if motor not in MOTOR_SYMBOLS: return
         value, ok = text_value.toDouble()
         if not ok: return
-        
+
         self.setStatus('moving ' + motor + ' motor to ' + str(value))
         self.motors[motor].move(value)
 
@@ -289,10 +289,10 @@ class USAXS_Q_tool(object):
     def recalculate(self, Q, *args, **kw):
         '''recompute all terms'''
         self.setStatus('recalculating ...')
-        
+
         try:   # get initial parameters from the GUI
             A_keV = 12.3984244 # Angstrom * keV
-            ar = self.motors['ar'].pv.RBV
+            # ar = self.motors['ar'].pv.RBV
             ar0 = float(self.ui.w_ARenc0.text())
             #arEnc = float(self.ui.w_ARenc.text())
             sad = float(self.ui.w_SAD.text())
@@ -301,9 +301,9 @@ class USAXS_Q_tool(object):
             dy0 = float(self.ui.w_DY0_user.text())
             energy = float(self.ui.w_energy.text())
             lambda_over_4pi = A_keV / (energy * 4 * math.pi)
-        except AttributeError, exc:
+        except AttributeError as exc:
             pass
-        except Exception, exc:
+        except Exception as exc:
             self.setStatus('recalc exception 1: ' + str(exc))
             return None
 
@@ -312,7 +312,7 @@ class USAXS_Q_tool(object):
             ar = ar0 + 2*math.degrees(math.asin( x ))
             dy = dy0 + sdd * math.tan( x )
             ay = ay0 + sad * math.tan( x )
-        except Exception, exc:
+        except Exception as exc:
             self.setStatus('recalc exception 2: ' + str(exc))
             return None
 

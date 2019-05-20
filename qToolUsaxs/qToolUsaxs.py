@@ -312,7 +312,7 @@ class USAXS_Q_tool(object):
             ar = ar0 + 2*math.degrees(math.asin( x ))
             dy = dy0 + sdd * math.tan( x )
             ay = ay0 + sad * math.tan( x )
-        except Exception, exc:
+        except Exception as exc:
             self.setStatus('recalc exception 2: ' + str(exc))
             return None
 

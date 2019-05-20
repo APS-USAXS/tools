@@ -53,7 +53,6 @@ Provides these utility routines:
 '''
 
 
-import sys
 import time
 
 
@@ -61,7 +60,7 @@ try:
     # CaChannel provides access to the EPICS PVs
     import CaChannel
     IMPORTED_CACHANNEL = True
-except:
+except Exception:
     IMPORTED_CACHANNEL = False
 
 
@@ -70,7 +69,7 @@ try:
     # only use this with a wx-based GUI
     import wx
     IMPORTED_WX = True
-except:
+except Exception:
     IMPORTED_WX = False
 
 
@@ -207,7 +206,7 @@ class EpicsPv:
         Invoke the callback routine specified by the caller.
         Set the PV name to be reported in the user_args term of the callback
         '''
-        if pv == None:
+        if pv is None:
             pv = self.pv
         self.connectw()
         self.SetUserCallback(callback)
@@ -226,7 +225,7 @@ class EpicsPv:
     def SetPv(self, name):
         '''redefine the PV name only if there is no connection
             @param name: valid EPICS PV name'''
-        if self.chan == None:
+        if self.chan is None:
             self.pv = name
 
     def GetChan(self):
@@ -280,7 +279,7 @@ def on_exit(timer = None):
     try:        # fail no matter what
         if timer != None:
             timer.stop()
-    except:
+    except Exception:
         pass
 
 
@@ -321,7 +320,7 @@ def testConnect(pv):
         #print 'testConnect:', type(pv), pv
         chan = CaChannel.CaChannel()
         chan.searchw(str(pv))
-        val = chan.getw()
+        # val = chan.getw()
         del chan
         result = True
     except (TypeError, CaChannel.CaChannelException), status:

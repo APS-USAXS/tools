@@ -147,7 +147,7 @@ def writeLines(list):
         s1 = getpv1.char_value
         s2 = getpv2.char_value
         space1 = size2 - len(list[i][2])+1
-    space2 = size2 - len(str(caget(list[i][0])))-10
+        space2 = size2 - len(str(caget(list[i][0])))-10
         line = list[i][2]+space1*' '+str(s1) + space2*' ' + str(s2)
         return line
 
@@ -165,13 +165,13 @@ def writeLines(list):
             f.write(line + spaces)
     """
     for i in range(len(list)):
-    line = createLine(i)
+        line = createLine(i)
         f.write(line + '\n')
 
 #Check whether even or odd
 def numCheck(list):
     if len(list)%2 == 0:
-    writeLines(list)
+        writeLines(list)
     else:
         writeLines(list)
         f.write('\n')

@@ -213,35 +213,15 @@ class SaveFlyScan(object):
 
     def waitForData(self):
         '''wait until the data is ready, then save it'''
-        def keep_waiting():
-            triggered = self.trigger.get() in self.trigger_accepted_values
-            #time_remains = quitting_time >= datetime.datetime.now()
-            #if not time_remains:
-            #    raise TimeoutException
-            return not triggered
         self.trigger = epics.PV(self.trigger_pv)
-        #timeout_s = max(0, epics.caget(self.scantime_pv))
-        #quitting_time = datetime.datetime.now() + datetime.timedelta(seconds=(timeout_s+70))
         epics.caput(self.flyScanNotSaved_pv, 1)
-        #!# measure amount of time spent in next step and write to a PV
-        #!t0 = time.time()
+
         self.preliminaryWriteFile()        # file is already open, write preliminary data
-        #!t1 = time.time()
-        #!epics.caput('9idcLAX:float15.DESC', 'preliminaryWriteFile()')
-        #!epics.caput('9idcLAX:float15', t1 - t0)
-        #!# measure amount of time spent in next step and write to a PV
-        #!t0 = time.time()
-        while keep_waiting():
+
+        while self.trigger.get() not in self.trigger_accepted_values:
             time.sleep(self.trigger_poll_interval_s)
-        #!t1 = time.time()
-        #!epics.caput('9idcLAX:float16.DESC', 'keep_waiting()')
-        #!epics.caput('9idcLAX:float16', t1 - t0)
-        #!# measure amount of time spent in next step and write to a PV
-        #!t0 = time.time()
+
         self.saveFile()                    # write the remaining data and close the file
-        #!t1 = time.time()
-        #!epics.caput('9idcLAX:float17.DESC', 'saveFile()')
-        #!epics.caput('9idcLAX:float17', t1 - t0)
         epics.caput(self.flyScanNotSaved_pv, 0)
 
     def preliminaryWriteFile(self):

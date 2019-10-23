@@ -249,8 +249,6 @@ class SaveFlyScan(object):
             msg = "Waited %.2f s for MCA data to be read" % elapsed
             print(msg)
 
-
-
         self.saveFile()                    # write the remaining data and close the file
         epics.caput(self.flyScanNotSaved_pv, 0)
 

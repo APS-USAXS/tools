@@ -240,7 +240,7 @@ class SaveFlyScan(object):
                 t_now = time.time() - t0
                 emsg = "Waited %.2f s" % t_now
                 emsg += " for at least %d channels from every MCA" % acceptable_count
-                emsg += " received only %s for mca1, 2, and 3" % str([pv.count for pv in pv_s])
+                emsg += " received only %s for [mca1, mca2, mca3]" % str([pv.count for pv in pv_s])
                 raise TimeoutException(emsg)
             time.sleep(self.mca_data_wait_interval_s)
 

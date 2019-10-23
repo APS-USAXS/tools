@@ -200,6 +200,8 @@ class SaveFlyScan(object):
     trigger_pv = '9idcLAX:USAXSfly:Start'
     trigger_accepted_values = (0, 'Done')
     trigger_poll_interval_s = 0.1
+    mca_data_wait_interval_s = 0.01
+    mca_data_wait_timeout_s = 10.0
     scantime_pv = '9idcLAX:USAXS:FS_ScanTime'
     creator_version = 'unknown'
     flyScanNotSaved_pv = '9idcLAX:USAXS:FlyScanNotSaved'
@@ -220,6 +222,27 @@ class SaveFlyScan(object):
 
         while self.trigger.get() not in self.trigger_accepted_values:
             time.sleep(self.trigger_poll_interval_s)
+        
+        # check that all MCA arrays are filled. mca3 particularly (also mca1 & mca2)
+        # .NORD (count) is number of elements read into the array
+        # .NELM (nelm) is the (maximum) number of elements in the array
+        # pv_registry['/entry/flyScan/mca3'].pv.count
+        current_channel = pv_registry['/entry/flyScan/mca_channels'].pv.value
+        acceptable_fraction = 0.5
+        # choice of acceptable_fraction is somewhat arbitrary
+        # allows for some channel advances to be missed
+        acceptable_count = int(current_channel * acceptable_fraction)
+        pv_s = [pv_registry['/entry/flyScan/'+s].pv for s in "mca1 mca2 mca3".split()]
+        t0 = time.time()
+        t_end = t0 + mca_data_wait_timeout_s
+        while min([pv.count for pv in pv_s]) < acceptable_count:
+            if time.time() > t_end:
+                t_now = time.time() - t0
+                emsg = "Waited %.2f s" % t_now
+                emsg += " for at least %d channels from every MCA" % acceptable_count
+                emsg += " received only %s for mca1, 2, and 3" % str([pv.count for pv in pv_s])
+                raise TimeoutException(emsg)
+            time.sleep(self.mca_data_wait_interval_s)
 
         self.saveFile()                    # write the remaining data and close the file
         epics.caput(self.flyScanNotSaved_pv, 0)

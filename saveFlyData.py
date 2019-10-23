@@ -234,15 +234,22 @@ class SaveFlyScan(object):
         acceptable_count = int(current_channel * acceptable_fraction)
         pv_s = [pv_registry['/entry/flyScan/'+s].pv for s in "mca1 mca2 mca3".split()]
         t0 = time.time()
-        t_end = t0 + mca_data_wait_timeout_s
+        t_end = t0 + self.mca_data_wait_timeout_s
         while min([pv.count for pv in pv_s]) < acceptable_count:
             if time.time() > t_end:
-                t_now = time.time() - t0
-                emsg = "Waited %.2f s" % t_now
+                elapsed = time.time() - t0
+                emsg = "Waited %.2f s" % elapsed
                 emsg += " for at least %d channels from every MCA" % acceptable_count
                 emsg += " received only %s for [mca1, mca2, mca3]" % str([pv.count for pv in pv_s])
                 raise TimeoutException(emsg)
             time.sleep(self.mca_data_wait_interval_s)
+        elapsed = time.time() - t0
+        if self.mca_data_wait_interval_s < elapsed <= self.mca_data_wait_timeout_s:
+            # had to wait, report how long it took
+            msg = "Waited %.2f s for MCA data to be read" % elapsed
+            print(msg)
+
+
 
         self.saveFile()                    # write the remaining data and close the file
         epics.caput(self.flyScanNotSaved_pv, 0)

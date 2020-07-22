@@ -71,8 +71,36 @@ Additionally, you can check this file for validity and that all PVs exist with t
 
 				<group name="sample" class="NXsample">
 					<attribute name="canSAS_class" value="SASsample" />
-					<PV label="name" pvname="9idcLAX:USAXS:sampleTitle" string="true" />
-					<PV label="thickness" pvname="9idcLAX:USAXS:SampleThickness" />
+                    <PV label="name" pvname="9idcLAX:USAXS:sampleTitle" string="true" />
+                    <PV label="thickness" pvname="9idcLAX:USAXS:SampleThickness" />
+                    <PV label="description" pvname="9idcSample:Description" />
+                    <PV label="chemical_formula" pvname="9idcSample:ChemicalFormula" />
+
+                    <PV label="temperature" pvname="9idcSample:Temperature">
+                        <attribute name="units" value="C" />
+                    </PV>
+                    <PV label="concentration" pvname="9idcSample:Concentration">
+                        <attribute name="units" value="g/cm3" />
+                    </PV>
+                    <PV label="volume_fraction" pvname="9idcSample:VolumeFraction" />
+                    <PV label="scattering_length_density" pvname="9idcSample:ScatteringLengthDensity">
+                        <attribute name="units" value="cm/cm3" />
+                    </PV>
+                    <PV label="magnetic_field" pvname="9idcSample:MagneticField" />
+                    <PV label="stress_field" pvname="9idcSample:StressField" />
+                    <PV label="electric_field" pvname="9idcSample:ElectricField">
+                        <attribute name="units" value="V" />
+                    </PV>
+                    <PV label="x_translation" pvname="9idcSample:XTranslation">
+                        <attribute name="units" value="mm" />
+                    </PV>
+                    <PV label="rotation_angle" pvname="9idcSample:RotationAngle">
+                        <attribute name="units" value="degrees" />
+                    </PV>
+
+                    <PV label="magnetic_field_direction" pvname="9idcSample:MagneticFieldDir" />
+                    <PV label="stress_field_direction" pvname="9idcSample:StressFieldDir" />
+                    <PV label="electric_field_direction" pvname="9idcSample:ElectricFieldDir" />
 				</group>
 
 				<group name="flyScan" class="NXdata">
@@ -527,6 +555,18 @@ Additionally, you can check this file for validity and that all PVs exist with t
 					<PV label="BSS_time_end" 		pvname="9id_bss:time_end" string="true" />
 					<PV label="BSS_timestamp" 		pvname="9id_bss:timestamp" string="true" />
 					<PV label="BSS_title" 			pvname="9id_bss:title" string="true" />
+
+					<!-- apsbss experiment metadata  -->
+                    <PV label="ESAF_number" 		pvname="9idc:bss:esaf:id" string="true" />
+                    <PV label="ESAF_title" 		    pvname="9idc:bss:esaf:title" string="true" />
+                    <PV label="ESAF_raw" 		    pvname="9idc:bss:esaf:raw" string="true">
+                        <attribute name="text_format" value="yaml" />
+                    </PV>
+                    <PV label="Proposal_number" 	pvname="9idc:bss:proposal:id" string="true" />
+                    <PV label="Proposal_title" 		pvname="9idc:bss:proposal:title" string="true" />
+                    <PV label="Proposal_raw" 		pvname="9idc:bss:proposal:raw" string="true">
+                        <attribute name="text_format" value="yaml" />
+                    </PV>
 
 				</group> 	<!-- entry:NXentry/metadata:NXcollection -->
 
